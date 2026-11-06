@@ -1,0 +1,106 @@
+{
+  "status": "SEALED_FOR_ONE_RUN",
+  "authorization": "REVIEW_CANDIDATE_ONLY_NOT_EXECUTION_APPROVAL",
+  "files": {
+    "I1.patch": {
+      "bytes": 47534,
+      "sha256": "fcf21f8a280d717ea480c75782b3e7e1f5135ae47fe4ed80112809d1432119bb"
+    },
+    "aggregate.py": {
+      "bytes": 4642,
+      "sha256": "569444efe52482b74829053bd853792e6dd2b7b4cbe27316d3fece0cbaa222c5"
+    },
+    "candidate-files/v3/@claude-flow/cli/__tests__/openai-configured-provider-4834.test.ts": {
+      "bytes": 20810,
+      "sha256": "37232dc5902097814e52a58aece5407558c305b5b04bd47dccba78778e103eb5"
+    },
+    "check_lifecycles.py": {
+      "bytes": 5740,
+      "sha256": "5a3df06bdf02c24bcbff42e4210304d383796113a9ea26f1ab414be16cebbcfa"
+    },
+    "compare_reports.py": {
+      "bytes": 11111,
+      "sha256": "0c949d1de229acac69f4cd81f82fcf9d5c627125d4dd34a7468563445ba3ac26"
+    },
+    "host.py": {
+      "bytes": 11754,
+      "sha256": "bd41fc5cfc26728d70a88c50e6b4c9571e384808e5331b38693766537cedfc88"
+    },
+    "inside.py": {
+      "bytes": 20626,
+      "sha256": "2b6e71cb85d7cfda94e8bfa10c868a9da8b3cb1a2333679e14e454408aaf1535"
+    },
+    "install-global-guard.cjs": {
+      "bytes": 718,
+      "sha256": "6bfcd26f154e97c5fe39c3f63f54402005ad54e0e08a7666dcb243e48294dec6"
+    },
+    "installed-api-smoke.mjs": {
+      "bytes": 8628,
+      "sha256": "e1e3c9283c7d8c45c24ef2bd9c774f100e7db019e28d132ca44f6f41b9da6c99"
+    },
+    "lifecycle-allowlist-for-review.json": {
+      "bytes": 6549,
+      "sha256": "fdeccc4339bda4e4f47e7db241568d8ede8f2866aaf91f17cce6d5f15a952f4e"
+    },
+    "manifest.json": {
+      "bytes": 40067,
+      "sha256": "1fe6a4ae7b5aa5297b45339674852eb482f41990fdf458e06e53eb3e80b457ee"
+    },
+    "pnpm-8.15.0.tgz": {
+      "bytes": 3805828,
+      "sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665"
+    },
+    "profile-plan.json": {
+      "bytes": 18214,
+      "sha256": "fd1b64ed4f2592f1b21fa2884e6998cc8a957f384444446813ef3066e727730b"
+    },
+    "restore_cache.py": {
+      "bytes": 1346,
+      "sha256": "4867b034fbb164119bfead0efdf297122893a2866d4d795eefa11285b62bfa72"
+    },
+    "safe_extract.py": {
+      "bytes": 2208,
+      "sha256": "9fe3909b256bf2e9b174f73f98d76a3ae1b96951855a3899d43827ad9c81b9d6"
+    },
+    "source-identities.json": {
+      "bytes": 8574,
+      "sha256": "45b8a8b45d8b704886c42dc8ba6ea776c24b0b7ddb27e96c317d1f8a48465ef3"
+    },
+    "source.pack": {
+      "bytes": 72114080,
+      "sha256": "1c781389aa991dffa7dc213fad23b82721abd3272362b8117e190820b76a6729"
+    },
+    "source_cache.py": {
+      "bytes": 8334,
+      "sha256": "ec635ce1b6a1bf2434c3eef430a3830dec5da36ee815e6766fce78f467983c4a"
+    },
+    "verify_packet.py": {
+      "bytes": 1574,
+      "sha256": "9273e73d7c322c8aa442aba907b42aa20e4576f6e55ac16495d8ecc12cfb9425"
+    },
+    "candidate-files/v3/@claude-flow/cli/README.md": {
+      "bytes": 28734,
+      "sha256": "4324f9129456d5414cdd88181e5b104edf5d1cf907080b7ff01d662717db12fa"
+    },
+    "candidate-files/v3/@claude-flow/cli/src/commands/agent.ts": {
+      "bytes": 38739,
+      "sha256": "89193004dd0b71adf39982684f04b341fe29beda40bb5a7e29c3ae0f563a4fa9"
+    },
+    "candidate-files/v3/@claude-flow/cli/src/commands/providers.ts": {
+      "bytes": 24870,
+      "sha256": "0e8c38b825b8a70bb62c59a55a9ca8062dd6fd5e9dff72eee14ad5dd8ef483e3"
+    },
+    "candidate-files/v3/@claude-flow/cli/src/mcp-tools/agent-execute-core.ts": {
+      "bytes": 44607,
+      "sha256": "6e029c63bd567006e6363e6dfcd19fba17442cf7715526ab6490a106bdabc303"
+    },
+    "candidate-files/v3/@claude-flow/cli/src/mcp-tools/agent-tools.ts": {
+      "bytes": 51452,
+      "sha256": "aa5b9cb9c2daac5eecab9e557b63a22440be00e19df57cc3be7347126ec072c9"
+    },
+    "candidate-files/v3/@claude-flow/cli/src/services/openai-connection.ts": {
+      "bytes": 4281,
+      "sha256": "d4fe812cfce9d72a0b8b377e102b929bf16dd8885c678122a1b1fc5ff129a697"
+    }
+  }
+}

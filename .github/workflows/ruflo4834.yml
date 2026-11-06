@@ -1,0 +1,120 @@
+name: Ruflo 4834 full isolated Docker validation
+on:
+  push:
+    branches: [validate-openai-config-4834-20261106]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  d0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    outputs:
+      origin: ${{ steps.origin.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Exact parentless diagnostic tree
+        run: python3 validation4834/verify_packet.py --tree
+      - name: Preserve actual original run creation time
+        id: origin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/leninworld/ruflo/actions/runs/$GITHUB_RUN_ID > "$RUNNER_TEMP/run.json"
+          python3 - <<'PY'
+          import datetime,json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'run.json').read_text())
+          assert r['id']==int(os.environ['GITHUB_RUN_ID']) and r['run_attempt']==1
+          origin=int(datetime.datetime.fromisoformat(r['created_at'].replace('Z','+00:00')).timestamp())
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write(f'value={origin}\n')
+          PY
+      - name: Exact packet identity and real D0
+        env:
+          PACKET_ORIGIN: ${{ steps.origin.outputs.value }}
+        run: |
+          set -euo pipefail
+          python3 validation4834/verify_packet.py
+          python3 validation4834/host.py d0
+      - name: Seal dependency cache handoff
+        run: |
+          set -euo pipefail
+          tar -C "$RUNNER_TEMP/ruflo4834-cache" -czf "$RUNNER_TEMP/dependency-cache.tgz" npm20 npm22 pnpm
+          sha256sum "$RUNNER_TEMP/dependency-cache.tgz" > "$RUNNER_TEMP/dependency-cache.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruflo4834-dependency-cache
+          path: |
+            ${{ runner.temp }}/dependency-cache.tgz
+            ${{ runner.temp }}/dependency-cache.sha256
+          retention-days: 2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ruflo4834-result-d0
+          path: ${{ runner.temp }}/ruflo4834-d0/**/evidence/**
+          if-no-files-found: error
+          retention-days: 7
+  full:
+    needs: d0
+    runs-on: ubuntu-latest
+    timeout-minutes: 44
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [root20, v3-test22, cli22, quality20, smokes22, shipping22]
+        variant: [baseline, candidate]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ruflo4834-dependency-cache
+          path: ${{ runner.temp }}/cache-handoff
+      - name: Verify and restore only package-manager caches
+        run: |
+          set -euo pipefail
+          python3 validation4834/restore_cache.py "$RUNNER_TEMP/cache-handoff" "$RUNNER_TEMP/ruflo4834-cache"
+      - name: Exact full profile in isolated Docker
+        env:
+          PROFILE: ${{ matrix.profile }}
+          VARIANT: ${{ matrix.variant }}
+          PACKET_ORIGIN: ${{ needs.d0.outputs.origin }}
+        run: |
+          set -euo pipefail
+          python3 validation4834/verify_packet.py
+          python3 validation4834/host.py full
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ruflo4834-result-${{ matrix.profile }}-${{ matrix.variant }}
+          path: ${{ runner.temp }}/ruflo4834-${{ matrix.profile }}-${{ matrix.variant }}/**/evidence/**
+          if-no-files-found: error
+          retention-days: 7
+  compare:
+    needs: [d0, full]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ruflo4834-result-*
+          path: ${{ runner.temp }}/results
+      - name: Verify complete baseline/candidate scope and actual reports
+        run: python3 validation4834/aggregate.py "$RUNNER_TEMP/results" "$RUNNER_TEMP/aggregate.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ruflo4834-aggregate
+          path: ${{ runner.temp }}/aggregate.json
+          if-no-files-found: error
+          retention-days: 7
