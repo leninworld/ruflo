@@ -1,0 +1,83 @@
+name: Ruflo 4834 final installed-package proof (attempt 2 of 2)
+on:
+  push:
+    branches: [validate-openai-config-4834-shipping2-20261106]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  shipping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 42
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [baseline, candidate]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Exact original and final diagnostic payloads
+        run: |
+          python3 validation4834/verify_packet.py
+          python3 validation4834shipping2/verify_packet.py --tree
+      - name: Anchor final attempt to its actual creation time
+        id: origin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/leninworld/ruflo/actions/runs/$GITHUB_RUN_ID > "$RUNNER_TEMP/run.json"
+          python3 - <<'PY'
+          import datetime,json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'run.json').read_text())
+          assert r['id']==int(os.environ['GITHUB_RUN_ID']) and r['run_attempt']==1
+          assert r['event']=='push' and r['head_branch']=='validate-openai-config-4834-shipping2-20261106'
+          origin=int(datetime.datetime.fromisoformat(r['created_at'].replace('Z','+00:00')).timestamp())
+          with open(os.environ['GITHUB_OUTPUT'],'a')as f:f.write(f'value={origin}\n')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ruflo4834-dependency-cache
+          run-id: 42262920667
+          repository: leninworld/ruflo
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/cache-handoff
+      - name: Reuse verified public package-manager cache only
+        run: python3 validation4834shipping2/restore_cache.py "$RUNNER_TEMP/cache-handoff" "$RUNNER_TEMP/ruflo4834-cache"
+      - name: Complete both installed-package paths
+        env:
+          PROFILE: shipping22
+          VARIANT: ${{ matrix.variant }}
+          PACKET_ORIGIN: ${{ steps.origin.outputs.value }}
+        run: python3 validation4834shipping2/host.py full
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ruflo4834-shipping2-${{ matrix.variant }}
+          path: ${{ runner.temp }}/ruflo4834-shipping22-${{ matrix.variant }}/**/evidence/**
+          if-no-files-found: error
+          retention-days: 7
+  compare:
+    needs: shipping
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ruflo4834-shipping2-*
+          path: ${{ runner.temp }}/results
+      - name: Verify both complete proofs and equal consumer graphs
+        run: python3 validation4834shipping2/compare_shipping.py "$RUNNER_TEMP/results" "$RUNNER_TEMP/shipping-comparison.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ruflo4834-shipping2-comparison
+          path: ${{ runner.temp }}/shipping-comparison.json
+          if-no-files-found: error
+          retention-days: 7

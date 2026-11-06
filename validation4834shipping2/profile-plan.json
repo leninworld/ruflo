@@ -1,0 +1,376 @@
+{
+  "status": "SEALED_CURRENT_09BD_B_U_CORRECTIONS_NOT_EXECUTED",
+  "base": "09bd1bf304cf1906729f8cca66460549d78b1f89",
+  "patch_sha256": "fcf21f8a280d717ea480c75782b3e7e1f5135ae47fe4ed80112809d1432119bb",
+  "separate_baseline_candidate_jobs": 12,
+  "profiles": {
+    "root20": {
+      "node": "20",
+      "gating_suite": true,
+      "install": "npm ci --legacy-peer-deps",
+      "install_cwd": ".",
+      "commands": [
+        {
+          "name": "Build workspace-linked packages needed at runtime by tests",
+          "run": "npm run build --workspace=@claude-flow/security",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "test",
+          "cwd": "."
+        },
+        {
+          "name": "Build local @claude-flow/cli-core and overlay onto the installed package",
+          "run": "npm run build --prefix v3/@claude-flow/cli-core\nrm -rf node_modules/@claude-flow/cli-core/dist\ncp -r v3/@claude-flow/cli-core/dist node_modules/@claude-flow/cli-core/dist\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "test",
+          "cwd": "."
+        },
+        {
+          "name": "Run all tests",
+          "run": "node scripts/ci-test-ratchet.mjs",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "test",
+          "cwd": "."
+        },
+        {
+          "name": "Lint code",
+          "run": "npm run lint",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "security",
+          "cwd": "."
+        },
+        {
+          "name": "Type check",
+          "run": "npm run typecheck || echo \"\u26a0\ufe0f Type checking skipped (TypeScript compiler crash)\"",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "security",
+          "cwd": "."
+        },
+        {
+          "name": "Build project",
+          "run": "echo \"Building project for ${{ matrix.platform }}...\"\nnpm run build:ts\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "build",
+          "cwd": "."
+        },
+        {
+          "name": "Test CLI binary (Unix)",
+          "run": "chmod +x ./v3/@claude-flow/cli/bin/cli.js\nnode ./v3/@claude-flow/cli/bin/cli.js --version\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "build",
+          "cwd": "."
+        },
+        {
+          "name": "Package build",
+          "run": "npm pack\nls -la *.tgz\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "build",
+          "cwd": "."
+        }
+      ],
+      "report": ".test-results/vitest.json",
+      "workers": "Upstream ratchet literal --maxWorkers=2; no injected worker flags."
+    },
+    "v3-test22": {
+      "node": "22",
+      "gating_suite": true,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "Verify opt-in MCP policy through both shipped stdio launchers",
+          "run": "node scripts/test-mcp-policy-stdio.mjs",
+          "working_directory": "v3/@claude-flow/cli",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "Build (so workspace dist/ exists for runtime imports)",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3"
+        },
+        {
+          "name": "ADR-176/177 \u2014 self-learning proof artifacts must stay valid",
+          "run": "node scripts/smoke-flywheel-proof.mjs",
+          "working_directory": "v3/@claude-flow/cli",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "ADR-176 \u2014 clean-room replay acceptance test (offline, identical hashes)",
+          "run": "node scripts/replay-generation.mjs",
+          "working_directory": "v3/@claude-flow/cli",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "Run tests",
+          "run": "REPORT=\"$RUNNER_TEMP/vitest-report.json\"\nrm -f \"$REPORT\"\nset +e\n# The bin shim execs node, so a segfault surfaces as 139. Through\n# `pnpm exec` a signalled child is reported as exit 1 instead.\n./node_modules/.bin/vitest run --reporter=default --reporter=json --outputFile.json=\"$REPORT\" 2>&1 | tee \"$RUNNER_TEMP/vitest-output.log\"\nEXIT=${PIPESTATUS[0]}\nset -e\nif [ \"$EXIT\" -eq 139 ]; then\n  # Count error lines explicitly: a scanner failure leaves ERRORS empty\n  # and fails closed instead of reading as \"no errors\".\n  ERRORS=\"$(sed -E 's/\\x1b\\[[0-9;]*m//g' \"$RUNNER_TEMP/vitest-output.log\" | grep -cE '^ *Errors +[0-9]+ errors?|Unhandled Errors|error during close' || true)\"\n  if [ -s \"$REPORT\" ] && [ -s \"$RUNNER_TEMP/vitest-output.log\" ] && [ \"$ERRORS\" = \"0\" ] \\\n    && node -e 'const r=JSON.parse(require(\"fs\").readFileSync(process.argv[1],\"utf8\")); process.exit(r.success===true && r.numTotalTestSuites>0 && r.numFailedTestSuites===0 && r.numFailedTests===0 ? 0 : 1)' \"$REPORT\"; then\n    echo \"::warning::vitest exited with SIGSEGV (139) after it reported a passing run with no unhandled errors \u2014 tolerated as a shutdown crash\"\n    exit 0\n  fi\n  echo \"::error::vitest exited with SIGSEGV (139) without a passing report (report present: $([ -s \"$REPORT\" ] && echo yes || echo no); error lines: ${ERRORS:-unreadable}); the suite did not finish, or it reported failures or unhandled errors\"\nfi\nexit \"$EXIT\"\n",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3"
+        }
+      ],
+      "report": "$RUNNER_TEMP/vitest-report.json",
+      "workers": "Unmodified Vitest4 default; record real availableParallelism/effective worker count."
+    },
+    "cli22": {
+      "node": "22",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "workspace runtime bootstrap",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3"
+        },
+        {
+          "name": "strict affected package build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "extra full package-native suite",
+          "cwd": "v3/@claude-flow/cli",
+          "run": "./node_modules/.bin/vitest run --reporter=default --reporter=json --outputFile.json=\"$RUNNER_TEMP/cli-report.json\""
+        }
+      ],
+      "report": "$RUNNER_TEMP/cli-report.json",
+      "workers": "Unmodified Vitest4 package default; this is an extra suite, not a CI gate."
+    },
+    "quality20": {
+      "node": "20",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "Build",
+          "run": "pnpm build",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "build",
+          "cwd": "v3"
+        },
+        {
+          "name": "Type check",
+          "run": "pnpm typecheck",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "typecheck",
+          "cwd": "v3"
+        },
+        {
+          "name": "Run env-var-precedence audit (ADR-125 / ADR-130)",
+          "run": "node scripts/audit-env-var-precedence.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "plugin-package-audit",
+          "cwd": "."
+        },
+        {
+          "name": "Verify witness manifest (via standalone plugin script \u2014 no CLI dep)",
+          "run": "# Use the project-agnostic verifier from ruflo-core plugin. This\n# is the same script external adopters use \u2014 dogfooding ensures\n# the plugin pathway works and avoids CI-specific cli build\n# issues (e.g. missing @ruvector/sona, sharp native postinstall).\n# Capture both streams; analyze regardless of exit code so we\n# always see WHY a verification failed.\n# OS-specific manifest path (verification/<os>/manifest.md.json).\n# Each runner reads its own snapshot \u2014 Linux runner reads\n# verification/linux/, macOS reads verification/macos/, etc.\ncase \"$RUNNER_OS\" in\n  Linux)   OS_DIR=linux ;;\n  macOS)   OS_DIR=macos ;;\n  Windows) OS_DIR=windows ;;\n  *)       OS_DIR=linux ;;\nesac\nMANIFEST=\"verification/$OS_DIR/manifest.md.json\"\necho \"verifying: $MANIFEST\"\nset +e\nnode plugins/ruflo-core/scripts/witness/verify.mjs \\\n  --manifest \"$MANIFEST\" \\\n  --json > \"$RUNNER_TEMP/witness-result.json\" 2> \"$RUNNER_TEMP/witness-result.err\"\nVERIFY_EXIT=$?\nset -e\necho \"--- verify.mjs exit code: $VERIFY_EXIT ---\"\necho \"--- stderr ---\"\ncat \"$RUNNER_TEMP/witness-result.err\" || true\necho \"--- summary ---\"\nnode -e \"\n  const fs = require('fs');\n  const raw = fs.readFileSync(process.env.RUNNER_TEMP + '/witness-result.json', 'utf8');\n  if (!raw.trim()) { console.error('verify.mjs produced no JSON output'); process.exit(1); }\n  const r = JSON.parse(raw);\n  console.log(JSON.stringify({signature: r.signature, summary: r.summary}, null, 2));\n  const failures = (r.results || []).filter(x => x.status !== 'pass' && x.status !== 'drift');\n  if (failures.length) {\n    console.error('non-pass fixes:');\n    for (const f of failures) console.error('  ' + f.status + ': ' + f.id + ' (' + f.file + ')');\n  }\n  if (!r.ok) { console.error('witness verify FAILED'); process.exit(1); }\n  if (r.summary.regressed > 0) { console.error('regressed fixes:', r.summary.regressed); process.exit(1); }\n  console.log('witness verify ok:', r.summary.pass, 'pass,', r.summary.drift, 'drift');\n\"\n",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "witness-verify",
+          "cwd": "."
+        }
+      ],
+      "caveats": [
+        "pnpm typecheck omits CLI; strict v3 build supplies the CLI compile gate.",
+        "Use the Linux signed manifest, retain upstream drift semantics and reject regressions. No signing."
+      ]
+    },
+    "smokes22": {
+      "node": "22",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "workspace runtime bootstrap",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3"
+        },
+        {
+          "name": "strict affected package build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "Run agent_execute providers smoke",
+          "run": "node scripts/smoke-agent-execute-providers.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "agent-execute-providers-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Scan every witness marker for drift",
+          "run": "node scripts/smoke-witness-marker-drift.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "witness-marker-drift-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Drive precondition + built-tree shapes through verify.mjs",
+          "run": "node scripts/smoke-witness-verify-precondition.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "witness-verify-precondition-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run",
+          "run": "node plugins/ruflo-core/scripts/test-mcp-roundtrips.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "mcp-roundtrip-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run",
+          "run": "node plugins/ruflo-core/scripts/test-cli-no-crash.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "mcp-roundtrip-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run ADR-095 G2 consensus-transport guard",
+          "run": "node plugins/ruflo-core/scripts/test-consensus-transport.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "mcp-roundtrip-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run tool-description audit",
+          "run": "node scripts/audit-tool-descriptions.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "tool-descriptions-audit",
+          "cwd": "."
+        },
+        {
+          "name": "Run CLI \u2194 MCP tool coverage audit (#1916)",
+          "run": "node scripts/audit-cli-mcp-tools.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "tool-descriptions-audit",
+          "cwd": "."
+        },
+        {
+          "name": "Run vector-dim audit",
+          "run": "node scripts/audit-vector-dim.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "vector-dim-audit",
+          "cwd": "."
+        },
+        {
+          "name": "Run init-scaffold references smoke",
+          "run": "node scripts/smoke-init-scaffold-references.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "init-scaffold-references-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run fix-invariants audit (presence-check guard for",
+          "run": "node scripts/audit-fix-invariants.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "hook-command-audit",
+          "cwd": "."
+        }
+      ],
+      "caveats": [
+        "Preserve upstream advisory/watchdog distinctions.",
+        "Only selected literal scripts run; do not claim unrelated whole jobs.",
+        "Static smokes do not prove provider behavior; real loopback regressions and installed MCP handlers do."
+      ]
+    },
+    "shipping22": {
+      "node": "22",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "workspace runtime bootstrap",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3"
+        },
+        {
+          "name": "strict affected package build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli"
+        }
+      ],
+      "pack_origin": "scripts/smoke-cli-npx-install.mjs",
+      "pack": "pnpm pack --pack-destination /work/pack from the built CLI workspace, preserving bundled dependencies.",
+      "warmup": "Fresh consumer npm install TARBALL --omit=optional --no-audit --no-fund; seal its lock and full cache closure. No provider test online.",
+      "offline": "Another fresh consumer npm ci --offline --omit=optional --no-audit --no-fund, same exact lock/tarball, then installed-api-smoke.mjs under Docker network none.",
+      "caveats": [
+        "Different offline omit-optional shipping proof, not the upstream Node22/24 live-registry npx job.",
+        "Require actual version3.72.2, real package lifecycle, published cli-core3.7.5, and API load with memory retained through neural, but without optional native platforms.",
+        "Real CLI configure/probe and MCP agent_spawn/agent_execute must reach loopback; no mocked provider or public provider claim."
+      ]
+    }
+  },
+  "D0": {
+    "target_seconds": 600,
+    "hard_seconds": 900,
+    "node_versions": [
+      "20",
+      "22"
+    ],
+    "native_probe_files": [
+      "__tests__/bug-cluster-2219-2226.test.ts",
+      "__tests__/doctor-component-selection.test.ts",
+      "__tests__/mcp-tools-deep.test.ts",
+      "__tests__/neural-package-bridge.test.ts",
+      "__tests__/sona-embeddings-validation.test.ts"
+    ],
+    "first": "Real tiny Docker fixtures: public source pack import/check-out/hash, multiset report comparison and negative controls, actual npm/pnpm lifecycle formats and global-install trap, extraction/package layout. Before dependencies.",
+    "regression_case_price": 47,
+    "collection": "Actual complete ID multisets. At least root20 OR v3-test22 must collect all46; CLI extra alone is insufficient.",
+    "capacity": "x86_64, process.arch x64, nproc>=4, MemAvailable>=13.5GiB, full CPU affinity. No injected test worker/heap flags.",
+    "memory": "Real test-window anonymous-memory peak sampled200ms; scale by ceil(full/probe concurrency)*1.25+1GiB; <=12GiB, oom/oom_kill0.",
+    "time": "Actualrun.created_at+3600; D0hard900; endremaining>=2430 includes cachehandoff120 and full2310incl180reserve; fullstart>=2130."
+  },
+  "disk_price": {
+    "observed_old_internal_cache_KiB": {
+      "root_node_modules": 2023572,
+      "v3_node_modules": 1913848,
+      "npm_cache": 676412,
+      "pnpm_store": 531100
+    },
+    "limitation": "Historical arm64 blocks, not a new amd64 installation or whole peak. No old node_modules tree is copied.",
+    "proposed_initial_free_GiB": 20,
+    "proposed_owned_peak_GiB": 16,
+    "free_floor_GiB": 3,
+    "reason": "The provisional8GiB price did not include both Node ABI trees, images and package-cache handoff. Include this correction in the whole review, not a tiny separate review."
+  },
+  "network": "Public frozen install/cache warmups only online. Actual tests/smokes use verified Docker network none and real loopback HTTP.",
+  "preservation": "Hosted owned ephemeral files only; no Mac Docker execution, source runtime, external SSD changes, prune/rm/reset or private material.",
+  "remaining_authoring": []
+}

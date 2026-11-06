@@ -1,0 +1,1068 @@
+{
+  "status": "SEALED_FOR_ONE_RUN",
+  "base": "09bd1bf304cf1906729f8cca66460549d78b1f89",
+  "root_tree": "532fc88f2ef2f6bf5383daf29420ce8e200229f1",
+  "files": [
+    {
+      "path": "v3/@claude-flow/cli/README.md",
+      "sha256": "4324f9129456d5414cdd88181e5b104edf5d1cf907080b7ff01d662717db12fa",
+      "bytes": 28734,
+      "lines": 445,
+      "before_blob": "8382cbddbe7e8f7597db9d9097b80c64fe8dd35d"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/commands/agent.ts",
+      "sha256": "89193004dd0b71adf39982684f04b341fe29beda40bb5a7e29c3ae0f563a4fa9",
+      "bytes": 38739,
+      "lines": 1169,
+      "before_blob": "ac87de84417d6d4b598d22f0b3fcbf5e54131146"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/commands/providers.ts",
+      "sha256": "0e8c38b825b8a70bb62c59a55a9ca8062dd6fd5e9dff72eee14ad5dd8ef483e3",
+      "bytes": 24870,
+      "lines": 602,
+      "before_blob": "1efd9499d2481d621d3af37c76a57110cca43d18"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/mcp-tools/agent-execute-core.ts",
+      "sha256": "6e029c63bd567006e6363e6dfcd19fba17442cf7715526ab6490a106bdabc303",
+      "bytes": 44607,
+      "lines": 958,
+      "before_blob": "8bf9b0766374977b472774ef3836092bcf6b747d"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/mcp-tools/agent-tools.ts",
+      "sha256": "aa5b9cb9c2daac5eecab9e557b63a22440be00e19df57cc3be7347126ec072c9",
+      "bytes": 51452,
+      "lines": 1111,
+      "before_blob": "ebf874e8ce0e7d5d5e661a2a1d61e11bab64d5fb"
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/openai-configured-provider-4834.test.ts",
+      "sha256": "37232dc5902097814e52a58aece5407558c305b5b04bd47dccba78778e103eb5",
+      "bytes": 20810,
+      "lines": 341,
+      "before_blob": null
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/services/openai-connection.ts",
+      "sha256": "d4fe812cfce9d72a0b8b377e102b929bf16dd8885c678122a1b1fc5ff129a697",
+      "bytes": 4281,
+      "lines": 94,
+      "before_blob": null
+    }
+  ],
+  "patch_sha256": "fcf21f8a280d717ea480c75782b3e7e1f5135ae47fe4ed80112809d1432119bb",
+  "new_test_path": "v3/@claude-flow/cli/__tests__/openai-configured-provider-4834.test.ts",
+  "source_pack": {
+    "base": "09bd1bf304cf1906729f8cca66460549d78b1f89",
+    "root_tree": "532fc88f2ef2f6bf5383daf29420ce8e200229f1",
+    "bytes": 72114080,
+    "sha256": "1c781389aa991dffa7dc213fad23b82721abd3272362b8117e190820b76a6729",
+    "shallow": [
+      "09bd1bf304cf1906729f8cca66460549d78b1f89"
+    ],
+    "objects": 9892,
+    "seconds": 1.029538208,
+    "network": false,
+    "source_fetch_attempts": 0,
+    "input": "Exact current public tree reconstructed from held diffs; only current commit+tree objects, no incomplete parent history, no authored source changes.",
+    "future_import_proof": "D0 index-pack/fsck/tree/blob verification remains mandatory; no fsck-success claim for old fetch store."
+  },
+  "predicted_new_cases": 47,
+  "whole_deadline_seconds": 3000,
+  "attempt": 2,
+  "no_rerun": true,
+  "images": {
+    "20": {
+      "image": "node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a",
+      "platform": "linux/amd64",
+      "tag_observed": "20-bookworm",
+      "index_digest": "sha256:8f693eaa7e0a8e71560c9a82b55fd54c2ae920a2ba5d2cde28bac7d1c01c9ba5",
+      "descriptor": {
+        "annotations": {
+          "com.docker.official-images.bashbrew.arch": "amd64",
+          "org.opencontainers.image.base.digest": "sha256:f6f643dcd562af1c83b5800dafffe230d050dfae204d9d7e783d33798f9318b2",
+          "org.opencontainers.image.base.name": "buildpack-deps:bookworm",
+          "org.opencontainers.image.created": "2026-04-22T07:17:09Z",
+          "org.opencontainers.image.revision": "8e93bb03443b68eccbddc0f1e31a5e9756f7e70e",
+          "org.opencontainers.image.source": "https://github.com/nodejs/docker-node.git#8e93bb03443b68eccbddc0f1e31a5e9756f7e70e:20/bookworm",
+          "org.opencontainers.image.url": "https://hub.docker.com/_/node",
+          "org.opencontainers.image.version": "20"
+        },
+        "digest": "sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a",
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "size": 2493
+      },
+      "runtime_toolchain": "D0 must prove python3, make, g++, git and Node major before any install"
+    },
+    "22": {
+      "image": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa",
+      "platform": "linux/amd64",
+      "tag_observed": "22-bookworm",
+      "index_digest": "sha256:7702d8aa4d5910871692af4480eb3ba86f23047a6417a44d857d06c95d060d3f",
+      "descriptor": {
+        "annotations": {
+          "com.docker.official-images.bashbrew.arch": "amd64",
+          "org.opencontainers.image.base.digest": "sha256:cba7fa3c133e3110d747518182a10a8f969691e6788abea5f454ce7f83de1542",
+          "org.opencontainers.image.base.name": "buildpack-deps:bookworm",
+          "org.opencontainers.image.created": "2026-11-05T09:18:28Z",
+          "org.opencontainers.image.revision": "80f02a542da739e6a662451d1db66456a0dea253",
+          "org.opencontainers.image.source": "https://github.com/nodejs/docker-node.git#80f02a542da739e6a662451d1db66456a0dea253:22/bookworm",
+          "org.opencontainers.image.url": "https://hub.docker.com/_/node",
+          "org.opencontainers.image.version": "22"
+        },
+        "digest": "sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa",
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "size": 2493
+      },
+      "runtime_toolchain": "D0 must prove python3, make, g++, git and Node major before any install"
+    }
+  },
+  "complete_peer_review": "PENDING_SHIPPING_FINAL_P5",
+  "profiles": {
+    "root20": {
+      "node": "20",
+      "gating_suite": true,
+      "install": "npm ci --legacy-peer-deps",
+      "install_cwd": ".",
+      "commands": [
+        {
+          "name": "Build workspace-linked packages needed at runtime by tests",
+          "run": "npm run build --workspace=@claude-flow/security",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "test",
+          "cwd": "."
+        },
+        {
+          "name": "Build local @claude-flow/cli-core and overlay onto the installed package",
+          "run": "npm run build --prefix v3/@claude-flow/cli-core\nrm -rf node_modules/@claude-flow/cli-core/dist\ncp -r v3/@claude-flow/cli-core/dist node_modules/@claude-flow/cli-core/dist\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "test",
+          "cwd": "."
+        },
+        {
+          "name": "Run all tests",
+          "run": "node scripts/ci-test-ratchet.mjs",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "test",
+          "cwd": "."
+        },
+        {
+          "name": "Lint code",
+          "run": "npm run lint",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "security",
+          "cwd": "."
+        },
+        {
+          "name": "Type check",
+          "run": "npm run typecheck || echo \"\u26a0\ufe0f Type checking skipped (TypeScript compiler crash)\"",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "security",
+          "cwd": "."
+        },
+        {
+          "name": "Build project",
+          "run": "echo \"Building project for ${{ matrix.platform }}...\"\nnpm run build:ts\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "build",
+          "cwd": "."
+        },
+        {
+          "name": "Test CLI binary (Unix)",
+          "run": "chmod +x ./v3/@claude-flow/cli/bin/cli.js\nnode ./v3/@claude-flow/cli/bin/cli.js --version\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "build",
+          "cwd": "."
+        },
+        {
+          "name": "Package build",
+          "run": "npm pack\nls -la *.tgz\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "build",
+          "cwd": "."
+        }
+      ],
+      "report": ".test-results/vitest.json",
+      "workers": "Upstream ratchet literal --maxWorkers=2; no injected worker flags."
+    },
+    "v3-test22": {
+      "node": "22",
+      "gating_suite": true,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "Verify opt-in MCP policy through both shipped stdio launchers",
+          "run": "node scripts/test-mcp-policy-stdio.mjs",
+          "working_directory": "v3/@claude-flow/cli",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "Build (so workspace dist/ exists for runtime imports)",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3"
+        },
+        {
+          "name": "ADR-176/177 \u2014 self-learning proof artifacts must stay valid",
+          "run": "node scripts/smoke-flywheel-proof.mjs",
+          "working_directory": "v3/@claude-flow/cli",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "ADR-176 \u2014 clean-room replay acceptance test (offline, identical hashes)",
+          "run": "node scripts/replay-generation.mjs",
+          "working_directory": "v3/@claude-flow/cli",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "Run tests",
+          "run": "REPORT=\"$RUNNER_TEMP/vitest-report.json\"\nrm -f \"$REPORT\"\nset +e\n# The bin shim execs node, so a segfault surfaces as 139. Through\n# `pnpm exec` a signalled child is reported as exit 1 instead.\n./node_modules/.bin/vitest run --reporter=default --reporter=json --outputFile.json=\"$REPORT\" 2>&1 | tee \"$RUNNER_TEMP/vitest-output.log\"\nEXIT=${PIPESTATUS[0]}\nset -e\nif [ \"$EXIT\" -eq 139 ]; then\n  # Count error lines explicitly: a scanner failure leaves ERRORS empty\n  # and fails closed instead of reading as \"no errors\".\n  ERRORS=\"$(sed -E 's/\\x1b\\[[0-9;]*m//g' \"$RUNNER_TEMP/vitest-output.log\" | grep -cE '^ *Errors +[0-9]+ errors?|Unhandled Errors|error during close' || true)\"\n  if [ -s \"$REPORT\" ] && [ -s \"$RUNNER_TEMP/vitest-output.log\" ] && [ \"$ERRORS\" = \"0\" ] \\\n    && node -e 'const r=JSON.parse(require(\"fs\").readFileSync(process.argv[1],\"utf8\")); process.exit(r.success===true && r.numTotalTestSuites>0 && r.numFailedTestSuites===0 && r.numFailedTests===0 ? 0 : 1)' \"$REPORT\"; then\n    echo \"::warning::vitest exited with SIGSEGV (139) after it reported a passing run with no unhandled errors \u2014 tolerated as a shutdown crash\"\n    exit 0\n  fi\n  echo \"::error::vitest exited with SIGSEGV (139) without a passing report (report present: $([ -s \"$REPORT\" ] && echo yes || echo no); error lines: ${ERRORS:-unreadable}); the suite did not finish, or it reported failures or unhandled errors\"\nfi\nexit \"$EXIT\"\n",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3"
+        }
+      ],
+      "report": "$RUNNER_TEMP/vitest-report.json",
+      "workers": "Unmodified Vitest4 default; record real availableParallelism/effective worker count."
+    },
+    "cli22": {
+      "node": "22",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "workspace runtime bootstrap",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3"
+        },
+        {
+          "name": "strict affected package build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "extra full package-native suite",
+          "cwd": "v3/@claude-flow/cli",
+          "run": "./node_modules/.bin/vitest run --reporter=default --reporter=json --outputFile.json=\"$RUNNER_TEMP/cli-report.json\""
+        }
+      ],
+      "report": "$RUNNER_TEMP/cli-report.json",
+      "workers": "Unmodified Vitest4 package default; this is an extra suite, not a CI gate."
+    },
+    "quality20": {
+      "node": "20",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "Build",
+          "run": "pnpm build",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "build",
+          "cwd": "v3"
+        },
+        {
+          "name": "Type check",
+          "run": "pnpm typecheck",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "typecheck",
+          "cwd": "v3"
+        },
+        {
+          "name": "Run env-var-precedence audit (ADR-125 / ADR-130)",
+          "run": "node scripts/audit-env-var-precedence.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "plugin-package-audit",
+          "cwd": "."
+        },
+        {
+          "name": "Verify witness manifest (via standalone plugin script \u2014 no CLI dep)",
+          "run": "# Use the project-agnostic verifier from ruflo-core plugin. This\n# is the same script external adopters use \u2014 dogfooding ensures\n# the plugin pathway works and avoids CI-specific cli build\n# issues (e.g. missing @ruvector/sona, sharp native postinstall).\n# Capture both streams; analyze regardless of exit code so we\n# always see WHY a verification failed.\n# OS-specific manifest path (verification/<os>/manifest.md.json).\n# Each runner reads its own snapshot \u2014 Linux runner reads\n# verification/linux/, macOS reads verification/macos/, etc.\ncase \"$RUNNER_OS\" in\n  Linux)   OS_DIR=linux ;;\n  macOS)   OS_DIR=macos ;;\n  Windows) OS_DIR=windows ;;\n  *)       OS_DIR=linux ;;\nesac\nMANIFEST=\"verification/$OS_DIR/manifest.md.json\"\necho \"verifying: $MANIFEST\"\nset +e\nnode plugins/ruflo-core/scripts/witness/verify.mjs \\\n  --manifest \"$MANIFEST\" \\\n  --json > \"$RUNNER_TEMP/witness-result.json\" 2> \"$RUNNER_TEMP/witness-result.err\"\nVERIFY_EXIT=$?\nset -e\necho \"--- verify.mjs exit code: $VERIFY_EXIT ---\"\necho \"--- stderr ---\"\ncat \"$RUNNER_TEMP/witness-result.err\" || true\necho \"--- summary ---\"\nnode -e \"\n  const fs = require('fs');\n  const raw = fs.readFileSync(process.env.RUNNER_TEMP + '/witness-result.json', 'utf8');\n  if (!raw.trim()) { console.error('verify.mjs produced no JSON output'); process.exit(1); }\n  const r = JSON.parse(raw);\n  console.log(JSON.stringify({signature: r.signature, summary: r.summary}, null, 2));\n  const failures = (r.results || []).filter(x => x.status !== 'pass' && x.status !== 'drift');\n  if (failures.length) {\n    console.error('non-pass fixes:');\n    for (const f of failures) console.error('  ' + f.status + ': ' + f.id + ' (' + f.file + ')');\n  }\n  if (!r.ok) { console.error('witness verify FAILED'); process.exit(1); }\n  if (r.summary.regressed > 0) { console.error('regressed fixes:', r.summary.regressed); process.exit(1); }\n  console.log('witness verify ok:', r.summary.pass, 'pass,', r.summary.drift, 'drift');\n\"\n",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "witness-verify",
+          "cwd": "."
+        }
+      ],
+      "caveats": [
+        "pnpm typecheck omits CLI; strict v3 build supplies the CLI compile gate.",
+        "Use the Linux signed manifest, retain upstream drift semantics and reject regressions. No signing."
+      ]
+    },
+    "smokes22": {
+      "node": "22",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "workspace runtime bootstrap",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3"
+        },
+        {
+          "name": "strict affected package build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli"
+        },
+        {
+          "name": "Run agent_execute providers smoke",
+          "run": "node scripts/smoke-agent-execute-providers.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "agent-execute-providers-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Scan every witness marker for drift",
+          "run": "node scripts/smoke-witness-marker-drift.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "witness-marker-drift-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Drive precondition + built-tree shapes through verify.mjs",
+          "run": "node scripts/smoke-witness-verify-precondition.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "witness-verify-precondition-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run",
+          "run": "node plugins/ruflo-core/scripts/test-mcp-roundtrips.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "mcp-roundtrip-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run",
+          "run": "node plugins/ruflo-core/scripts/test-cli-no-crash.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "mcp-roundtrip-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run ADR-095 G2 consensus-transport guard",
+          "run": "node plugins/ruflo-core/scripts/test-consensus-transport.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "mcp-roundtrip-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run tool-description audit",
+          "run": "node scripts/audit-tool-descriptions.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "tool-descriptions-audit",
+          "cwd": "."
+        },
+        {
+          "name": "Run CLI \u2194 MCP tool coverage audit (#1916)",
+          "run": "node scripts/audit-cli-mcp-tools.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "tool-descriptions-audit",
+          "cwd": "."
+        },
+        {
+          "name": "Run vector-dim audit",
+          "run": "node scripts/audit-vector-dim.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "vector-dim-audit",
+          "cwd": "."
+        },
+        {
+          "name": "Run init-scaffold references smoke",
+          "run": "node scripts/smoke-init-scaffold-references.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "init-scaffold-references-smoke",
+          "cwd": "."
+        },
+        {
+          "name": "Run fix-invariants audit (presence-check guard for",
+          "run": "node scripts/audit-fix-invariants.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "hook-command-audit",
+          "cwd": "."
+        }
+      ],
+      "caveats": [
+        "Preserve upstream advisory/watchdog distinctions.",
+        "Only selected literal scripts run; do not claim unrelated whole jobs.",
+        "Static smokes do not prove provider behavior; real loopback regressions and installed MCP handlers do."
+      ]
+    },
+    "shipping22": {
+      "node": "22",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "workspace runtime bootstrap",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3"
+        },
+        {
+          "name": "strict affected package build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli"
+        }
+      ],
+      "pack_origin": "scripts/smoke-cli-npx-install.mjs",
+      "pack": "pnpm pack --pack-destination /work/pack from the built CLI workspace, preserving bundled dependencies.",
+      "warmup": "Fresh consumer npm install TARBALL --omit=optional --no-audit --no-fund; seal its lock and full cache closure. No provider test online.",
+      "offline": "Another fresh consumer npm ci --offline --omit=optional --no-audit --no-fund, same exact lock/tarball, then installed-api-smoke.mjs under Docker network none.",
+      "caveats": [
+        "Different offline omit-optional shipping proof, not the upstream Node22/24 live-registry npx job.",
+        "Require actual version3.72.2, real package lifecycle, published cli-core3.7.5, and API load with memory retained through neural, but without optional native platforms.",
+        "Real CLI configure/probe and MCP agent_spawn/agent_execute must reach loopback; no mocked provider or public provider claim."
+      ]
+    }
+  },
+  "initial_free_GiB": 20,
+  "owned_peak_GiB": 16,
+  "pnpm_tar_sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
+  "B17_static_evidence": {
+    "node_versions": [
+      {
+        "profile": "root20",
+        "node": "20",
+        "job": "test",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": {
+          "os": [
+            "ubuntu-latest"
+          ]
+        }
+      },
+      {
+        "profile": "root20",
+        "node": "20",
+        "job": "test",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": {
+          "os": [
+            "ubuntu-latest"
+          ]
+        }
+      },
+      {
+        "profile": "root20",
+        "node": "20",
+        "job": "test",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": {
+          "os": [
+            "ubuntu-latest"
+          ]
+        }
+      },
+      {
+        "profile": "root20",
+        "node": "20",
+        "job": "security",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "root20",
+        "node": "20",
+        "job": "security",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "root20",
+        "node": "20",
+        "job": "build",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": {
+          "os": [
+            "ubuntu-latest",
+            "macos-latest",
+            "windows-latest"
+          ],
+          "include": [
+            {
+              "os": "ubuntu-latest",
+              "platform": "linux"
+            },
+            {
+              "os": "macos-latest",
+              "platform": "darwin"
+            },
+            {
+              "os": "windows-latest",
+              "platform": "win32"
+            }
+          ]
+        }
+      },
+      {
+        "profile": "root20",
+        "node": "20",
+        "job": "build",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": {
+          "os": [
+            "ubuntu-latest",
+            "macos-latest",
+            "windows-latest"
+          ],
+          "include": [
+            {
+              "os": "ubuntu-latest",
+              "platform": "linux"
+            },
+            {
+              "os": "macos-latest",
+              "platform": "darwin"
+            },
+            {
+              "os": "windows-latest",
+              "platform": "win32"
+            }
+          ]
+        }
+      },
+      {
+        "profile": "root20",
+        "node": "20",
+        "job": "build",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": {
+          "os": [
+            "ubuntu-latest",
+            "macos-latest",
+            "windows-latest"
+          ],
+          "include": [
+            {
+              "os": "ubuntu-latest",
+              "platform": "linux"
+            },
+            {
+              "os": "macos-latest",
+              "platform": "darwin"
+            },
+            {
+              "os": "windows-latest",
+              "platform": "win32"
+            }
+          ]
+        }
+      },
+      {
+        "profile": "v3-test22",
+        "node": "22",
+        "job": "test",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "v3-test22",
+        "node": "22",
+        "job": "test",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "v3-test22",
+        "node": "22",
+        "job": "test",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "v3-test22",
+        "node": "22",
+        "job": "test",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "v3-test22",
+        "node": "22",
+        "job": "test",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "quality20",
+        "node": "20",
+        "job": "build",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": {
+          "os": [
+            "ubuntu-latest",
+            "macos-latest",
+            "windows-2022"
+          ]
+        }
+      },
+      {
+        "profile": "quality20",
+        "node": "20",
+        "job": "typecheck",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "quality20",
+        "node": "20",
+        "job": "plugin-package-audit",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "quality20",
+        "node": "20",
+        "job": "witness-verify",
+        "literal_versions": [
+          "${{ env.NODE_VERSION }}"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": {
+          "os": [
+            "ubuntu-latest",
+            "macos-latest",
+            "windows-latest"
+          ]
+        }
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "agent-execute-providers-smoke",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "witness-marker-drift-smoke",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "witness-verify-precondition-smoke",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "mcp-roundtrip-smoke",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "mcp-roundtrip-smoke",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "mcp-roundtrip-smoke",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "tool-descriptions-audit",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "tool-descriptions-audit",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "vector-dim-audit",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "init-scaffold-references-smoke",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      },
+      {
+        "profile": "smokes22",
+        "node": "22",
+        "job": "hook-command-audit",
+        "literal_versions": [
+          "22"
+        ],
+        "workflow_env_NODE_VERSION": "20",
+        "matrix": null
+      }
+    ],
+    "npm_ci_retry_composite": "name: 'npm ci with retry'\ndescription: >-\n  Runs `npm ci` with retries to absorb transient prebuilt-binary download\n  failures (observed repeatedly as sharp/libvips \"socket hang up\" / 503\n  errors from GitHub Releases during postinstall \u2014 unrelated to the PR's\n  own changes, and not fixed by npm's own package cache since the failing\n  request is a separate direct download, not an npm registry fetch).\ninputs:\n  args:\n    description: 'Extra flags to pass to npm ci'\n    required: false\n    default: '--legacy-peer-deps'\n  attempts:\n    description: 'Number of attempts before failing the step'\n    required: false\n    default: '3'\n  working-directory:\n    description: >-\n      Directory to run npm ci in. NOTE: working-directory on the calling\n      (uses:) step itself has no effect on a composite action's internal\n      run steps \u2014 GitHub rejects \"working-directory cannot be used with\n      uses\" at parse time \u2014 so it must be threaded through as an input.\n    required: false\n    default: '.'\nruns:\n  using: 'composite'\n  steps:\n    - shell: bash\n      working-directory: ${{ inputs.working-directory }}\n      run: |\n        n=0\n        max=${{ inputs.attempts }}\n        until [ \"$n\" -ge \"$max\" ]; do\n          npm ci ${{ inputs.args }} && exit 0\n          n=$((n + 1))\n          echo \"npm ci failed (attempt $n/$max) \u2014 retrying in 15s (known transient prebuilt-binary download flake, e.g. sharp/libvips)\"\n          [ \"$n\" -lt \"$max\" ] && sleep 15\n        done\n        echo \"npm ci failed after $max attempts\"\n        exit 1\n",
+    "observed_retry_divergence": "The composite defaults to3 attempts; this reviewed execution allows one install only. No retry authorized.",
+    "witness_anchors": [
+      {
+        "id": "G1",
+        "path": "v3/@claude-flow/cli/src/mcp-tools/agent-execute-core.ts",
+        "marker": "callAnthropicMessages",
+        "present_in_candidate_source": true,
+        "compiled_verification": "UNRUN"
+      },
+      {
+        "id": "CAP-MCP-agent-tools",
+        "path": "v3/@claude-flow/cli/src/mcp-tools/agent-tools.ts",
+        "marker": "agent_execute",
+        "present_in_candidate_source": true,
+        "compiled_verification": "UNRUN"
+      },
+      {
+        "id": "#1906",
+        "path": "v3/@claude-flow/cli/src/mcp-tools/agent-execute-core.ts",
+        "marker": "claude-sonnet-4-6",
+        "present_in_candidate_source": true,
+        "compiled_verification": "UNRUN"
+      },
+      {
+        "id": "#1916",
+        "path": "v3/@claude-flow/cli/src/mcp-tools/agent-tools.ts",
+        "marker": "loadAllAgents",
+        "present_in_candidate_source": true,
+        "compiled_verification": "UNRUN"
+      }
+    ],
+    "README_scan_sha256": "b67b82b19fc19aecb3da25f54ab535687ba64c36559c33952c853b721ef6a9a4",
+    "README_scan_lines": 129,
+    "README_parity_assessment": "Full129-line public scan read: plugin/fixture/root README usages only, no parity test reading the changed CLI README found."
+  },
+  "feasibility_risk_B21": "Hosted20GiB initial free-space and900s D0 ceiling remain unmeasured. Fail closed; even pre-install admission failure consumes the one attempt. No rerun.",
+  "B_approval": {
+    "verdict": "../whole-execution-verdict.md",
+    "duration_ms": 522785,
+    "handle": 62875,
+    "status": "B1-B21 independently agreed and applied; source/hash/Python AST checked; freshness admission pending; runtime UNRUN"
+  },
+  "U3_closure": {
+    "state": "CURRENT_WORKSPACE_AND_LOCK_CLOSURE_MATCH_REVIEWED_METADATA",
+    "workspace_projects": [
+      {
+        "path": "v3/@claude-flow/aidefence/package.json",
+        "name": "@claude-flow/aidefence",
+        "version": "3.1.0",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/browser/package.json",
+        "name": "@claude-flow/browser",
+        "version": "3.0.1",
+        "scripts": {
+          "postinstall": "node -e \"const{execSync}=require('child_process');try{execSync('agent-browser --version',{stdio:'ignore'});}catch{console.log('\\n\ud83d\udce6 Installing agent-browser globally...');try{execSync('npm install -g agent-browser@latest',{stdio:'inherit'});console.log('\u2705 agent-browser installed successfully!');}catch(e){console.log('\u26a0\ufe0f  Could not install agent-browser globally. Run manually:\\n   npm install -g agent-browser@latest');}}\""
+        }
+      },
+      {
+        "path": "v3/@claude-flow/claims/package.json",
+        "name": "@claude-flow/claims",
+        "version": "3.0.0",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/cli/package.json",
+        "name": "@claude-flow/cli",
+        "version": "3.72.2",
+        "scripts": {
+          "postinstall": "node ./scripts/postinstall.cjs"
+        }
+      },
+      {
+        "path": "v3/@claude-flow/cli-core/package.json",
+        "name": "@claude-flow/cli-core",
+        "version": "3.7.5",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/codex/package.json",
+        "name": "@claude-flow/codex",
+        "version": "3.0.6",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/deployment/package.json",
+        "name": "@claude-flow/deployment",
+        "version": "3.0.0",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/embeddings/package.json",
+        "name": "@claude-flow/embeddings",
+        "version": "3.0.0-alpha.18",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/guidance/package.json",
+        "name": "@claude-flow/guidance",
+        "version": "3.0.0",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/hooks/package.json",
+        "name": "@claude-flow/hooks",
+        "version": "3.0.2",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/integration/package.json",
+        "name": "@claude-flow/integration",
+        "version": "3.0.1",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/mcp/package.json",
+        "name": "@claude-flow/mcp",
+        "version": "3.1.6",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/memory/package.json",
+        "name": "@claude-flow/memory",
+        "version": "3.2.3",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/neural/package.json",
+        "name": "@claude-flow/neural",
+        "version": "3.0.3",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/performance/package.json",
+        "name": "@claude-flow/performance",
+        "version": "3.0.2",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/plugin-agent-federation/package.json",
+        "name": "@claude-flow/plugin-agent-federation",
+        "version": "1.0.5",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/plugin-iot-cognitum/package.json",
+        "name": "@claude-flow/plugin-iot-cognitum",
+        "version": "1.0.0",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/plugins/package.json",
+        "name": "@claude-flow/plugins",
+        "version": "3.0.2",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/providers/package.json",
+        "name": "@claude-flow/providers",
+        "version": "3.0.1",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/security/package.json",
+        "name": "@claude-flow/security",
+        "version": "3.0.6",
+        "scripts": {
+          "prepare": "npm run build"
+        }
+      },
+      {
+        "path": "v3/@claude-flow/shared/package.json",
+        "name": "@claude-flow/shared",
+        "version": "3.0.7",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/swarm/package.json",
+        "name": "@claude-flow/swarm",
+        "version": "3.0.4",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/testing/package.json",
+        "name": "@claude-flow/testing",
+        "version": "3.0.0",
+        "scripts": {}
+      },
+      {
+        "path": "v3/@claude-flow/watermark/package.json",
+        "name": "@claude-flow/watermark",
+        "version": "0.2.0",
+        "scripts": {}
+      }
+    ],
+    "root_patterns": [
+      "v3/@claude-flow/codex",
+      "v3/@claude-flow/mcp",
+      "v3/@claude-flow/plugin-agent-federation",
+      "v3/@claude-flow/security"
+    ],
+    "pnpm_patterns": [
+      "@claude-flow/*"
+    ],
+    "previous_and_current_package_count": 1522,
+    "changed_package_records": [
+      "/@ruvector/attention@2.2.3"
+    ],
+    "new_registry_versions": [],
+    "registry_metadata_records_reused": 1361,
+    "actual_lifecycle_allowlist_entries": 28,
+    "commands_identical": true,
+    "registry_prepare_not_executed": true,
+    "initial_inert_check": "Initial derivation included registry prepare metadata and its count guard stopped before any metadata write or runtime; corrected to preapproved B11 actual phases; normalized the existing implicit hnswlib node-gyp command exactly as approved_inventory does.",
+    "runtime": false
+  },
+  "U_approval": {
+    "verdict": "APPROVE U1-U6 plus timely offline recovery",
+    "review_duration_ms": 81204,
+    "recovery_duration_ms": 41230,
+    "offline_recovery_remaining_seconds": 29.196413040161133,
+    "source_fetch2": "TERMINAL_GUARD_RACE_NO_RETRY",
+    "current_tree": "EXACT_PUBLISHED_ROOT_RECONSTRUCTED_FROM_RETAINED_PUBLIC_DIFF",
+    "U2": "Detached current checkout and unchanged7fileI2 verified; original preflight stopped0subprocess from carrying recovery-onlydeadline acrossstages. Completed separatelyapprovedU2without repeatingfetch/recovery.",
+    "parent_history": "INCOMPLETE_NOT_EXPORTED_OR_CLAIMED",
+    "Codex": "AGREE; allsevenbytehashes/case47/fullscope/currentclosure verified statically; actualDockerD0mandatory."
+  },
+  "previous_run": 42262920667,
+  "previous_run_conclusion": "failure",
+  "consumer_resolution_before_utc": "2026-11-06T18:07:52.599062Z",
+  "resolution_timestamp_source": "Retained original P1-started.json actual at; no new baseline or pricing window."
+}
