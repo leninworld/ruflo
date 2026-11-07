@@ -1,0 +1,32 @@
+{
+  "execution_enabled": false,
+  "source_manifest": "source-manifest.json",
+  "source_count": 22,
+  "P1": "pack.sh,helper-proof.mjs,consumer-warm.sh,consumer.sh,packed-smoke.mjs; 2freshconsumerinstalls includeCLI/root/rufloarchives; actualnative/omitpresence/backend; officialmismatchdifferential+basebytesproof",
+  "P2": "fullfleet/external/npxNOT_RUN; localNode20registry/guardandexternalplanunitchecks explicit; neverclaimfullallplugins",
+  "P3": "fullhostmatrix/CodexbinaryNOT_RUN; productHTTP/CLIchain andnegativecontract testedwithoutremote marketplace. Noassumptionkeylessmeansoffline",
+  "P4": "rootratchetunchangedcommand/baseline/exclusions; fullV3/CLI/MCP; compare.py multisetandfilefailuregates; expiryneverrenew",
+  "P5": "typecheck/builddifferential; rootlint/missingtypechecknotclaimed; Linuxonly",
+  "P6": "I5 fullnewsourcecases derived fromactualbaselinecollectiondirectories; installedrealCLIchildstart/initialize/memoryproof; deterministicinprocess408 labeledMCPServerManagerrequestTimeoutMs; HNSWfilledcandidatewindow andRaBitQsameparentmoduleidentitysentinel",
+  "P7": "offlinehash/BM25mandatory; network-guard.cjs+Docker networknone; deterministicnativevectorproviderdeclared; ONNXoptionalnoartificialmodelprerequisite",
+  "P8": "E2fullcanonicalbyteseal beforehelpers; offlinepre-networklifecycleadmission; G0actualnativecompile; sameorigin+3420across14VMs; measuredcurrenthostandcgroupgates; proposedcapsnotpriceclosure",
+  "P9": "RetainedQ1-cached-assessment-continued.json fourregiontagassessmentreference; noadditionalfetch; ifnotacceptedreport3.71.4surfacesplitunknown",
+  "I1_correction": "PR-headpre-releasepack; officialhelperbaselineequalversionmismatchnotpass; currentbuiltbundlemanifest/distcomparison; startup/memoryblockedbymismatch=>wholeissuePARK",
+  "source_alias": "I5exactMCPsourcealiases atroot,V3,CLI; no baselineedits/exclusions/prebuildworkaround",
+  "NOT_RUN": [
+    "CodeQL/advisory",
+    "vendorbinary",
+    "publishedalpha",
+    "externalfleet/fullhostmatrix",
+    "simulatedglobalintegration",
+    "macOS/Windows",
+    "release-tag/auth/publish/disttags"
+  ],
+  "still_unexecuted": [
+    "allcodecompilation",
+    "G0",
+    "everyprojecttest",
+    "everyDockerlane",
+    "native/coldpayloadacquisition"
+  ]
+}

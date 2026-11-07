@@ -1,0 +1,8 @@
+{
+  "base": "3fe9d70ba7d08ff12233003a9342037ab80af3ce",
+  "workspace": "@claude-flow/browser",
+  "phase": "v3 prepare postinstall",
+  "execution": "Runs under actualnonrootrunnerUID; exactscriptpre-admitted, networkbounded",
+  "expected": "When agent-browser--version probe fails, basepostinstall attempts npm install -g agent-browser@latest; globalprefix write isexpectedEACCES undernonroot. This isexpectedbasebehavior torecord, notanoptionalwarning orproductregression. Actualprobe/fallback outcome remainsunrun.",
+  "literal_script_provenance": "workspace-lifecycle-inputs.json exactbasebrowserpackage; noeditedscript orpinclaim"
+}

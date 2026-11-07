@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-07T07:12:59.987279+00:00",
+  "base": "3fe9d70ba7d08ff12233003a9342037ab80af3ce",
+  "root_tree": "2cdd3faf13550c8e1022726bdbf436efd1631575",
+  "shallow": [
+    "3fe9d70ba7d08ff12233003a9342037ab80af3ce"
+  ],
+  "bytes": 71927170,
+  "sha256": "6d639f6c489e27b384c496205c9010b44e4fa5194b9cabf50241010d0100b3e8",
+  "seconds": 0.627606375,
+  "exit": 0,
+  "stop": null,
+  "network_fetch": false,
+  "source_fetch_attempts_unchanged": 1,
+  "project_execution": false,
+  "pack_path": "control-plane/co_create/20261106/proven-next-after-queued-repairs/source-3fe9d70.pack"
+}

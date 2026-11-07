@@ -1,0 +1,2151 @@
+diff --git a/README.md b/README.md
+index f72d861..9d644fd 100644
+--- a/README.md
++++ b/README.md
+@@ -371,6 +371,30 @@ For static inspection of local applications and binaries, see the [ruRE plugin g
+ | <img src="docs/assets/readme/icons/federation.svg" width="28" height="28" alt=""> **Agent Federation** | Cross-installation agent collaboration with zero-trust security |
+ | <img src="docs/assets/readme/icons/audit.svg" width="28" height="28" alt=""> **[MetaHarness](docs/metaharness-user-guide.md)** | Audit your AI agent setup before you ship. Grade readiness (1-100), scan tool configs for security issues, snapshot the whole project to catch regressions over time, and find templates that match your repo. `ruflo eject` turns a ruflo project into a standalone agent toolkit with its own name. [Full guide](docs/metaharness-user-guide.md). |
+ 
++#### HTTP budgets and unified memory search
++
++The HTTP server defaults to a 30,000 ms socket inactivity timeout. For a slower
++cold-start workload, set `--request-timeout-ms 120000` or
++`RUFLO_MCP_REQUEST_TIMEOUT_MS=120000` before starting the server. This is an
++inactivity timer, not an absolute elapsed-time deadline. A longer client-side
++budget does not override the server setting; configure both layers deliberately.
++
++An HTTP timeout, a disconnected POST, or the closure of its SSE session cancels
++that request's unified memory search cooperatively. Cancellation takes effect at
++asynchronous phase and namespace boundaries; it cannot preempt a synchronous
++SQLite/WASM operation already running. Other in-flight requests are independent.
++The default stdio and WebSocket request behavior is unchanged.
++
++`memory_search_unified` keeps `searchTime` as its legacy completion timestamp;
++use the additive `elapsedMs` for elapsed duration. `complete` is false when any
++namespace search fails, enumeration fails, or enumeration reaches its 100,000-row
++cap with more rows remaining. `namespaceErrors` contains at most ten diagnostics;
++`namespaceErrorCount` and `namespaceErrorsTruncated` disclose any additional
++failures. Enumeration failure preserves the legacy namespace fallback and reports
++`enumerationError`. Partial results keep `success: true` without a top-level
++`error`; if no namespace search succeeds, the response reports `success: false`.
++An empty successful namespace is not a failure.
++
+ ### <img src="docs/assets/readme/icons/learning.svg" width="28" height="28" alt=""> Learning from experience
+ 
+ <p align="center"><img src="docs/assets/readme/learning-flow.svg" width="100%" alt="Recall, execute, evaluate, store, adapt and reuse: an illustrative agent learning cycle."></p>
+diff --git a/v3/@claude-flow/cli/__tests__/issue-3375-rescue-local-embedder.test.ts b/v3/@claude-flow/cli/__tests__/issue-3375-rescue-local-embedder.test.ts
+index 9b19ae3..6f15bb4 100644
+--- a/v3/@claude-flow/cli/__tests__/issue-3375-rescue-local-embedder.test.ts
++++ b/v3/@claude-flow/cli/__tests__/issue-3375-rescue-local-embedder.test.ts
+@@ -25,9 +25,11 @@ import Database from 'better-sqlite3';
+ import { mkdtempSync, rmSync } from 'node:fs';
+ import { join } from 'node:path';
+ import { tmpdir } from 'node:os';
++import { QueryVectorMemo } from '../src/memory/search-request.js';
+ 
+ const local = vi.hoisted(() => ({
+   ruvectorAvailable: true,
++  inferences: [] as string[],
+   // Deterministic, non-zero, text-dependent 384-d "ONNX" vector.
+   vec(text: string): number[] {
+     let h = 0;
+@@ -48,7 +50,7 @@ vi.mock('ruvector', () => ({
+   get initOnnxEmbedder() {
+     return local.ruvectorAvailable ? async () => {} : undefined;
+   },
+-  getOptimizedOnnxEmbedder: () => ({ embed: async (t: string) => local.vec(t) }),
++  getOptimizedOnnxEmbedder: () => ({ embed: async (t: string) => { local.inferences.push(t); return local.vec(t); } }),
+ }));
+ 
+ let root: string;
+@@ -92,6 +94,7 @@ beforeEach(() => {
+   delete process.env.CLAUDE_FLOW_DISABLE_BRIDGE;
+   delete process.env.RUFLO_REQUIRE_REAL_EMBEDDINGS;
+   local.ruvectorAvailable = true;
++  local.inferences = [];
+   mockEmbedCalls = 0;
+   root = mkdtempSync(join(tmpdir(), 'ruflo-3375-'));
+   db = new Database(join(root, 'memory.db'));
+@@ -157,6 +160,58 @@ describe('#3375 rescueAgentdbEmbedder can fire', () => {
+     expect(Array.from(v)).toEqual(local.vec('rescued text').map(x => Math.fround(x)));
+   });
+ 
++  it('keeps rescued public methods independent of a caller second argument (#4876)', async () => {
++    const emb = Object.assign(degradedAgentdbEmbedder(), {
++      embedQuery: async (_text: string) => new Float32Array(384),
++      embedPassage: async (_text: string) => new Float32Array(384),
++    });
++    const { bridge } = await freshModules(emb);
++    await bridge.rescueAgentdbEmbedder(emb);
++    expect(emb.__ruvectorRescued).toBe(true);
++    const controller = new AbortController();
++    controller.abort('external options must remain ignored');
++    for (const method of [emb.embed, emb.embedQuery, emb.embedPassage]) {
++      const invoke = method as unknown as (text: string, options: unknown) => Promise<Float32Array>;
++      const vector = await invoke('public rescue contract', {
++        signal: controller.signal, normalize: false, queryMemo: new QueryVectorMemo(),
++      });
++      expect(Array.from(vector)).toEqual(local.vec('public rescue contract').map(x => Math.fround(x)));
++    }
++  });
++
++  it('forwards request memo and cancellation through an actual null-pipeline rescue (#4876)', async () => {
++    const emb = degradedAgentdbEmbedder();
++    const { bridge } = await freshModules(emb);
++    const queryMemo = new QueryVectorMemo();
++    const controller = new AbortController();
++    // A degraded result is never retained as a final query vector.
++    expect(await bridge.bridgeGenerateEmbedding('query', undefined, controller.signal, queryMemo)).toBeNull();
++    await bridge.rescueAgentdbEmbedder(emb);
++    expect(emb.__ruvectorRescued).toBe(true);
++    local.inferences = [];
++    const first = await bridge.bridgeGenerateEmbedding('query', undefined, controller.signal, queryMemo);
++    const second = await bridge.bridgeGenerateEmbedding('query', undefined, controller.signal, queryMemo);
++    expect(second).toEqual(first);
++    expect(first).toMatchObject({ backend: 'onnx', dimensions: 384 }); // synthetic ONNX provider above
++    expect(local.inferences.filter(text => text === 'query')).toHaveLength(1);
++    expect(mockEmbedCalls).toBe(0);
++    controller.abort('request ended');
++    await expect(bridge.bridgeGenerateEmbedding('query', undefined, controller.signal, queryMemo))
++      .rejects.toMatchObject({ name: 'AbortError' });
++    expect(local.inferences.filter(text => text === 'query')).toHaveLength(1);
++
++    // A new local-chain/model instance in a replacement lifecycle must not
++    // consume the old instance's vector from the same request-owned memo.
++    const replacement = degradedAgentdbEmbedder();
++    const next = await freshModules(replacement);
++    await next.bridge.rescueAgentdbEmbedder(replacement);
++    local.inferences = [];
++    expect(await next.bridge.bridgeGenerateEmbedding('query', undefined, undefined, queryMemo))
++      .toMatchObject({ backend: 'onnx', dimensions: 384 });
++    expect(local.inferences.filter(text => text === 'query')).toHaveLength(1);
++    expect(mockEmbedCalls).toBe(0);
++  });
++
+   it('declines the rescue and tags backend=mock when the local chain is degraded too', async () => {
+     local.ruvectorAvailable = false;
+     const emb = degradedAgentdbEmbedder();
+diff --git a/v3/@claude-flow/cli/src/mcp-server.ts b/v3/@claude-flow/cli/src/mcp-server.ts
+index e14e221..4715a20 100644
+--- a/v3/@claude-flow/cli/src/mcp-server.ts
++++ b/v3/@claude-flow/cli/src/mcp-server.ts
+@@ -1133,12 +1133,12 @@ export class MCPServerManager extends EventEmitter {
+       version: tool.version,
+       cacheable: tool.cacheable,
+       cacheTTL: tool.cacheTTL,
+-      handler: async (input: unknown, context?: { sessionId?: string }) => {
++      handler: async (input: unknown, context?: { sessionId?: string; signal?: AbortSignal }) => {
+         try {
+           const result = await callMCPTool(
+             tool.name,
+             (input as Record<string, unknown>) || {},
+-            { sessionId: context?.sessionId || fallbackSessionId, transport: this.options.transport === 'websocket' ? 'websocket' : 'http' }
++            { sessionId: context?.sessionId || fallbackSessionId, transport: this.options.transport === 'websocket' ? 'websocket' : 'http', signal: context?.signal }
+           );
+           trackRequest(tool.name, !hasToolError(result));
+           return result;
+diff --git a/v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts b/v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts
+index 24fbd6a..4c743a5 100644
+--- a/v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts
++++ b/v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts
+@@ -21,6 +21,7 @@ import { validateIdentifier } from './validate-input.js';
+ import { DEFAULT_SEARCH_THRESHOLD, nearMisses } from '../memory/search-defaults.js';
+ import { compileExclusionPatterns, MAX_EXCLUDE_PATTERNS, MAX_EXCLUDE_PATTERN_LENGTH } from './glob-exclusions.js';
+ import { readImportFile } from './import-limits.js';
++import { QueryVectorMemo, throwIfSearchAborted } from '../memory/search-request.js';
+ 
+ // Legacy JSON store interface (for migration)
+ interface LegacyMemoryEntry {
+@@ -1483,14 +1484,19 @@ export const memoryTools: MCPTool[] = [
+       },
+       required: ['query'],
+     },
+-    handler: async (input) => {
++    handler: async (input, context) => {
++      const startedAt = performance.now();
++      const signal = context?.signal as AbortSignal | undefined;
++      throwIfSearchAborted(signal);
+       const missingQuery = missingRequiredString(input, 'query', 'memory_search_unified');
+       if (missingQuery) {
+         return { success: false, query: input.query, results: [], total: 0, ...missingQuery };
+       }
+ 
+       await ensureInitialized();
++      throwIfSearchAborted(signal);
+       const { searchEntries, listEntries } = await getMemoryFunctions();
++      throwIfSearchAborted(signal);
+       validateMemoryInput(undefined, undefined, input.query as string);
+ 
+       const query = input.query as string;
+@@ -1512,6 +1518,8 @@ export const memoryTools: MCPTool[] = [
+       // The legacy default was silently missing ~95% of entries on stores with
+       // custom namespaces (issue #2246). Dynamic enumeration fixes that.
+       const LEGACY_DEFAULT = ['default', 'claude-memories', 'auto-memory', 'patterns', 'tasks', 'feedback'];
++      let enumerationError: string | undefined;
++      let truncatedAtCap = false;
+       let namespaces: string[];
+       let namespaceSource: 'param-single' | 'param-list' | 'env' | 'dynamic' | 'legacy-fallback';
+       if (ns) {
+@@ -1523,23 +1531,37 @@ export const memoryTools: MCPTool[] = [
+         namespaceSource = 'env';
+       } else {
+         // Dynamic enumeration — list all entries and collect distinct namespaces.
+-        // Cap entries at 100k to bound memory; in practice this is fast (<200ms).
++        // Preserve the enumeration cap and disclose any incomplete page.
+         try {
++          throwIfSearchAborted(signal);
+           const all = await listEntries({ limit: 100000 });
++          throwIfSearchAborted(signal);
++          if (!all.success) throw new Error(all.error || 'Namespace enumeration failed');
++          truncatedAtCap = typeof all.total === 'number' && all.total > all.entries.length;
+           const seenNs = new Set<string>();
+           for (const e of all?.entries ?? []) if (e.namespace) seenNs.add(e.namespace);
+           namespaces = seenNs.size > 0 ? Array.from(seenNs).sort() : LEGACY_DEFAULT;
+           namespaceSource = seenNs.size > 0 ? 'dynamic' : 'legacy-fallback';
+-        } catch {
++        } catch (error) {
++          throwIfSearchAborted(signal);
++          enumerationError = error instanceof Error ? error.message : String(error);
+           namespaces = LEGACY_DEFAULT; namespaceSource = 'legacy-fallback';
+         }
+       }
+ 
+       const allResults: Array<{ key: string; content: string; score: number; namespace: string; source: string }> = [];
+ 
++      const queryMemo = new QueryVectorMemo();
++      const namespaceErrors: Array<{ namespace: string; error: string }> = [];
++      let namespaceErrorCount = 0;
++      let successfulNamespaces = 0;
+       for (const searchNs of namespaces) {
++        throwIfSearchAborted(signal);
+         try {
+-          const r = await searchEntries({ query, namespace: searchNs, limit: limit * 2 });
++          const r = await searchEntries({ query, namespace: searchNs, limit: limit * 2, signal, queryMemo });
++          throwIfSearchAborted(signal);
++          if (!r.success) throw new Error(r.error || 'Namespace search failed');
++          successfulNamespaces++;
+           if (r?.results) {
+             for (const entry of r.results) {
+               allResults.push({
+@@ -1551,9 +1573,17 @@ export const memoryTools: MCPTool[] = [
+               });
+             }
+           }
+-        } catch { /* namespace may not exist */ }
++        } catch (error) {
++          throwIfSearchAborted(signal);
++          namespaceErrorCount++;
++          if (namespaceErrors.length < 10) {
++            namespaceErrors.push({ namespace: searchNs, error: error instanceof Error ? error.message : String(error) });
++          }
++        }
+       }
+ 
++      throwIfSearchAborted(signal);
++
+       // Sort by score, deduplicate by (namespace, key), take top N. An entry is
+       // identified by both (see #2271), so the same key in another namespace is
+       // a different entry and must not be dropped as a duplicate.
+@@ -1567,7 +1597,15 @@ export const memoryTools: MCPTool[] = [
+       }).slice(0, limit);
+ 
+       return {
+-        success: true,
++        success: namespaces.length === 0 || successfulNamespaces > 0,
++        error: namespaces.length > 0 && successfulNamespaces === 0 ? 'No namespace search succeeded' : undefined,
++        complete: (namespaces.length === 0 || successfulNamespaces > 0) && namespaceErrorCount === 0 && !enumerationError && !truncatedAtCap,
++        namespaceErrors,
++        namespaceErrorCount,
++        namespaceErrorsTruncated: namespaceErrorCount > namespaceErrors.length,
++        enumerationError,
++        truncatedAtCap,
++        elapsedMs: performance.now() - startedAt,
+         query,
+         results: deduplicated,
+         total: deduplicated.length,
+diff --git a/v3/@claude-flow/cli/src/memory/memory-bridge.ts b/v3/@claude-flow/cli/src/memory/memory-bridge.ts
+index 920c970..19e9b16 100644
+--- a/v3/@claude-flow/cli/src/memory/memory-bridge.ts
++++ b/v3/@claude-flow/cli/src/memory/memory-bridge.ts
+@@ -21,6 +21,7 @@ import { AppendConditionFailed, assertAppendConditions, validateAppendConditions
+ import { liveMemoryRowSql } from './live-memory-row.js';
+ import { resolveAgentdbBetterSqlite3 } from './shared-sqlite.js';
+ import { DEFAULT_SEARCH_THRESHOLD } from './search-defaults.js';
++import { throwIfSearchAborted, type QueryVectorMemo, type SearchEmbeddingOptions } from './search-request.js';
+ import { encodeEmbeddingQ8, MAX_LIST_EMBEDDINGS } from './embedding-q8.js';
+ import * as path from 'path';
+ import * as crypto from 'crypto';
+@@ -29,6 +30,11 @@ import { createRequire } from 'node:module';
+ import { AsyncLocalStorage } from 'node:async_hooks';
+ import { validateFeedbackPatterns } from './feedback-patterns.js';
+ 
++// Private request options never become AgentDB's public second argument.
++const requestScopedRescuedEmbedding = Symbol('request-scoped-rescued-embedding');
++type RequestScopedRescuedEmbed = (text: string, options?: SearchEmbeddingOptions) => Promise<Float32Array>;
++type RequestScopedRescuedProvider = { [requestScopedRescuedEmbedding]?: RequestScopedRescuedEmbed };
++
+ // ===== Lazy registry cache, keyed by database path =====
+ 
+ /**
+@@ -939,7 +945,7 @@ export async function rescueAgentdbEmbedder(agentdb: { embedder?: { pipeline?: u
+   // rescued embedder is a leaf. If the running memory-initializer build
+   // predates generateLocalEmbedding, decline the rescue entirely — a stale
+   // pairing must fail safe, not recurse.
+-  type EmbedFn = (text: string) => Promise<{ embedding: number[] | Float32Array; dimensions: number; model: string; backend?: 'onnx' | 'mock' }>;
++  type EmbedFn = (text: string, options?: SearchEmbeddingOptions) => Promise<{ embedding: number[] | Float32Array; dimensions: number; model: string; backend?: 'onnx' | 'mock' }>;
+   let localEmbed: EmbedFn | null = null;
+   try {
+     const mod = (await import('./memory-initializer.js')) as unknown as { generateLocalEmbedding?: EmbedFn };
+@@ -969,15 +975,17 @@ export async function rescueAgentdbEmbedder(agentdb: { embedder?: { pipeline?: u
+     return;
+   }
+ 
+-  const newEmbed = async (text: string): Promise<Float32Array> => {
+-    const out = await embed(text);
++  const newEmbed = async (text: string, options?: SearchEmbeddingOptions): Promise<Float32Array> => {
++    const out = await embed(text, options);
+     return out.embedding instanceof Float32Array
+       ? out.embedding
+       : new Float32Array((out.embedding as number[]) ?? []);
+   };
++  const publicEmbed = (text: string): Promise<Float32Array> => newEmbed(text);
+   const newBatch = async (texts: string[]): Promise<Float32Array[]> =>
+-    Promise.all(texts.map(t => newEmbed(t)));
+-  emb.embed = newEmbed;
++    Promise.all(texts.map(t => publicEmbed(t)));
++  (emb as typeof emb & RequestScopedRescuedProvider)[requestScopedRescuedEmbedding] = newEmbed;
++  emb.embed = publicEmbed;
+   emb.embedBatch = newBatch;
+   // #4643: agentdb 3.x's ReasoningBank calls embedQuery()/embedPassage(),
+   // which route through embedFor() → generateEmbedding() → mockEmbedding()
+@@ -987,8 +995,8 @@ export async function rescueAgentdbEmbedder(agentdb: { embedder?: { pipeline?: u
+   const roles = emb as typeof emb & {
+     embedQuery?: unknown; embedPassage?: unknown; embedQueryBatch?: unknown; embedPassageBatch?: unknown; clearCache?: () => void;
+   };
+-  if (typeof roles.embedQuery === 'function') roles.embedQuery = newEmbed;
+-  if (typeof roles.embedPassage === 'function') roles.embedPassage = newEmbed;
++  if (typeof roles.embedQuery === 'function') roles.embedQuery = publicEmbed;
++  if (typeof roles.embedPassage === 'function') roles.embedPassage = publicEmbed;
+   if (typeof roles.embedQueryBatch === 'function') roles.embedQueryBatch = newBatch;
+   if (typeof roles.embedPassageBatch === 'function') roles.embedPassageBatch = newBatch;
+   try { roles.clearCache?.(); } catch { /* best-effort */ }
+@@ -1017,9 +1025,12 @@ function isMockAgentdbEmbedder(embedder: {
+  * were a bare `catch {}` that stored embedding=NULL and reported nothing.
+  */
+ async function embedForBridge(
+-  agentdb: { embedder?: { embed?: (t: string) => Promise<ArrayLike<number> | null | undefined>; isMock?: boolean; backend?: string; pipeline?: unknown; __ruvectorRescued?: boolean } } | null | undefined,
++  agentdb: { embedder?: { embed?: (t: string, options?: SearchEmbeddingOptions) => Promise<ArrayLike<number> | null | undefined>; isMock?: boolean; backend?: string; pipeline?: unknown; __ruvectorRescued?: boolean } } | null | undefined,
+   text: string,
++  signal?: AbortSignal,
++  queryMemo?: QueryVectorMemo,
+ ): Promise<{ vector: number[]; model: string } | { vector: null; reason: string }> {
++  throwIfSearchAborted(signal);
+   let agentdbProblem: string;
+   const embedder = agentdb?.embedder;
+   // Same mock signal bridgeGenerateEmbedding honours (AUDIT #3): the rescue
+@@ -1031,12 +1042,30 @@ async function embedForBridge(
+     agentdbProblem = 'agentdb embedder is serving mock vectors';
+   } else if (embedder && typeof embedder.embed === 'function') {
+     try {
+-      const emb = await embedder.embed(text);
++      // getRegistry's embeddingConfig fixes all-MiniLM-L6-v2 at dimension 384.
++      // put rejects any different length, preserving the uncached return path.
++      // Identity detects replacement, not a model swapped inside one pipeline.
++      // Unknown/degraded providers retain the original embedding path.
++      const provider = ['bridge-search', agentdb, embedder, embedder.embed, embedder.pipeline, embedder.backend];
++      const ready = !!embedder.pipeline && !embedder.__ruvectorRescued;
++      const cached = ready ? queryMemo?.get(text, 384, provider) : undefined;
++      if (cached) return { vector: cached, model: 'Xenova/all-MiniLM-L6-v2' };
++      const requestEmbed = (embedder as typeof embedder & RequestScopedRescuedProvider)[requestScopedRescuedEmbedding];
++      const emb = requestEmbed
++        ? await requestEmbed(text, { signal, queryMemo, memoScope: 'bridge-search-rescued' })
++        : await embedder.embed(text);
++      throwIfSearchAborted(signal);
+       if (emb && emb.length > 0) {
++        if (ready && embedder === agentdb?.embedder && provider[3] === embedder.embed
++          && provider[4] === embedder.pipeline && provider[5] === embedder.backend
++          && !embedder.__ruvectorRescued) {
++          queryMemo?.put(text, 384, provider, Array.from(emb));
++        }
+         return { vector: Array.from(emb), model: 'Xenova/all-MiniLM-L6-v2' };
+       }
+       agentdbProblem = 'agentdb embedder returned no vector';
+     } catch (err) {
++      throwIfSearchAborted(signal);
+       agentdbProblem = `agentdb embedder threw: ${err instanceof Error ? err.message : String(err)}`;
+     }
+   } else {
+@@ -1044,13 +1073,17 @@ async function embedForBridge(
+   }
+ 
+   try {
++    throwIfSearchAborted(signal);
+     const { generateLocalEmbedding } = await import('./memory-initializer.js');
+-    const local = await generateLocalEmbedding(text);
++    throwIfSearchAborted(signal);
++    const local = await generateLocalEmbedding(text, { signal, queryMemo, memoScope: 'bridge-search-local' });
++    throwIfSearchAborted(signal);
+     if (local.backend === 'onnx' && local.embedding.length > 0) {
+       return { vector: Array.from(local.embedding), model: local.model };
+     }
+     return { vector: null, reason: `${agentdbProblem}; local embedding chain has no real model (backend=${local.backend})` };
+   } catch (err) {
++    throwIfSearchAborted(signal);
+     return { vector: null, reason: `${agentdbProblem}; local embedding chain failed: ${err instanceof Error ? err.message : String(err)}` };
+   }
+ }
+@@ -1407,6 +1440,8 @@ export function resolveBridgeSearchWindow(env: NodeJS.ProcessEnv = process.env):
+ 
+ export async function bridgeSearchEntries(options: {
+   query: string;
++  signal?: AbortSignal;
++  queryMemo?: QueryVectorMemo;
+   namespace?: string;
+   limit?: number;
+   threshold?: number;
+@@ -1431,6 +1466,7 @@ export async function bridgeSearchEntries(options: {
+   searchMethod?: string;
+   error?: string;
+ } | null> {
++  throwIfSearchAborted(options.signal);
+   if (!operationContext.getStore()?.active) return withBridgeOperation(() => bridgeSearchEntries(options));
+   if (options.provenanceFilter?.length) {
+     const invalid = options.provenanceFilter.filter(p => !isValidProvenanceType(p));
+@@ -1438,6 +1474,7 @@ export async function bridgeSearchEntries(options: {
+   }
+ 
+   const registry = await getRegistry(options.dbPath);
++  throwIfSearchAborted(options.signal);
+   if (!registry) return null;
+ 
+   const ctx = getDb(registry);
+@@ -1451,7 +1488,8 @@ export async function bridgeSearchEntries(options: {
+     // Generate query embedding — same agentdb-then-local chain as the write
+     // path (#3325), so rows embedded by the local fallback are searchable.
+     // No vector → keyword (BM25) search only.
+-    const queryEmbedding: number[] | null = (await embedForBridge(ctx.agentdb, queryStr)).vector;
++    const queryEmbedding: number[] | null = (await embedForBridge(ctx.agentdb, queryStr, options.signal, options.queryMemo)).vector;
++    throwIfSearchAborted(options.signal);
+ 
+     // better-sqlite3: .prepare().all() returns array of objects
+     // ADR-323: compose namespace + provenance filters into one WHERE clause.
+@@ -1484,6 +1522,7 @@ export async function bridgeSearchEntries(options: {
+       `);
+       rows = filterParams.length > 0 ? stmt.all(...filterParams) : stmt.all();
+     } catch {
++      throwIfSearchAborted(options.signal);
+       return null;
+     }
+ 
+@@ -1571,6 +1610,7 @@ export async function bridgeSearchEntries(options: {
+       searchMethod: queryEmbedding ? 'hybrid-bm25-semantic' : 'bm25-only',
+     };
+   } catch {
++    throwIfSearchAborted(options.signal);
+     return null;
+   }
+ }
+@@ -2066,9 +2106,13 @@ export async function bridgePurgeNamespace(options: {
+ export async function bridgeGenerateEmbedding(
+   text: string,
+   dbPath?: string,
++  signal?: AbortSignal,
++  queryMemo?: QueryVectorMemo,
+ ): Promise<{ embedding: number[]; dimensions: number; model: string; backend?: 'onnx' | 'mock' } | null> {
+-  if (!operationContext.getStore()?.active) return withBridgeOperation(() => bridgeGenerateEmbedding(text, dbPath));
++  throwIfSearchAborted(signal);
++  if (!operationContext.getStore()?.active) return withBridgeOperation(() => bridgeGenerateEmbedding(text, dbPath, signal, queryMemo));
+   const registry = await getRegistry(dbPath);
++  throwIfSearchAborted(signal);
+   if (!registry) return null;
+ 
+   try {
+@@ -2076,7 +2120,18 @@ export async function bridgeGenerateEmbedding(
+     const embedder = agentdb?.embedder;
+     if (!embedder || isMockAgentdbEmbedder(embedder)) return null;
+ 
+-    const emb = await embedder.embed(text);
++    // As in getRegistry's 384-dimensional configuration, cache only matching
++    // successful vectors. Replacing a pipeline invalidates the memo; mutating
++    // the model inside the same pipeline cannot be detected by identity.
++    const provider = ['bridge-embedding', agentdb, embedder, embedder.embed, embedder.pipeline, embedder.backend];
++    const ready = !!embedder.pipeline && !embedder.__ruvectorRescued;
++    const cached = ready ? queryMemo?.getEmbedding(text, 384, provider) : undefined;
++    if (cached) return cached;
++    const requestEmbed = (embedder as typeof embedder & RequestScopedRescuedProvider)[requestScopedRescuedEmbedding];
++    const emb = requestEmbed
++      ? await requestEmbed(text, { signal, queryMemo, memoScope: 'sqljs-search-rescued' })
++      : await embedder.embed(text);
++    throwIfSearchAborted(signal);
+     if (!emb) return null;
+ 
+     // AUDIT #3: surface backend truthfully. AgentDB's embedder is a real ONNX
+@@ -2097,13 +2152,19 @@ export async function bridgeGenerateEmbedding(
+       return null;
+     }
+ 
+-    return {
+-      embedding: Array.from(emb),
++    const result = {
++      embedding: Array.from(emb) as number[],
+       dimensions: emb.length,
+       model: 'Xenova/all-MiniLM-L6-v2',
+-      backend: isMock ? 'mock' : 'onnx',
++      backend: isMock ? 'mock' as const : 'onnx' as const,
+     };
++    if (ready && !isMock && provider[3] === embedder.embed && provider[4] === embedder.pipeline
++      && provider[5] === embedder.backend && !embedder.__ruvectorRescued) {
++      queryMemo?.putEmbedding(text, 384, provider, result);
++    }
++    return result;
+   } catch {
++    throwIfSearchAborted(signal);
+     return null;
+   }
+ }
+diff --git a/v3/@claude-flow/cli/src/memory/memory-initializer.ts b/v3/@claude-flow/cli/src/memory/memory-initializer.ts
+index e88b6cf..7d8ef22 100644
+--- a/v3/@claude-flow/cli/src/memory/memory-initializer.ts
++++ b/v3/@claude-flow/cli/src/memory/memory-initializer.ts
+@@ -13,6 +13,7 @@ import type { AppendCondition } from './append-conditions.js';
+ import { loadBetterSqlite3 } from './shared-sqlite.js';
+ import { resolveMemoryRoot } from './memory-root.js';
+ import { DEFAULT_SEARCH_THRESHOLD } from './search-defaults.js';
++import { throwIfSearchAborted, type QueryVectorMemo, type SearchEmbeddingOptions } from './search-request.js';
+ import { liveMemoryRowSql } from './live-memory-row.js';
+ import { encodeEmbeddingQ8, MAX_LIST_EMBEDDINGS, type EmbeddingQ8 } from './embedding-q8.js';
+ import * as fs from 'fs';
+@@ -2550,23 +2551,26 @@ async function loadLocalEmbeddingChain(verbose = false, startTime = Date.now()):
+  */
+ export async function generateEmbedding(
+   text: string,
+-  options?: { normalize?: boolean },
++  options?: SearchEmbeddingOptions,
+ ): Promise<{
+   embedding: number[];
+   dimensions: number;
+   model: string;
+   backend: 'onnx' | 'mock';
+ }> {
++  throwIfSearchAborted(options?.signal);
+   // #4724: AgentDB embed() has no normalize switch and always returns a unit
+   // vector. A raw request has to use the local chain, which can skip L2.
+   if (options?.normalize === false) {
+-    return generateLocalEmbedding(text, { normalize: false });
++    return generateLocalEmbedding(text, { ...options, normalize: false });
+   }
+ 
+   // ADR-053: Try AgentDB v3 bridge first
+   const bridge = await getBridge();
++  throwIfSearchAborted(options?.signal);
+   if (bridge) {
+-    const bridgeResult = await bridge.bridgeGenerateEmbedding(text);
++    const bridgeResult = await bridge.bridgeGenerateEmbedding(text, undefined, options?.signal, options?.queryMemo);
++    throwIfSearchAborted(options?.signal);
+     if (bridgeResult) {
+       // The bridge labels its output with a real model name unconditionally;
+       // honor the backend it reports if present, otherwise treat a real model
+@@ -2577,7 +2581,7 @@ export async function generateEmbedding(
+     }
+   }
+ 
+-  return generateLocalEmbedding(text);
++  return generateLocalEmbedding(text, options);
+ }
+ 
+ /**
+@@ -2597,13 +2601,14 @@ export async function generateEmbedding(
+  */
+ export async function generateLocalEmbedding(
+   text: string,
+-  options?: { normalize?: boolean },
++  options?: SearchEmbeddingOptions,
+ ): Promise<{
+   embedding: number[];
+   dimensions: number;
+   model: string;
+   backend: 'onnx' | 'mock';
+ }> {
++  throwIfSearchAborted(options?.signal);
+   // Default true keeps the historical unit-norm embedding math.
+   const normalize = options?.normalize !== false;
+   // Ensure the LOCAL model is loaded. #3375: this must not go through
+@@ -2621,6 +2626,7 @@ export async function generateLocalEmbedding(
+       Date.now() - (embeddingModelState.lastAttemptAt ?? 0) >= MODEL_INIT_RETRY_INTERVAL_MS);
+   if (shouldRetryLoad) {
+     await loadLocalEmbeddingChain();
++    throwIfSearchAborted(options?.signal);
+   }
+ 
+   // #2461: loadEmbeddingModel() can leave embeddingModelState null when an
+@@ -2637,9 +2643,17 @@ export async function generateLocalEmbedding(
+   };
+ 
+   // Use ONNX model if available
++  // Only a loaded real model has final readiness. Hash/null/retryable states
++  // are intentionally never memoized, so a later namespace can recover.
++  const provider = [options?.memoScope ?? 'local', state.model, state.dimensions, normalize];
++  const cached = state.model && state.loaded
++    ? options?.queryMemo?.getEmbedding(text, state.dimensions, provider) : undefined;
++  if (cached) return cached;
++
+   if (state.model && typeof (state.model as any) === 'function') {
+     try {
+       const output = await (state.model as any)(text, { pooling: 'mean', normalize });
++      throwIfSearchAborted(options?.signal);
+       // Handle @xenova/transformers (output.data), ruvector (plain array) and
+       // typed-array (ReasoningBank Float32Array, #3114) formats. DataView is an
+       // ArrayBuffer view without an iterator (Array.from gives []), so exclude it.
+@@ -2648,21 +2662,29 @@ export async function generateLocalEmbedding(
+         : Array.isArray(output) ? output
+         : ArrayBuffer.isView(output) && !(output instanceof DataView) ? Array.from(output as Float32Array) : null;
+       if (embedding) {
+-        return {
++        const result = {
+           embedding,
+           dimensions: embedding.length,
+           model: 'onnx',
+-          backend: 'onnx'
++          backend: 'onnx' as const,
+         };
++        if (embeddingModelState === state && state.loaded) {
++          options?.queryMemo?.putEmbedding(text, state.dimensions, provider, result);
++        }
++        return result;
+       }
+     } catch {
++      throwIfSearchAborted(options?.signal);
+       // Fall through to fallback
+     }
+   }
+ 
+   // Deterministic hash-based fallback (for testing/demo without ONNX).
+   // AUDIT #3: backend='mock' — these vectors do NOT carry real semantics.
+-  (await import('./embedding-policy.js')).enforceNoStub('memory-initializer.generateLocalEmbedding'); // "no stubs" strict mode
++  throwIfSearchAborted(options?.signal);
++  const policy = await import('./embedding-policy.js');
++  throwIfSearchAborted(options?.signal);
++  policy.enforceNoStub('memory-initializer.generateLocalEmbedding'); // "no stubs" strict mode
+   const embedding = generateHashEmbedding(text, state.dimensions, normalize);
+   return {
+     embedding,
+@@ -3211,6 +3233,9 @@ export async function storeEntry(options: {
+  */
+ export async function searchEntries(options: {
+   query: string;
++  /** Cancellation is cooperative at asynchronous phase boundaries. */
++  signal?: AbortSignal;
++  queryMemo?: QueryVectorMemo;
+   namespace?: string;
+   limit?: number;
+   threshold?: number;
+@@ -3237,6 +3262,7 @@ export async function searchEntries(options: {
+   searchTime: number;
+   error?: string;
+ }> {
++  throwIfSearchAborted(options.signal);
+   if (options.provenanceFilter?.length) {
+     const invalid = options.provenanceFilter.filter(p => !isValidProvenanceType(p));
+     if (invalid.length > 0) {
+@@ -3251,11 +3277,14 @@ export async function searchEntries(options: {
+ 
+   // ADR-053: Try AgentDB v3 bridge first
+   const bridge = await getBridge();
++  throwIfSearchAborted(options.signal);
+   if (bridge) {
+     const bridgeResult = await bridge.bridgeSearchEntries(options);
++    throwIfSearchAborted(options.signal);
+     if (bridgeResult) return bridgeResult;
+   }
+ 
++  throwIfSearchAborted(options.signal);
+   // Fallback: raw sql.js
+   const {
+     query,
+@@ -3278,23 +3307,30 @@ export async function searchEntries(options: {
+ 
+     // Ensure schema has all required columns (migration for older DBs)
+     await ensureSchemaColumns(dbPath);
++    throwIfSearchAborted(options.signal);
+ 
+     // Generate query embedding
+-    const queryEmb = await generateEmbedding(query);
++    const queryEmb = await generateEmbedding(query, { signal: options.signal, queryMemo: options.queryMemo, memoScope: 'sqljs-search' });
++    throwIfSearchAborted(options.signal);
+     const queryEmbedding = queryEmb.embedding;
+ 
+     // Try RaBitQ pre-filter first (32× compressed Hamming scan)
+     try {
+       const { ensureRabitqIndex, searchRabitq } = await import('./rabitq-index.js');
++      throwIfSearchAborted(options.signal);
+       // #4203: build/rebuild on demand — without this the index was only ever
+       // populated by the explicit `embeddings_rabitq_build` tool, so this
+       // pre-filter always missed.
+       await ensureRabitqIndex({ dbPath, dimensions: queryEmbedding.length });
++      throwIfSearchAborted(options.signal);
+       const rabitqCandidates = await searchRabitq(queryEmbedding, { k: limit * 2, namespace: effectiveNamespace });
++      throwIfSearchAborted(options.signal);
+       if (rabitqCandidates && rabitqCandidates.length > 0) {
+         // Rerank candidates with exact cosine similarity from SQLite
+         const initSqlJs = (await import('sql.js')).default;
++        throwIfSearchAborted(options.signal);
+         const SQL = await initSqlJs();
++        throwIfSearchAborted(options.signal);
+         const fileBuffer = readFileMaybeEncrypted(dbPath, null);
+         const db = new SQL.Database(fileBuffer);
+         const reranked: { id: string; key: string; content: string; score: number; namespace: string; provenanceType?: string; embedding?: number[] }[] = [];
+@@ -3344,13 +3380,17 @@ export async function searchEntries(options: {
+           return { success: true, results: reranked.slice(0, limit), searchTime: Date.now() - startTime };
+         }
+       }
+-    } catch { /* RaBitQ unavailable, fall through */ }
++    } catch {
++      throwIfSearchAborted(options.signal);
++      /* RaBitQ unavailable, fall through */
++    }
+ 
+     // Try HNSW search (150x faster than brute-force)
+     const hnswResults = await searchHNSWIndex(queryEmbedding, {
+       k: provenanceFilter?.length ? Math.max(limit * 4, limit + 32) : limit,
+       namespace: effectiveNamespace,
+     });
++    throwIfSearchAborted(options.signal);
+     if (hnswResults && hnswResults.length > 0) {
+       // Filter by threshold
+       let filtered: Array<{ id: string; key: string; content: string; score: number; namespace: string; provenanceType?: string }> =
+@@ -3362,7 +3402,9 @@ export async function searchEntries(options: {
+       if (filtered.length > 0) {
+         try {
+           const initSqlJs = (await import('sql.js')).default;
++          throwIfSearchAborted(options.signal);
+           const SQL = await initSqlJs();
++          throwIfSearchAborted(options.signal);
+           const fileBuffer = readFileMaybeEncrypted(dbPath, null);
+           const db = new SQL.Database(fileBuffer);
+           const provenanceByKey = new Map<string, string>();
+@@ -3382,6 +3424,7 @@ export async function searchEntries(options: {
+             filtered = filtered.filter(r => provenanceFilter.includes(r.provenanceType!));
+           }
+         } catch {
++          throwIfSearchAborted(options.signal);
+           // An ANN hit alone cannot prove the row is still live. Fall back
+           // to the authoritative SQL scan if liveness cannot be checked.
+           filtered = [];
+@@ -3402,7 +3445,9 @@ export async function searchEntries(options: {
+ 
+     // Fall back to brute-force SQLite search
+     const initSqlJs = (await import('sql.js')).default;
++    throwIfSearchAborted(options.signal);
+     const SQL = await initSqlJs();
++    throwIfSearchAborted(options.signal);
+ 
+     const fileBuffer = readFileMaybeEncrypted(dbPath, null);
+     const db = new SQL.Database(fileBuffer);
+@@ -3487,6 +3532,7 @@ export async function searchEntries(options: {
+       searchTime: Date.now() - startTime
+     };
+   } catch (error) {
++    throwIfSearchAborted(options.signal);
+     return {
+       success: false,
+       results: [],
+diff --git a/v3/@claude-flow/cli/vitest.config.ts b/v3/@claude-flow/cli/vitest.config.ts
+index 4e66a62..fcfa0f1 100644
+--- a/v3/@claude-flow/cli/vitest.config.ts
++++ b/v3/@claude-flow/cli/vitest.config.ts
+@@ -10,6 +10,12 @@ export default defineConfig({
+     // prefix-match, so '@claude-flow/security' alone would rewrite
+     // '@claude-flow/security/safe-git' to '.../src/index.ts/safe-git'.
+     alias: [
++      // HTTP integration must exercise this checkout's server/transport,
++      // not the separately published MCP version in the CLI dependency tree.
++      {
++        find: /^@claude-flow\/mcp$/,
++        replacement: fileURLToPath(new URL('../mcp/src/index.ts', import.meta.url)),
++      },
+       {
+         find: '@claude-flow/guidance/compiler',
+         replacement: fileURLToPath(new URL('../guidance/src/compiler.ts', import.meta.url)),
+diff --git a/v3/@claude-flow/mcp/__tests__/http-transport-timeout-3158.test.ts b/v3/@claude-flow/mcp/__tests__/http-transport-timeout-3158.test.ts
+index 0370094..55830c7 100644
+--- a/v3/@claude-flow/mcp/__tests__/http-transport-timeout-3158.test.ts
++++ b/v3/@claude-flow/mcp/__tests__/http-transport-timeout-3158.test.ts
+@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
+ import type { AddressInfo } from 'node:net';
+ import type { Server } from 'node:http';
+ import { HttpTransport } from '../src/transport/http.js';
++import { WebSocket } from 'ws';
+ import type { ILogger, MCPResponse } from '../src/types.js';
+ 
+ describe('HTTP request timeout (#3158)', () => {
+@@ -28,7 +29,11 @@ describe('HTTP request timeout (#3158)', () => {
+     });
+     let finish!: (response: MCPResponse) => void;
+     const work = new Promise<MCPResponse>((resolve) => { finish = resolve; });
+-    transport.onRequest(async () => await work);
++    let signal: AbortSignal | undefined;
++    transport.onRequest(async (_request, context) => {
++      signal = context?.signal;
++      return await work;
++    });
+     await transport.start();
+ 
+     const port = ((transport as unknown as { server: Server }).server.address() as AddressInfo).port;
+@@ -40,13 +45,15 @@ describe('HTTP request timeout (#3158)', () => {
+       body: JSON.stringify(request),
+     });
+     expect(timedOut.status).toBe(408);
++    expect(signal).toBeDefined();
++    expect(signal?.aborted).toBe(true);
+     const timeoutBody = await timedOut.json();
+ 
+     finish({ jsonrpc: '2.0', id: 17, result: { stored: true } });
+     await new Promise<void>((resolve) => setImmediate(resolve));
+     expect(logger.error).not.toHaveBeenCalled();
+     expect(timeoutBody).toMatchObject({ id: 17, error: { code: -32000, message: 'Request timeout' } });
+-    expect((await transport.getHealthStatus()).metrics?.messagesSent).toBe(0);
++    expect((await transport.getHealthStatus()).metrics).toMatchObject({ messagesSent: 0, errors: 0 });
+ 
+     // The timed-out request must not poison the next HTTP request.
+     transport.onRequest(async (next) => ({ jsonrpc: '2.0', id: next.id, result: { ok: true } }));
+@@ -68,7 +75,11 @@ describe('HTTP request timeout (#3158)', () => {
+     });
+     let fail!: (error: Error) => void;
+     const work = new Promise<MCPResponse>((_resolve, reject) => { fail = reject; });
+-    transport.onRequest(async () => await work);
++    let signal: AbortSignal | undefined;
++    transport.onRequest(async (_request, context) => {
++      signal = context?.signal;
++      return await work;
++    });
+     await transport.start();
+ 
+     const port = ((transport as unknown as { server: Server }).server.address() as AddressInfo).port;
+@@ -78,10 +89,182 @@ describe('HTTP request timeout (#3158)', () => {
+       body: JSON.stringify({ jsonrpc: '2.0', id: 19, method: 'tools/call' }),
+     });
+     expect(response.status).toBe(408);
++    expect(signal).toBeDefined();
++    expect(signal?.aborted).toBe(true);
+     await response.json();
+ 
+     fail(new Error('late tool failure'));
+     await new Promise<void>((resolve) => setImmediate(resolve));
+     expect(logger.error).not.toHaveBeenCalled();
+   });
++
++  it('cancels only the expired request while a concurrent request completes normally', async () => {
++    transport = new HttpTransport(logger, {
++      host: '127.0.0.1', port: 0, corsEnabled: false, requestTimeout: 100,
++    });
++    let finish!: (response: MCPResponse) => void;
++    let started!: () => void;
++    const startedWork = new Promise<void>((resolve) => { started = resolve; });
++    const work = new Promise<MCPResponse>((resolve) => { finish = resolve; });
++    const signals = new Map<unknown, AbortSignal | undefined>();
++    transport.onRequest(async (request, context) => {
++      signals.set(request.id, context?.signal);
++      if (request.id === 21) {
++        started();
++        return await work;
++      }
++      return { jsonrpc: '2.0', id: request.id, result: { ok: true } };
++    });
++    await transport.start();
++    const port = ((transport as unknown as { server: Server }).server.address() as AddressInfo).port;
++    const post = (id: number) => fetch(`http://127.0.0.1:${port}/rpc`, {
++      method: 'POST', headers: { 'content-type': 'application/json' },
++      body: JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call' }),
++    });
++    const pending = post(21);
++    await startedWork;
++    const healthy = await post(22);
++    expect(healthy.status).toBe(200);
++    expect(await healthy.json()).toMatchObject({ id: 22, result: { ok: true } });
++    const expired = await pending;
++    expect(expired.status).toBe(408);
++    await expired.json();
++    expect(signals.get(21)).toBeDefined();
++    expect(signals.get(22)).toBeDefined();
++    expect(signals.get(21)?.aborted).toBe(true);
++    expect(signals.get(22)?.aborted).toBe(false);
++    expect(signals.get(21)).not.toBe(signals.get(22));
++    finish({ jsonrpc: '2.0', id: 21, result: { late: true } });
++    await new Promise<void>((resolve) => setImmediate(resolve));
++    expect(logger.error).not.toHaveBeenCalled();
++  });
++
++  it('cancels work when the POST client disconnects before the response', async () => {
++    transport = new HttpTransport(logger, { host: '127.0.0.1', port: 0, corsEnabled: false });
++    let started!: (signal: AbortSignal | undefined) => void;
++    let stopped!: () => void;
++    const received = new Promise<AbortSignal | undefined>(resolve => { started = resolve; });
++    const cancelled = new Promise<void>(resolve => { stopped = resolve; });
++    transport.onRequest(async (request, context) => {
++      const signal = context?.signal;
++      started(signal);
++      if (!signal) return { jsonrpc: '2.0', id: request.id, result: { uncancellable: true } };
++      return await new Promise<MCPResponse>((_resolve, reject) => {
++        signal.addEventListener('abort', () => { stopped(); reject(signal.reason); }, { once: true });
++      });
++    });
++    await transport.start();
++    const port = ((transport as unknown as { server: Server }).server.address() as AddressInfo).port;
++    const client = new AbortController();
++    const pending = fetch(`http://127.0.0.1:${port}/rpc`, {
++      method: 'POST', headers: { 'content-type': 'application/json' },
++      body: JSON.stringify({ jsonrpc: '2.0', id: 23, method: 'tools/call' }), signal: client.signal,
++    });
++    const signal = await received;
++    expect(signal).toBeDefined();
++    client.abort();
++    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
++    await cancelled;
++    expect(signal?.aborted).toBe(true);
++    expect((await transport.getHealthStatus()).metrics).toMatchObject({ messagesSent: 0, errors: 0 });
++  });
++
++  it.each(['reject', 'return'] as const)('cancels an SSE-routed POST after stream close even when the handler will %s', async (completion) => {
++    transport = new HttpTransport(logger, { host: '127.0.0.1', port: 0, corsEnabled: false });
++    let started!: (signal: AbortSignal | undefined) => void;
++    let stopped!: () => void;
++    const received = new Promise<AbortSignal | undefined>(resolve => { started = resolve; });
++    const cancelled = new Promise<void>(resolve => { stopped = resolve; });
++    transport.onRequest(async (request, context) => {
++      const signal = context?.signal;
++      started(signal);
++      if (!signal) return { jsonrpc: '2.0', id: request.id, result: { uncancellable: true } };
++      return await new Promise<MCPResponse>((resolve, reject) => {
++        signal.addEventListener('abort', () => {
++          stopped();
++          if (completion === 'reject') reject(signal.reason);
++          else resolve({ jsonrpc: '2.0', id: request.id, result: { ignoredCancellation: true } });
++        }, { once: true });
++      });
++    });
++    await transport.start();
++    const port = ((transport as unknown as { server: Server }).server.address() as AddressInfo).port;
++    const stream = await fetch(`http://127.0.0.1:${port}/mcp`);
++    const reader = stream.body!.getReader();
++    try {
++      const chunk = await reader.read();
++      const endpoint = /data: ([^\n]+)/.exec(new TextDecoder().decode(chunk.value))?.[1];
++      expect(endpoint).toMatch(/^\/mcp\?sessionId=/);
++      const pending = fetch(`http://127.0.0.1:${port}${endpoint}`, {
++        method: 'POST', headers: { 'content-type': 'application/json' },
++        body: JSON.stringify({ jsonrpc: '2.0', id: 24, method: 'tools/call' }),
++      });
++      const signal = await received;
++      expect(signal).toBeDefined();
++      await reader.cancel();
++      await cancelled;
++      const response = await pending;
++      expect(response.status).toBe(500);
++      expect(await response.json()).toMatchObject({ id: 24, error: { code: -32800 } });
++      expect(signal?.aborted).toBe(true);
++      expect((await transport.getHealthStatus()).metrics).toMatchObject({ messagesSent: 0, errors: 0 });
++    } finally {
++      await reader.cancel();
++    }
++  });
++
++  it('does not cancel a completed SSE-routed request when the stream later closes', async () => {
++    transport = new HttpTransport(logger, { host: '127.0.0.1', port: 0, corsEnabled: false });
++    let signal: AbortSignal | undefined;
++    transport.onRequest(async (request, context) => {
++      signal = context?.signal;
++      return { jsonrpc: '2.0', id: request.id, result: { ok: true } };
++    });
++    await transport.start();
++    const port = ((transport as unknown as { server: Server }).server.address() as AddressInfo).port;
++    const stream = await fetch(`http://127.0.0.1:${port}/mcp`);
++    const reader = stream.body!.getReader();
++    try {
++      const chunk = await reader.read();
++      const endpoint = /data: ([^\n]+)/.exec(new TextDecoder().decode(chunk.value))?.[1];
++      const sessionId = new URL(endpoint!, `http://127.0.0.1:${port}`).searchParams.get('sessionId')!;
++      const serverStream = (transport as unknown as { sseClients: Map<string, { once: (event: 'close', listener: () => void) => void }> }).sseClients.get(sessionId)!;
++      const closed = new Promise<void>(resolve => serverStream.once('close', resolve));
++      const response = await fetch(`http://127.0.0.1:${port}${endpoint}`, {
++        method: 'POST', headers: { 'content-type': 'application/json' },
++        body: JSON.stringify({ jsonrpc: '2.0', id: 25, method: 'tools/call' }),
++      });
++      expect(response.status).toBe(202);
++      expect(signal).toBeDefined();
++      expect(signal?.aborted).toBe(false);
++      await reader.cancel();
++      await closed;
++      expect(signal?.aborted).toBe(false);
++    } finally { await reader.cancel(); }
++  });
++
++  it('keeps WebSocket calls on the existing one-argument handler contract', async () => {
++    transport = new HttpTransport(logger, { host: '127.0.0.1', port: 0, corsEnabled: false });
++    let context: unknown = 'not called';
++    transport.onRequest(async (request, received) => {
++      context = received;
++      return { jsonrpc: '2.0', id: request.id, result: { ok: true } };
++    });
++    await transport.start();
++    const port = ((transport as unknown as { server: Server }).server.address() as AddressInfo).port;
++    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
++    try {
++      const response = await new Promise<string>((resolve, reject) => {
++        ws.once('error', reject);
++        ws.once('message', data => resolve(data.toString()));
++        ws.once('open', () => ws.send(JSON.stringify({ jsonrpc: '2.0', id: 26, method: 'ping' })));
++      });
++      expect(JSON.parse(response)).toEqual({ jsonrpc: '2.0', id: 26, result: { ok: true } });
++      expect(context).toBeUndefined();
++    } finally {
++      const closed = new Promise<void>(resolve => ws.once('close', () => resolve()));
++      ws.close();
++      await closed;
++    }
++  });
+ });
+diff --git a/v3/@claude-flow/mcp/src/index.ts b/v3/@claude-flow/mcp/src/index.ts
+index 870e46b..c0993d2 100644
+--- a/v3/@claude-flow/mcp/src/index.ts
++++ b/v3/@claude-flow/mcp/src/index.ts
+@@ -43,6 +43,7 @@ export type {
+   MCPTool,
+   ToolCallResult,
+   ToolRegistrationOptions,
++  RequestContext,
+   RequestHandler,
+   NotificationHandler,
+   TransportHealthStatus,
+diff --git a/v3/@claude-flow/mcp/src/server.ts b/v3/@claude-flow/mcp/src/server.ts
+index 1c773c7..b0327e6 100644
+--- a/v3/@claude-flow/mcp/src/server.ts
++++ b/v3/@claude-flow/mcp/src/server.ts
+@@ -22,6 +22,7 @@ import type {
+   TransportType,
+   ILogger,
+   ToolContext,
++  RequestContext,
+ } from './types.js';
+ import { MCPServerError, ErrorCodes } from './types.js';
+ import {
+@@ -236,7 +237,7 @@ export class MCPServer extends EventEmitter implements IMCPServer {
+       } as any));
+ 
+       for (const transport of transports) {
+-        transport.onRequest(async (request) => await this.handleRequest(request));
++        transport.onRequest(async (request, context) => await this.handleRequest(request, context));
+         transport.onNotification(async (notification) => {
+           await this.handleNotification(notification);
+         });
+@@ -409,7 +410,7 @@ export class MCPServer extends EventEmitter implements IMCPServer {
+     return result;
+   }
+ 
+-  private async handleRequest(request: MCPRequest): Promise<MCPResponse> {
++  private async handleRequest(request: MCPRequest, requestContext?: RequestContext): Promise<MCPResponse> {
+     const startTime = performance.now();
+     this.requestStats.total++;
+ 
+@@ -454,7 +455,7 @@ export class MCPServer extends EventEmitter implements IMCPServer {
+ 
+       this.sessionManager.updateActivity(session.id);
+ 
+-      const response = await this.routeRequest(request);
++      const response = await this.routeRequest(request, requestContext);
+ 
+       const duration = performance.now() - startTime;
+       this.requestStats.successful++;
+@@ -543,13 +544,13 @@ export class MCPServer extends EventEmitter implements IMCPServer {
+     };
+   }
+ 
+-  private async routeRequest(request: MCPRequest): Promise<MCPResponse> {
++  private async routeRequest(request: MCPRequest, requestContext?: RequestContext): Promise<MCPResponse> {
+     switch (request.method) {
+       // Tool methods
+       case 'tools/list':
+         return this.handleToolsList(request);
+       case 'tools/call':
+-        return this.handleToolsCall(request);
++        return this.handleToolsCall(request, requestContext);
+ 
+       // Resource methods (MCP 2025-11-25)
+       case 'resources/list':
+@@ -596,7 +597,7 @@ export class MCPServer extends EventEmitter implements IMCPServer {
+       default:
+         // Check if it's a direct tool call
+         if (this.toolRegistry.hasTool(request.method)) {
+-          return this.handleToolExecution(request);
++          return this.handleToolExecution(request, requestContext);
+         }
+ 
+         return this.createErrorResponse(
+@@ -621,7 +622,7 @@ export class MCPServer extends EventEmitter implements IMCPServer {
+     };
+   }
+ 
+-  private async handleToolsCall(request: MCPRequest): Promise<MCPResponse> {
++  private async handleToolsCall(request: MCPRequest, requestContext?: RequestContext): Promise<MCPResponse> {
+     const params = request.params as { name: string; arguments?: Record<string, unknown> };
+ 
+     if (!params?.name) {
+@@ -635,6 +636,7 @@ export class MCPServer extends EventEmitter implements IMCPServer {
+     const context: ToolContext = {
+       sessionId: this.currentSession?.id || 'unknown',
+       requestId: request.id,
++      signal: requestContext?.signal,
+       orchestrator: this.orchestrator,
+       swarmCoordinator: this.swarmCoordinator,
+     };
+@@ -652,10 +654,11 @@ export class MCPServer extends EventEmitter implements IMCPServer {
+     };
+   }
+ 
+-  private async handleToolExecution(request: MCPRequest): Promise<MCPResponse> {
++  private async handleToolExecution(request: MCPRequest, requestContext?: RequestContext): Promise<MCPResponse> {
+     const context: ToolContext = {
+       sessionId: this.currentSession?.id || 'unknown',
+       requestId: request.id,
++      signal: requestContext?.signal,
+       orchestrator: this.orchestrator,
+       swarmCoordinator: this.swarmCoordinator,
+     };
+diff --git a/v3/@claude-flow/mcp/src/transport/http.ts b/v3/@claude-flow/mcp/src/transport/http.ts
+index b5589a1..8acc66b 100644
+--- a/v3/@claude-flow/mcp/src/transport/http.ts
++++ b/v3/@claude-flow/mcp/src/transport/http.ts
+@@ -13,6 +13,7 @@ import cors from 'cors';
+ import helmet from 'helmet';
+ import { rateLimit } from 'express-rate-limit';
+ import { createHash, randomUUID, timingSafeEqual } from 'crypto';
++import { ErrorCodes } from '../types.js';
+ import type {
+   ITransport,
+   TransportType,
+@@ -56,6 +57,8 @@ export class HttpTransport extends EventEmitter implements ITransport {
+   private running = false;
+   private activeConnections = new Set<WebSocket>();
+   private sseClients = new Map<string, Response>();
++  private requestControllers = new Map<Response, AbortController>();
++  private sessionControllers = new Map<string, Set<AbortController>>();
+ 
+   private messagesReceived = 0;
+   private messagesSent = 0;
+@@ -118,6 +121,12 @@ export class HttpTransport extends EventEmitter implements ITransport {
+     this.logger.info('Stopping HTTP transport');
+     this.running = false;
+ 
++    for (const controller of this.requestControllers.values()) {
++      controller.abort(new Error('HTTP transport stopped'));
++    }
++    this.requestControllers.clear();
++    this.sessionControllers.clear();
++
+     for (const ws of this.activeConnections) {
+       try {
+         ws.close(1000, 'Server shutting down');
+@@ -275,6 +284,7 @@ export class HttpTransport extends EventEmitter implements ITransport {
+         res.setTimeout(this.config.requestTimeout!, () => {
+           // A handler may have completed just as the socket timeout fired.
+           if (res.headersSent || res.writableEnded || res.destroyed) return;
++          this.requestControllers.get(res)?.abort(new Error('Request timeout'));
+           res.status(408).json({
+             jsonrpc: '2.0',
+             id: req.body?.id ?? null,
+@@ -340,6 +350,11 @@ export class HttpTransport extends EventEmitter implements ITransport {
+       res.on('close', () => {
+         if (this.sseClients.get(sessionId) === res) {
+           this.sseClients.delete(sessionId);
++          const controllers = this.sessionControllers.get(sessionId);
++          for (const controller of controllers ?? []) {
++            controller.abort(new Error('SSE connection closed'));
++          }
++          this.sessionControllers.delete(sessionId);
+         }
+       });
+     });
+@@ -493,11 +508,30 @@ export class HttpTransport extends EventEmitter implements ITransport {
+         return;
+       }
+ 
++      const controller = new AbortController();
++      this.requestControllers.set(res, controller);
++      const onClose = () => {
++        if (!res.writableFinished) controller.abort(new Error('HTTP client disconnected'));
++      };
++      res.on('close', onClose);
++      let sessionControllers: Set<AbortController> | undefined;
++      if (sseResponse && sseSessionId) {
++        sessionControllers = this.sessionControllers.get(sseSessionId);
++        if (!sessionControllers) {
++          sessionControllers = new Set();
++          this.sessionControllers.set(sseSessionId, sessionControllers);
++        }
++        sessionControllers.add(controller);
++      }
++
+       try {
+-        const response = await this.requestHandler(message as MCPRequest);
++        const response = await this.requestHandler(message as MCPRequest, { signal: controller.signal });
+         // A timed-out request can still finish its tool work; its HTTP reply
+         // already belongs to the timeout path and must not be written again.
+         if (res.headersSent || res.writableEnded || res.destroyed) return;
++        // A closed SSE stream may leave its POST open. Even a handler that
++        // ignores cancellation must receive an error here, never a silent 202.
++        controller.signal.throwIfAborted();
+         if (sseResponse) {
+           sseResponse.write(`event: message\ndata: ${JSON.stringify(response)}\n\n`);
+           res.status(202).end();
+@@ -506,16 +540,25 @@ export class HttpTransport extends EventEmitter implements ITransport {
+         }
+         this.messagesSent++;
+       } catch (error) {
+-        this.errors++;
++        // Timeouts and client disconnects are expected cancellation paths.
++        // Preserve error accounting for ordinary handler failures.
++        if (!controller.signal.aborted) this.errors++;
+         if (res.headersSent || res.writableEnded || res.destroyed) return;
+         res.status(500).json({
+           jsonrpc: '2.0',
+           id: message.id,
+           error: {
+-            code: -32603,
++            code: controller.signal.aborted ? ErrorCodes.REQUEST_CANCELLED : -32603,
+             message: error instanceof Error ? error.message : 'Internal error',
+           },
+         });
++      } finally {
++        res.off('close', onClose);
++        this.requestControllers.delete(res);
++        sessionControllers?.delete(controller);
++        if (sseSessionId && sessionControllers?.size === 0) {
++          this.sessionControllers.delete(sseSessionId);
++        }
+       }
+     }
+   }
+diff --git a/v3/@claude-flow/mcp/src/types.ts b/v3/@claude-flow/mcp/src/types.ts
+index 6c001d1..6e358ad 100644
+--- a/v3/@claude-flow/mcp/src/types.ts
++++ b/v3/@claude-flow/mcp/src/types.ts
+@@ -217,7 +217,7 @@ export interface JSONSchema {
+   additionalProperties?: boolean | JSONSchema;
+ }
+ 
+-export interface ToolContext {
++export interface ToolContext extends RequestContext {
+   sessionId: string;
+   requestId?: RequestId;
+   orchestrator?: unknown;
+@@ -512,7 +512,12 @@ export interface CompletionResult {
+ // Transport Types
+ // ============================================================================
+ 
+-export type RequestHandler = (request: MCPRequest) => Promise<MCPResponse>;
++/** Optional request lifetime supplied by transports that support cancellation. */
++export interface RequestContext {
++  signal?: AbortSignal;
++}
++
++export type RequestHandler = (request: MCPRequest, context?: RequestContext) => Promise<MCPResponse>;
+ 
+ export type NotificationHandler = (notification: MCPNotification) => Promise<void>;
+ 
+diff --git a/v3/vitest.config.ts b/v3/vitest.config.ts
+index 6db693f..c87f777 100644
+--- a/v3/vitest.config.ts
++++ b/v3/vitest.config.ts
+@@ -170,7 +170,9 @@ export default defineConfig({
+ 
+   // Path aliases for clean imports
+   resolve: {
+-    alias: {
++    alias: [
++      { find: /^@claude-flow\/mcp$/, replacement: path.resolve(__dirname, './@claude-flow/mcp/src/index.ts') },
++      ...Object.entries({
+       '@': path.resolve(__dirname, './src'),
+       '@tests': path.resolve(__dirname, './__tests__'),
+       '@fixtures': path.resolve(__dirname, './__tests__/fixtures'),
+@@ -180,6 +182,7 @@ export default defineConfig({
+       '@memory': path.resolve(__dirname, './modules/memory'),
+       '@swarm': path.resolve(__dirname, './modules/swarm'),
+       '@core': path.resolve(__dirname, './modules/core'),
+-    },
++      }).map(([find, replacement]) => ({ find, replacement })),
++    ],
+   },
+ });
+diff --git a/v3/@claude-flow/cli/__tests__/memory-search-http-chain-4876.test.ts b/v3/@claude-flow/cli/__tests__/memory-search-http-chain-4876.test.ts
+new file mode 100644
+index 0000000..56b8d41
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/memory-search-http-chain-4876.test.ts
+@@ -0,0 +1,166 @@
++/** Real HTTP -> MCP server -> CLI adapter -> unified search -> native SQLite.
++ * Only the vector provider is synthetic; this does not prove ONNX latency. */
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import type { AddressInfo } from 'node:net';
++import type { Server, ServerResponse } from 'node:http';
++import Database from 'better-sqlite3';
++import { MCPServerManager } from '../src/mcp-server.js';
++import { memoryTools } from '../src/mcp-tools/memory-tools.js';
++import * as memoryInitializer from '../src/memory/memory-initializer.js';
++import { isLocalCliCall } from '../src/mcp-tools/path-containment.js';
++import { __setMemoryBridgeRegistryForTests, ensureBridgeSchema } from '../src/memory/memory-bridge.js';
++
++const unified = memoryTools.find(tool => tool.name === 'memory_search_unified')!;
++const original = unified.handler;
++const vector = () => [1, ...Array(383).fill(0)];
++const namespaces = Array.from({ length: 74 }, (_, i) => `ns${i}`);
++let scratch: string;
++let previous: string;
++let db: Database.Database;
++let manager: MCPServerManager | undefined;
++let embed: ReturnType<typeof vi.fn>;
++let contexts: Array<Record<string, unknown> | undefined>;
++let searchObservation: ReturnType<typeof vi.spyOn>;
++let finished: Promise<void>;
++let didFinish: () => void;
++
++beforeEach(() => {
++  scratch = mkdtempSync(join(tmpdir(), 'ruflo-http-memory-4876-'));
++  previous = process.cwd();
++  process.chdir(scratch);
++  const memory = join(scratch, 'memory');
++  mkdirSync(memory);
++  mkdirSync(join(scratch, 'home'));
++  vi.stubEnv('HOME', join(scratch, 'home'));
++  vi.stubEnv('XDG_CONFIG_HOME', join(scratch, 'home', 'config'));
++  vi.stubEnv('CLAUDE_FLOW_MEMORY_PATH', memory);
++  vi.stubEnv('CLAUDE_FLOW_DISABLE_BRIDGE', '0');
++  vi.stubEnv('RUFLO_DAEMON_AUTOSTART', '0');
++  vi.stubEnv('RUFLO_MCP_ALLOW_UNAUTHENTICATED_HTTP', '1');
++  vi.stubEnv('CLAUDE_FLOW_MEMORY_SEARCH_NAMESPACES', '');
++  memoryInitializer._resetMemoryRootCache();
++  db = new Database(join(memory, 'memory.db'));
++  expect(ensureBridgeSchema(db)).toBe(true);
++  const insert = db.prepare('INSERT INTO memory_entries (id,key,namespace,content,embedding) VALUES (?,?,?,?,?)');
++  namespaces.forEach((namespace, i) => insert.run(`id${i}`, 'shared-key', namespace, `retrieval query ${i}`, JSON.stringify(vector())));
++  embed = vi.fn(async () => vector());
++  const agentdb = { database: db, embedder: { pipeline: {}, embed } };
++  __setMemoryBridgeRegistryForTests({ getAgentDB: () => agentdb });
++  contexts = [];
++  // Observation only: Vitest forwards every call to the real implementation.
++  searchObservation = vi.spyOn(memoryInitializer, 'searchEntries');
++  finished = new Promise<void>(resolve => { didFinish = resolve; });
++  unified.handler = async (input, context) => {
++    contexts.push(context);
++    try { return await original(input, context); }
++    finally { if ((input.query as string)?.startsWith('slow ')) didFinish(); }
++  };
++});
++afterEach(async () => {
++  await manager?.stop(); manager = undefined;
++  unified.handler = original;
++  __setMemoryBridgeRegistryForTests(null);
++  db?.close();
++  process.chdir(previous);
++  vi.restoreAllMocks();
++  vi.unstubAllEnvs();
++  memoryInitializer._resetMemoryRootCache();
++  // This path is a newly created synthetic test directory inside the container.
++  rmSync(scratch, { recursive: true, force: true });
++});
++
++async function start(timeout: number) {
++  manager = new MCPServerManager({ transport: 'http', host: '127.0.0.1', port: 0,
++    daemonize: false, tools: ['memory_search_unified'], requestTimeoutMs: timeout,
++    pidFile: join(scratch, 'mcp.pid'), logFile: join(scratch, 'mcp.log') });
++  // Preserve errors as ordinary test rejections rather than EventEmitter throws.
++  manager.on('error', () => {});
++  await manager.start();
++  const internal = manager as unknown as { mcpServers: Array<{ transports: Array<{ server: Server }> }> };
++  const port = (internal.mcpServers[0].transports[0].server.address() as AddressInfo).port;
++  const post = (body: unknown) => fetch(`http://127.0.0.1:${port}/mcp`, {
++    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
++  });
++  const initialized = await post({ jsonrpc: '2.0', id: 0, method: 'initialize', params: {
++    protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'memory-4876', version: '1' },
++  } });
++  expect(initialized.status).toBe(200);
++  expect((await initialized.json()).error).toBeUndefined();
++  return post;
++}
++
++const search = (id: number, method: string, query: string) => ({ jsonrpc: '2.0', id, method,
++  params: method === 'tools/call'
++    ? { name: 'memory_search_unified', arguments: { query, namespaces, limit: 100 } }
++    : { query, namespaces, limit: 100 },
++});
++
++describe('native unified search through the real CLI HTTP adapter (#4876)', () => {
++  it.each(['tools/call', 'memory_search_unified'])('reuses a request vector over 74 namespaces through %s without granting local authority', async method => {
++    const post = await start(10000);
++    const response = await post(search(1, method, 'retrieval query'));
++    expect(response.status).toBe(200);
++    const envelope = await response.json();
++    expect(envelope.error).toBeUndefined();
++    expect(envelope.result.isError).toBe(false);
++    const payload = JSON.parse(envelope.result.content[0].text);
++    expect(payload).toMatchObject({ success: true, complete: true, total: 74, namespaceErrorCount: 0 });
++    expect(payload.searchedNamespaces).toEqual(namespaces);
++    expect(new Set(payload.results.map((row: { namespace: string }) => row.namespace)).size).toBe(74);
++    expect(embed).toHaveBeenCalledTimes(1);
++    expect(searchObservation).toHaveBeenCalledTimes(74);
++    expect(contexts).toHaveLength(1);
++    expect(contexts[0]?.signal).toBeInstanceOf(AbortSignal);
++    expect(contexts[0]?.transport).toBe('http');
++    expect(isLocalCliCall(contexts[0])).toBe(false);
++  });
++
++  it('does not search the next namespace after timeout interrupts awaited native embedding', async () => {
++    const post = await start(3000);
++    let enter!: () => void;
++    const entered = new Promise<void>(resolve => { enter = resolve; });
++    let release!: (vector: number[]) => void;
++    const held = new Promise<number[]>(resolve => { release = resolve; });
++    embed.mockImplementationOnce(async () => { enter(); return await held; });
++    const request = post(search(2, 'tools/call', 'slow retrieval query'));
++    await entered;
++    const internal = manager as unknown as { mcpServers: Array<{ transports: Array<{
++      requestControllers: Map<ServerResponse, AbortController>;
++      sessionControllers: Map<string, Set<AbortController>>;
++    }> }> };
++    const transport = internal.mcpServers[0].transports[0];
++    const heldResponse = Array.from(transport.requestControllers.keys())[0];
++    expect(heldResponse).toBeDefined();
++    const closeListeners = heldResponse.listenerCount('close');
++    try {
++      // A separate unified call uses its own memo and finishes while slow
++      // inference is held; it must not inherit that request's cancellation.
++      const fast = await post(search(3, 'tools/call', 'retrieval query'));
++      expect(fast.status).toBe(200);
++      const fastEnvelope = await fast.json();
++      expect(fastEnvelope.result.isError).toBe(false);
++      expect(JSON.parse(fastEnvelope.result.content[0].text)).toMatchObject({ success: true, complete: true, total: 74 });
++      expect(contexts).toHaveLength(2);
++      expect((contexts[1]?.signal as AbortSignal).aborted).toBe(false);
++      expect(contexts[0]?.signal).not.toBe(contexts[1]?.signal);
++      const response = await request;
++      expect(response.status).toBe(408);
++      await response.json();
++      expect(contexts[0]?.signal).toBeInstanceOf(AbortSignal);
++      expect((contexts[0]?.signal as AbortSignal).aborted).toBe(true);
++      expect(isLocalCliCall(contexts[0])).toBe(false);
++    } finally { release(vector()); }
++    await finished;
++    // Let the real registry/server/transport continuations finish cleanup.
++    await new Promise<void>(resolve => setImmediate(resolve));
++    expect(embed).toHaveBeenCalledTimes(2);
++    expect(searchObservation).toHaveBeenCalledTimes(75); // 1 cancelled + 74 fast
++    expect((contexts[1]?.signal as AbortSignal).aborted).toBe(false);
++    expect(transport.requestControllers.size).toBe(0);
++    expect(transport.sessionControllers.size).toBe(0);
++    expect(heldResponse.listenerCount('close')).toBe(closeListeners - 1);
++  });
++});
+diff --git a/v3/@claude-flow/cli/__tests__/memory-search-native-query-reuse-4876.test.ts b/v3/@claude-flow/cli/__tests__/memory-search-native-query-reuse-4876.test.ts
+new file mode 100644
+index 0000000..5e9d838
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/memory-search-native-query-reuse-4876.test.ts
+@@ -0,0 +1,137 @@
++/** Real native SQLite/scorer with a deterministic synthetic vector provider.
++ * This is algorithm/lifecycle proof, not ONNX inference or latency evidence. */
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++import Database from 'better-sqlite3';
++import { QueryVectorMemo } from '../src/memory/search-request.js';
++import * as initializer from '../src/memory/memory-initializer.js';
++import { __setMemoryBridgeRegistryForTests, bridgeSearchEntries, ensureBridgeSchema, shutdownBridge } from '../src/memory/memory-bridge.js';
++let db: Database.Database;
++let agentdb: any;
++const vector = () => [1, ...Array(383).fill(0)];
++beforeEach(() => {
++  vi.stubEnv('CLAUDE_FLOW_DISABLE_BRIDGE', '0');
++  db = new Database(':memory:');
++  expect(ensureBridgeSchema(db)).toBe(true);
++  agentdb = { database: db, embedder: { pipeline: {}, embed: vi.fn(async () => vector()) } };
++  __setMemoryBridgeRegistryForTests({ getAgentDB: () => agentdb });
++  const insert = db.prepare('INSERT INTO memory_entries (id,key,namespace,content,embedding) VALUES (?,?,?,?,?)');
++  for (let i = 0; i < 74; i++) {
++    insert.run(`id${i}`, 'shared-key', `ns${i}`, `retrieval query ${i}`, JSON.stringify(vector()));
++  }
++});
++afterEach(() => { vi.restoreAllMocks(); __setMemoryBridgeRegistryForTests(null); db.close(); vi.unstubAllEnvs(); });
++describe('native query reuse without changing namespace ranking (#4876)', () => {
++  it('matches 74 independent namespace searches with one successful query vector', async () => {
++    const baseline = [];
++    for (let i = 0; i < 74; i++) baseline.push((await bridgeSearchEntries({ query: 'retrieval query', namespace: `ns${i}` }))?.results);
++    expect(agentdb.embedder.embed).toHaveBeenCalledTimes(74);
++    agentdb.embedder.embed.mockClear();
++    const queryMemo = new QueryVectorMemo();
++    const candidate = [];
++    for (let i = 0; i < 74; i++) candidate.push((await bridgeSearchEntries({ query: 'retrieval query', namespace: `ns${i}`, queryMemo }))?.results);
++    expect(candidate).toEqual(baseline);
++    expect(candidate.every(rows => rows?.length === 1)).toBe(true);
++    expect(agentdb.embedder.embed).toHaveBeenCalledTimes(1);
++  });
++  it('preserves real SQLite BM25-only scores when the local provider is degraded', async () => {
++    agentdb.embedder.pipeline = null;
++    // Explicit provider-failure injection. SQL/BM25/scoring are real; actual
++    // hash vectors are covered separately by the offline sql.js profile.
++    vi.spyOn(initializer, 'generateLocalEmbedding').mockResolvedValue({
++      embedding: [1, ...Array(127).fill(0)], dimensions: 128,
++      model: 'synthetic-degraded-provider', backend: 'mock',
++    });
++    const baseline = [];
++    const candidate = [];
++    const queryMemo = new QueryVectorMemo();
++    for (let i = 0; i < 74; i++) {
++      const options = { query: 'retrieval query', namespace: `ns${i}` };
++      const before = await bridgeSearchEntries(options);
++      const after = await bridgeSearchEntries({ ...options, queryMemo });
++      expect(before?.searchMethod).toBe('bm25-only');
++      expect(after?.searchMethod).toBe('bm25-only');
++      baseline.push(before?.results);
++      candidate.push(after?.results);
++    }
++    expect(candidate).toEqual(baseline);
++    expect(candidate.every(rows => rows?.length === 1)).toBe(true);
++    expect(agentdb.embedder.embed).not.toHaveBeenCalled();
++  });
++  it('re-embeds when the function changes on the same embedder', async () => {
++    const queryMemo = new QueryVectorMemo();
++    await bridgeSearchEntries({ query: 'query', namespace: 'ns0', queryMemo });
++    const replacement = vi.fn(async () => vector());
++    agentdb.embedder.embed = replacement;
++    await bridgeSearchEntries({ query: 'query', namespace: 'ns1', queryMemo });
++    expect(replacement).toHaveBeenCalledTimes(1);
++  });
++  it('re-embeds when a native model pipeline changes without replacing the embedder', async () => {
++    const queryMemo = new QueryVectorMemo();
++    await bridgeSearchEntries({ query: 'query', namespace: 'ns0', queryMemo });
++    agentdb.embedder.pipeline = {};
++    await bridgeSearchEntries({ query: 'query', namespace: 'ns1', queryMemo });
++    expect(agentdb.embedder.embed).toHaveBeenCalledTimes(2);
++  });
++  it('keeps unknown dimensions uncached without rejecting the original result', async () => {
++    agentdb.embedder.embed.mockResolvedValue([1, 0, 0]);
++    const queryMemo = new QueryVectorMemo();
++    for (const namespace of ['ns0', 'ns1']) {
++      expect(await bridgeSearchEntries({ query: 'retrieval', namespace, queryMemo })).toMatchObject({ success: true });
++    }
++    expect(agentdb.embedder.embed).toHaveBeenCalledTimes(2);
++  });
++  it('observes a concurrent namespace update instead of reusing a database snapshot', async () => {
++    const queryMemo = new QueryVectorMemo();
++    await bridgeSearchEntries({ query: 'retrieval', namespace: 'ns0', queryMemo });
++    db.prepare('UPDATE memory_entries SET content=? WHERE namespace=?').run('retrieval newly written', 'ns1');
++    const result = await bridgeSearchEntries({ query: 'retrieval', namespace: 'ns1', queryMemo });
++    expect(result?.results[0].content).toBe('retrieval newly written');
++  });
++  it('does not retain an unready result when the same provider becomes ready', async () => {
++    const queryMemo = new QueryVectorMemo();
++    agentdb.embedder.pipeline = undefined;
++    await bridgeSearchEntries({ query: 'retrieval', namespace: 'ns0', queryMemo });
++    await bridgeSearchEntries({ query: 'retrieval', namespace: 'ns1', queryMemo });
++    expect(agentdb.embedder.embed).toHaveBeenCalledTimes(2);
++    agentdb.embedder.pipeline = {};
++    await bridgeSearchEntries({ query: 'retrieval', namespace: 'ns2', queryMemo });
++    await bridgeSearchEntries({ query: 'retrieval', namespace: 'ns3', queryMemo });
++    expect(agentdb.embedder.embed).toHaveBeenCalledTimes(3);
++  });
++  it('rechecks provider identity after shutdown between namespaces with the same request memo', async () => {
++    const queryMemo = new QueryVectorMemo();
++    expect(await bridgeSearchEntries({ query: 'retrieval', namespace: 'ns0', queryMemo })).toMatchObject({ success: true });
++    expect(agentdb.embedder.embed).toHaveBeenCalledTimes(1);
++    await shutdownBridge();
++    const replacement = { database: db, embedder: { pipeline: {}, embed: vi.fn(async () => vector()) } };
++    __setMemoryBridgeRegistryForTests({ getAgentDB: () => replacement });
++    expect(await bridgeSearchEntries({ query: 'retrieval', namespace: 'ns1', queryMemo })).toMatchObject({ success: true });
++    expect(replacement.embedder.embed).toHaveBeenCalledTimes(1);
++    expect(db.open).toBe(true);
++  });
++  it('keeps shutdown waiting for the current namespace lease during awaited embedding', async () => {
++    let enter!: () => void;
++    const entered = new Promise<void>(resolve => { enter = resolve; });
++    let release!: (value: number[]) => void;
++    const held = new Promise<number[]>(resolve => { release = resolve; });
++    agentdb.embedder.embed.mockImplementationOnce(async () => { enter(); return await held; });
++    const search = bridgeSearchEntries({ query: 'retrieval', namespace: 'ns0', queryMemo: new QueryVectorMemo() });
++    await entered;
++    let retired = false;
++    const retirement = shutdownBridge().then(() => { retired = true; });
++    try {
++      await new Promise<void>(resolve => setImmediate(resolve));
++      expect(retired).toBe(false);
++    } finally { release(vector()); }
++    expect(await search).toMatchObject({ success: true });
++    await retirement;
++    expect(retired).toBe(true);
++    // The memo never owns or closes the borrowed native handle.
++    expect(db.open).toBe(true);
++  });
++  it('propagates an abort after embedding instead of returning null for fallback', async () => {
++    const controller = new AbortController();
++    agentdb.embedder.embed.mockImplementationOnce(async () => { controller.abort(); return vector(); });
++    await expect(bridgeSearchEntries({ query: 'retrieval', namespace: 'ns0', signal: controller.signal, queryMemo: new QueryVectorMemo() })).rejects.toMatchObject({ name: 'AbortError' });
++  });
++});
+diff --git a/v3/@claude-flow/cli/__tests__/memory-search-sqljs-fallback-4876.test.ts b/v3/@claude-flow/cli/__tests__/memory-search-sqljs-fallback-4876.test.ts
+new file mode 100644
+index 0000000..d15eaff
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/memory-search-sqljs-fallback-4876.test.ts
+@@ -0,0 +1,82 @@
++/** Real sql.js fallback profile: run in its isolated, network-disabled consumer
++ * without optional embedding providers. A real ONNX profile is separate. */
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import { QueryVectorMemo } from '../src/memory/search-request.js';
++import { MEMORY_SCHEMA_V3, generateLocalEmbedding, searchEntries, _resetMemoryRootCache } from '../src/memory/memory-initializer.js';
++
++// This environment-specific profile is opt-in; the validation packet must run
++// it explicitly and require all cases. Ordinary suites keep their own providers.
++const fallback = process.env.RUFLO_TEST_4876_SQLJS_FALLBACK === '1';
++let scratch: string;
++let previous: string;
++let dbPath: string;
++beforeEach(async () => {
++  if (!fallback) return;
++  scratch = mkdtempSync(join(tmpdir(), 'ruflo-wasm-search-4876-'));
++  previous = process.cwd();
++  process.chdir(scratch);
++  mkdirSync(join(scratch, 'home'));
++  vi.stubEnv('HOME', join(scratch, 'home'));
++  vi.stubEnv('XDG_CONFIG_HOME', join(scratch, 'home', 'config'));
++  vi.stubEnv('CLAUDE_FLOW_MEMORY_PATH', scratch);
++  vi.stubEnv('CLAUDE_FLOW_DISABLE_BRIDGE', '1');
++  _resetMemoryRootCache();
++  const actual = await generateLocalEmbedding('retrieval query');
++  expect(actual.backend, 'This profile must exercise real hash fallback, not an available model').toBe('mock');
++  const initSqlJs = (await import('sql.js')).default;
++  const SQL = await initSqlJs();
++  const db = new SQL.Database();
++  try {
++    db.run(MEMORY_SCHEMA_V3);
++    const now = Date.now();
++    for (let i = 0; i < 74; i++) {
++      db.run(`INSERT INTO memory_entries (id,key,namespace,content,embedding,access_count,created_at,updated_at,status)
++        VALUES (?,?,?,?,?,0,?,?,'active')`, [`id${i}`, 'same-key', `ns${i}`, 'retrieval query', JSON.stringify(actual.embedding), now, now]);
++    }
++    dbPath = join(scratch, 'memory.db');
++    writeFileSync(dbPath, Buffer.from(db.export()));
++  } finally { db.close(); }
++});
++afterEach(() => {
++  if (!fallback) return;
++  process.chdir(previous);
++  vi.unstubAllEnvs();
++  _resetMemoryRootCache();
++  // A synthetic container-owned fixture, never an existing/external directory.
++  rmSync(scratch, { recursive: true, force: true });
++});
++
++describe.skipIf(!fallback)('real sql.js hash fallback search (#4876)', () => {
++  it('preserves all namespace scores and ties with a request memo present', async () => {
++    const baseline = [];
++    const candidate = [];
++    const queryMemo = new QueryVectorMemo();
++    for (let i = 0; i < 74; i++) {
++      const options = { query: 'retrieval query', namespace: `ns${i}`, dbPath };
++      const before = await searchEntries(options);
++      const after = await searchEntries({ ...options, queryMemo });
++      expect(before.success).toBe(true);
++      expect(after.success).toBe(true);
++      baseline.push(before.results);
++      candidate.push(after.results);
++    }
++    expect(candidate).toEqual(baseline);
++    expect(candidate.every(rows => rows.length === 1)).toBe(true);
++  });
++  it('propagates cancellation rather than returning an empty success or backend error', async () => {
++    const controller = new AbortController();
++    controller.abort('synthetic request deadline');
++    await expect(searchEntries({ query: 'retrieval query', namespace: 'ns0', dbPath, signal: controller.signal }))
++      .rejects.toMatchObject({ name: 'AbortError' });
++  });
++  it('keeps degraded embedding metadata truthful when a memo is supplied', async () => {
++    const queryMemo = new QueryVectorMemo();
++    const first = await generateLocalEmbedding('retrieval query', { queryMemo });
++    const next = await generateLocalEmbedding('retrieval query', { queryMemo });
++    expect(next).toEqual(first);
++    expect(next.backend).toBe('mock');
++  });
++});
+diff --git a/v3/@claude-flow/cli/__tests__/memory-search-unified-errors-4876.test.ts b/v3/@claude-flow/cli/__tests__/memory-search-unified-errors-4876.test.ts
+new file mode 100644
+index 0000000..52be4c0
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/memory-search-unified-errors-4876.test.ts
+@@ -0,0 +1,86 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++import { mkdtempSync, rmSync } from 'node:fs';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++const backend = vi.hoisted(() => ({ searchEntries: vi.fn(), listEntries: vi.fn() }));
++vi.mock('../src/memory/memory-initializer.js', () => ({
++  ...backend, storeEntry: vi.fn(), getEntry: vi.fn(), deleteEntry: vi.fn(),
++  initializeMemoryDatabase: vi.fn(), checkMemoryInitialization: vi.fn(async () => ({ initialized: true })),
++}));
++const { memoryTools } = await import('../src/mcp-tools/memory-tools.js');
++const tool = memoryTools.find(t => t.name === 'memory_search_unified')!;
++let previous: string;
++let directory: string;
++beforeEach(() => {
++  previous = process.cwd();
++  directory = mkdtempSync(join(tmpdir(), 'ruflo-unified-errors-'));
++  process.chdir(directory);
++  vi.stubEnv('CLAUDE_FLOW_MEMORY_SEARCH_NAMESPACES', '');
++  backend.searchEntries.mockReset();
++  backend.listEntries.mockReset();
++  backend.searchEntries.mockResolvedValue({ success: true, results: [], searchTime: 0 });
++});
++afterEach(() => { process.chdir(previous); rmSync(directory, { recursive: true, force: true }); vi.unstubAllEnvs(); });
++const call = (input: Record<string, unknown>, context?: Record<string, unknown>) =>
++  tool.handler({ query: 'retrieval query', ...input }, context) as Promise<any>;
++
++describe('unified failure and completeness contracts (#4876)', () => {
++  it('keeps partial results successful and exposes the failed namespace', async () => {
++    backend.searchEntries.mockResolvedValueOnce({ success: true, results: [{ key: 'k', content: 'value', score: 0.8 }], searchTime: 1 });
++    backend.searchEntries.mockResolvedValueOnce({ success: false, results: [], error: 'read refused', searchTime: 1 });
++    const result = await call({ namespaces: ['good', 'bad'] });
++    expect(result).toMatchObject({ success: true, complete: false, total: 1, namespaceErrorCount: 1, namespaceErrors: [{ namespace: 'bad', error: 'read refused' }] });
++    expect(result.error).toBeUndefined();
++    expect(result.elapsedMs).toBeGreaterThanOrEqual(0);
++    expect(result.searchTime).toBeGreaterThan(1_000_000_000_000);
++  });
++  it('reports all namespaces failing instead of a successful empty result', async () => {
++    backend.searchEntries.mockResolvedValue({ success: false, results: [], error: 'Database not found' });
++    expect(await call({ namespaces: ['one', 'two'] })).toMatchObject({ success: false, complete: false, total: 0, error: expect.any(String), namespaceErrorCount: 2 });
++  });
++  it('preserves a successfully read empty namespace as complete', async () => {
++    expect(await call({ namespace: 'empty' })).toMatchObject({ success: true, complete: true, total: 0, namespaceErrorCount: 0 });
++  });
++  it('preserves a successful empty result for an explicitly empty environment list', async () => {
++    vi.stubEnv('CLAUDE_FLOW_MEMORY_SEARCH_NAMESPACES', ' ,  ');
++    expect(await call({})).toMatchObject({ success: true, complete: true, total: 0, searchedNamespaces: [] });
++    expect(backend.searchEntries).not.toHaveBeenCalled();
++    expect(backend.listEntries).not.toHaveBeenCalled();
++  });
++  it('retains legacy namespace searches after enumeration fails', async () => {
++    backend.listEntries.mockResolvedValue({ success: false, entries: [], total: 0, error: 'enumeration refused' });
++    const result = await call({});
++    expect(result).toMatchObject({ success: true, complete: false, namespaceSource: 'legacy-fallback', enumerationError: 'enumeration refused' });
++    expect(result.searchedNamespaces).toEqual(['default', 'claude-memories', 'auto-memory', 'patterns', 'tasks', 'feedback']);
++    expect(backend.searchEntries).toHaveBeenCalledTimes(6);
++  });
++  it('discloses the 100k enumeration cap without claiming completeness', async () => {
++    backend.listEntries.mockResolvedValue({ success: true, entries: Array.from({ length: 100000 }, () => ({ namespace: 'one' })), total: 100001 });
++    expect(await call({})).toMatchObject({ success: true, complete: false, truncatedAtCap: true, namespaceSource: 'dynamic' });
++  });
++  it('reports truncation when a backend returns fewer than the requested 100k rows', async () => {
++    backend.listEntries.mockResolvedValue({ success: true, entries: [{ namespace: 'one' }], total: 2 });
++    expect(await call({})).toMatchObject({ success: true, complete: false, truncatedAtCap: true });
++  });
++  it('bounds diagnostics while reporting the complete number of failures', async () => {
++    backend.searchEntries.mockRejectedValue(new Error('read failed'));
++    const result = await call({ namespaces: Array.from({ length: 12 }, (_, i) => `ns${i}`) });
++    expect(result.namespaceErrors).toHaveLength(10);
++    expect(result).toMatchObject({ namespaceErrorCount: 12, namespaceErrorsTruncated: true });
++  });
++  it('does not start another namespace or turn an abort into partial success', async () => {
++    const controller = new AbortController();
++    backend.searchEntries.mockImplementationOnce(async () => {
++      controller.abort();
++      return { success: true, results: [] };
++    });
++    await expect(call({ namespaces: ['one', 'two'] }, { signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' });
++    expect(backend.searchEntries).toHaveBeenCalledTimes(1);
++  });
++  it('never converts an aborted enumeration into legacy fallback work', async () => {
++    const controller = new AbortController();
++    backend.listEntries.mockImplementationOnce(async () => { controller.abort(); throw new Error('interrupted'); });
++    await expect(call({}, { signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' });
++    expect(backend.searchEntries).not.toHaveBeenCalled();
++  });
++});
+diff --git a/v3/@claude-flow/cli/__tests__/search-cancellation-fallback-4876.test.ts b/v3/@claude-flow/cli/__tests__/search-cancellation-fallback-4876.test.ts
+new file mode 100644
+index 0000000..5cd4e73
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/search-cancellation-fallback-4876.test.ts
+@@ -0,0 +1,109 @@
++/** Error-injection tests for backend boundaries, separate from the real
++ * transport/store integration. ANN failure/abort is deliberately injected. */
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++import Database from 'better-sqlite3';
++import { mkdtempSync, rmSync } from 'node:fs';
++import * as fs from 'fs';
++import { join } from 'node:path';
++import { tmpdir } from 'node:os';
++import * as bridge from '../src/memory/memory-bridge.js';
++import * as initializer from '../src/memory/memory-initializer.js';
++import * as rabitq from '../src/memory/rabitq-index.js';
++// Keep real filesystem behavior while observing reads through both import
++// styles. Do not try to redefine an immutable native ESM namespace export.
++const filesystemReads = vi.hoisted(() => ({
++  readFileSync: vi.fn(),
++  actual: undefined as typeof import('node:fs').readFileSync | undefined,
++}));
++vi.mock('fs', async (importOriginal) => {
++  const actual = await importOriginal<typeof import('fs')>();
++  filesystemReads.actual = actual.readFileSync;
++  filesystemReads.readFileSync.mockImplementation(actual.readFileSync);
++  const readFileSync = filesystemReads.readFileSync;
++  return { ...actual, readFileSync, default: { ...actual, readFileSync } };
++});
++vi.mock('node:fs', async (importOriginal) => {
++  const actual = await importOriginal<typeof import('node:fs')>();
++  filesystemReads.actual = actual.readFileSync;
++  filesystemReads.readFileSync.mockImplementation(actual.readFileSync);
++  const readFileSync = filesystemReads.readFileSync;
++  return { ...actual, readFileSync, default: { ...actual, readFileSync } };
++});
++let directory: string;
++let db: Database.Database;
++let dbPath: string;
++beforeEach(() => {
++  // The whole-v3 suite resets mocks before each test. Restore the real
++  // forwarding after that reset so cancellation observes actual file reads.
++  if (!filesystemReads.actual) throw new Error('Real filesystem reader was not captured');
++  filesystemReads.readFileSync.mockImplementation(filesystemReads.actual);
++  directory = mkdtempSync(join(tmpdir(), 'ruflo-cancel-boundary-4876-'));
++  dbPath = join(directory, 'memory.db');
++  vi.stubEnv('CLAUDE_FLOW_DISABLE_BRIDGE', '0');
++  vi.stubEnv('CLAUDE_FLOW_MEMORY_PATH', directory);
++  initializer._resetMemoryRootCache();
++  db = new Database(dbPath);
++  expect(bridge.ensureBridgeSchema(db)).toBe(true);
++  bridge.__setMemoryBridgeRegistryForTests({ getAgentDB: () => ({ database: db,
++    embedder: { pipeline: {}, embed: async () => [1, ...Array(383).fill(0)] } }) });
++});
++afterEach(() => {
++  vi.restoreAllMocks();
++  bridge.__setMemoryBridgeRegistryForTests(null);
++  db.close();
++  vi.unstubAllEnvs();
++  initializer._resetMemoryRootCache();
++  // Newly created synthetic container fixture only.
++  rmSync(directory, { recursive: true, force: true });
++});
++
++describe('cancellation must survive backend fallback boundaries (#4876)', () => {
++  it('does not enter SQL embedding after the bridge returns null with an aborted signal', async () => {
++    const controller = new AbortController();
++    vi.spyOn(bridge, 'bridgeSearchEntries').mockImplementationOnce(async () => {
++      controller.abort('bridge initialization interrupted');
++      return null;
++    });
++    const embedding = vi.spyOn(bridge, 'bridgeGenerateEmbedding');
++    const ensure = vi.spyOn(rabitq, 'ensureRabitqIndex');
++    await expect(initializer.searchEntries({ query: 'retrieval', dbPath, signal: controller.signal }))
++      .rejects.toMatchObject({ name: 'AbortError' });
++    expect(embedding).not.toHaveBeenCalled();
++    expect(ensure).not.toHaveBeenCalled();
++  });
++  it('does not enter SQL provenance reads after an HNSW await is cancelled', async () => {
++    const controller = new AbortController();
++    vi.spyOn(bridge, 'bridgeSearchEntries').mockResolvedValueOnce(null);
++    vi.spyOn(rabitq, 'ensureRabitqIndex').mockResolvedValueOnce(false);
++    vi.spyOn(rabitq, 'searchRabitq').mockResolvedValueOnce(null);
++    const reads = vi.mocked(fs.readFileSync);
++    reads.mockClear();
++    let readsAtAbort = -1;
++    const hnsw = vi.spyOn(bridge, 'bridgeSearchBruteForceCosine').mockImplementationOnce(async () => {
++      readsAtAbort = reads.mock.calls.length;
++      controller.abort('HNSW request ended');
++      return [{ id: 'id0', key: 'key0', content: 'retrieval', score: 1, namespace: 'default' }];
++    });
++    await expect(initializer.searchEntries({ query: 'retrieval', dbPath, signal: controller.signal }))
++      .rejects.toMatchObject({ name: 'AbortError' });
++    expect(hnsw).toHaveBeenCalledTimes(1);
++    expect(readsAtAbort).toBeGreaterThan(0);
++    expect(reads.mock.calls).toHaveLength(readsAtAbort);
++  });
++  it('does not start HNSW after a RaBitQ await rejects during cancellation', async () => {
++    const controller = new AbortController();
++    vi.spyOn(bridge, 'bridgeSearchEntries').mockResolvedValueOnce(null);
++    const ensure = vi.spyOn(rabitq, 'ensureRabitqIndex').mockImplementationOnce(async () => {
++      controller.abort('index request ended');
++      throw new Error('index interrupted');
++    });
++    const candidates = vi.spyOn(rabitq, 'searchRabitq');
++    // searchHNSWIndex's first real phase calls this bridge export.
++    const hnsw = vi.spyOn(bridge, 'bridgeSearchBruteForceCosine');
++    await expect(initializer.searchEntries({ query: 'retrieval', dbPath, signal: controller.signal }))
++      .rejects.toMatchObject({ name: 'AbortError' });
++    expect(ensure).toHaveBeenCalledTimes(1);
++    expect(candidates).not.toHaveBeenCalled();
++    expect(hnsw).not.toHaveBeenCalled();
++  });
++});
+diff --git a/v3/@claude-flow/cli/__tests__/search-request-4876.test.ts b/v3/@claude-flow/cli/__tests__/search-request-4876.test.ts
+new file mode 100644
+index 0000000..dcb0c76
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/search-request-4876.test.ts
+@@ -0,0 +1,54 @@
++import { describe, expect, it } from 'vitest';
++import { QueryVectorMemo, throwIfSearchAborted } from '../src/memory/search-request.js';
++
++describe('request-owned query vectors (#4876)', () => {
++  it('isolates namespaces through shared immutable vectors without sharing mutations', () => {
++    const memo = new QueryVectorMemo();
++    const provider = ['native', {}, () => {}];
++    const original = [1, 0, 0];
++    memo.put('query', 3, provider, original);
++    original[0] = -1;
++    const first = memo.get('query', 3, provider)!;
++    expect(first).toEqual([1, 0, 0]);
++    first[1] = 5;
++    expect(memo.get('query', 3, provider)).toEqual([1, 0, 0]);
++  });
++  it('invalidates on query, dimensions, embed function, model and path changes', () => {
++    const memo = new QueryVectorMemo();
++    const embed = () => {};
++    const model = {};
++    memo.put('query', 2, ['native', embed, model], [1, 0]);
++    expect(memo.get('other', 2, ['native', embed, model])).toBeUndefined();
++    expect(memo.get('query', 3, ['native', embed, model])).toBeUndefined();
++    expect(memo.get('query', 2, ['native', () => {}, model])).toBeUndefined();
++    expect(memo.get('query', 2, ['native', embed, {}])).toBeUndefined();
++    expect(memo.get('query', 2, ['sqljs', embed, model])).toBeUndefined();
++    expect(new QueryVectorMemo().get('query', 2, ['native', embed, model])).toBeUndefined();
++  });
++  it.each([{ vector: [1] }, { vector: [1, Number.NaN] }, { vector: [1, Infinity] }])('does not remember invalid or mismatched vectors $vector', ({ vector }) => {
++    const memo = new QueryVectorMemo();
++    memo.put('query', 2, ['provider'], vector);
++    expect(memo.get('query', 2, ['provider'])).toBeUndefined();
++  });
++  it('preserves embedding metadata and isolates returned records from mutation', () => {
++    const memo = new QueryVectorMemo();
++    const result = { embedding: [1, 0], dimensions: 2, model: 'actual-provider-model', backend: 'onnx' as const };
++    memo.putEmbedding('query', 2, ['provider'], result);
++    result.model = 'mutated';
++    result.embedding[0] = 99;
++    const hit = memo.getEmbedding('query', 2, ['provider'])!;
++    expect(hit).toEqual({ embedding: [1, 0], dimensions: 2, model: 'actual-provider-model', backend: 'onnx' });
++    hit.model = 'another mutation';
++    hit.embedding[0] = -1;
++    expect(memo.getEmbedding('query', 2, ['provider'])).toEqual({ embedding: [1, 0], dimensions: 2, model: 'actual-provider-model', backend: 'onnx' });
++    memo.put('query', 2, ['provider'], [0, 1]);
++    expect(memo.getEmbedding('query', 2, ['provider'])).toBeUndefined();
++  });
++  it('throws a typed cancellation rather than returning a backend failure', () => {
++    expect(() => throwIfSearchAborted()).not.toThrow();
++    const controller = new AbortController();
++    expect(() => throwIfSearchAborted(controller.signal)).not.toThrow();
++    controller.abort('timeout');
++    expect(() => throwIfSearchAborted(controller.signal)).toThrow(expect.objectContaining({ name: 'AbortError' }));
++  });
++});
+diff --git a/v3/@claude-flow/cli/src/memory/search-request.ts b/v3/@claude-flow/cli/src/memory/search-request.ts
+new file mode 100644
+index 0000000..cb5d320
+--- /dev/null
++++ b/v3/@claude-flow/cli/src/memory/search-request.ts
+@@ -0,0 +1,74 @@
++/** Cooperative cancellation at memory-search phase and namespace boundaries. */
++export function throwIfSearchAborted(signal?: AbortSignal): void {
++  if (!signal?.aborted) return;
++  const error = new Error('Memory search cancelled', { cause: signal.reason });
++  error.name = 'AbortError';
++  throw error;
++}
++
++interface MemoizedEmbedding {
++  embedding: number[];
++  dimensions: number;
++  model: string;
++  backend: 'onnx' | 'mock';
++}
++
++/** One unified request owns this memo; it never owns database or model handles. */
++export class QueryVectorMemo {
++  private readonly identities = new WeakMap<object, number>();
++  private readonly vectors = new Map<string, readonly number[]>();
++  private readonly metadata = new Map<string, Readonly<Omit<MemoizedEmbedding, 'embedding'>>>();
++  private nextIdentity = 0;
++
++  private key(query: string, dimensions: number, provider: readonly unknown[]): string {
++    const identities = provider.map((part) => {
++      if ((typeof part === 'object' && part !== null) || typeof part === 'function') {
++        const object = part as object;
++        let identity = this.identities.get(object);
++        if (identity === undefined) {
++          identity = ++this.nextIdentity;
++          this.identities.set(object, identity);
++        }
++        return ['object', identity];
++      }
++      return [typeof part, part];
++    });
++    return JSON.stringify([query, dimensions, identities]);
++  }
++
++  get(query: string, dimensions: number, provider: readonly unknown[]): number[] | undefined {
++    const vector = this.vectors.get(this.key(query, dimensions, provider));
++    return vector ? Array.from(vector) : undefined;
++  }
++
++  put(query: string, dimensions: number, provider: readonly unknown[], vector: readonly number[]): void {
++    // Unexpected dimensions or invalid output retain the normal uncached path.
++    if (dimensions <= 0 || vector.length !== dimensions || !vector.every(Number.isFinite)) return;
++    const key = this.key(query, dimensions, provider);
++    this.vectors.set(key, Object.freeze(Array.from(vector)));
++    this.metadata.delete(key);
++  }
++
++  getEmbedding(query: string, dimensions: number, provider: readonly unknown[]): MemoizedEmbedding | undefined {
++    const embedding = this.get(query, dimensions, provider);
++    const metadata = this.metadata.get(this.key(query, dimensions, provider));
++    return embedding && metadata ? { ...metadata, embedding } : undefined;
++  }
++
++  putEmbedding(query: string, dimensions: number, provider: readonly unknown[], result: MemoizedEmbedding): void {
++    if (result.dimensions !== dimensions || result.embedding.length !== dimensions
++      || !result.embedding.every(Number.isFinite) || dimensions <= 0) return;
++    this.put(query, dimensions, provider, result.embedding);
++    this.metadata.set(this.key(query, dimensions, provider), Object.freeze({
++      dimensions: result.dimensions, model: result.model, backend: result.backend,
++    }));
++  }
++}
++
++export interface SearchEmbeddingOptions {
++  normalize?: boolean;
++  signal?: AbortSignal;
++  queryMemo?: QueryVectorMemo;
++  /** Keep native-search, bridge-embedding and SQL fallback preparation distinct. */
++  memoScope?: string;
++}
+diff --git a/v3/@claude-flow/mcp/__tests__/request-cancellation-dispatch-4876.test.ts b/v3/@claude-flow/mcp/__tests__/request-cancellation-dispatch-4876.test.ts
+new file mode 100644
+index 0000000..0bbe1dd
+--- /dev/null
++++ b/v3/@claude-flow/mcp/__tests__/request-cancellation-dispatch-4876.test.ts
+@@ -0,0 +1,97 @@
++/** Real HTTP -> MCP server -> registry dispatch. No transport/registry mocks. */
++import { afterEach, describe, expect, it } from 'vitest';
++import { PassThrough } from 'node:stream';
++import type { AddressInfo } from 'node:net';
++import type { Server } from 'node:http';
++import { createMCPServer } from '../src/server.js';
++import { StdioTransport } from '../src/transport/stdio.js';
++import type { ILogger, ToolContext } from '../src/types.js';
++
++const logger: ILogger = { debug() {}, info() {}, warn() {}, error() {} };
++let server: ReturnType<typeof createMCPServer> | undefined;
++afterEach(async () => { await server?.stop(); server = undefined; });
++const initialize = { jsonrpc: '2.0', id: 0, method: 'initialize', params: {
++  protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'cancellation-regression', version: '1' },
++} };
++
++describe('request cancellation through both MCP dispatch routes (#4876)', () => {
++  it.each(['tools/call', 'cancellation_probe'])('passes only the transport signal through %s and isolates another request', async (method) => {
++    server = createMCPServer({ transport: 'http', host: '127.0.0.1', port: 0, requestTimeout: 150, enableCaching: false }, logger);
++    let started!: () => void;
++    let cancelled!: () => void;
++    const entered = new Promise<void>(resolve => { started = resolve; });
++    const stopped = new Promise<void>(resolve => { cancelled = resolve; });
++    const contexts: ToolContext[] = [];
++    server.registerTool({
++      name: 'cancellation_probe', description: 'synthetic cancellation boundary',
++      inputSchema: { type: 'object', properties: { wait: { type: 'boolean' }, signal: { type: 'object' } } },
++      handler: async (input, context) => {
++        if (!context) throw new Error("MCP dispatch omitted the tool context");
++        contexts.push(context);
++        if (!(input as { wait?: boolean }).wait) return { ok: true };
++        started();
++        if (!context.signal) return { missingSignal: true };
++        await new Promise<void>((resolve) => {
++          const abort = () => { cancelled(); resolve(); };
++          if (context.signal!.aborted) abort();
++          else context.signal!.addEventListener('abort', abort, { once: true });
++        });
++        return { ignoredCancellation: true };
++      },
++    });
++    await server.start();
++    const transport = (server as unknown as { transports: Array<{ server: Server }> }).transports[0];
++    const port = (transport.server.address() as AddressInfo).port;
++    const post = (message: unknown) => fetch(`http://127.0.0.1:${port}/rpc`, {
++      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(message),
++    });
++    expect((await (await post(initialize)).json()).error).toBeUndefined();
++    const message = (id: number, wait: boolean) => ({ jsonrpc: '2.0', id, method,
++      params: method === 'tools/call'
++        ? { name: 'cancellation_probe', arguments: { wait, signal: { aborted: true } } }
++        : { wait, signal: { aborted: true } },
++    });
++    const slow = post(message(1, true));
++    await entered;
++    const fast = await post(message(2, false));
++    expect(fast.status).toBe(200);
++    expect((await fast.json()).error).toBeUndefined();
++    expect(contexts).toHaveLength(2);
++    expect(contexts[0].signal).toBeInstanceOf(AbortSignal);
++    expect(contexts[1].signal).toBeInstanceOf(AbortSignal);
++    expect(contexts[0].signal).not.toBe(contexts[1].signal);
++    // A JSON argument named signal is input, never transport authority.
++    expect(contexts[0].signal?.aborted).toBe(false);
++    const expired = await slow;
++    expect(expired.status).toBe(408);
++    await expired.json();
++    await stopped;
++    expect(contexts[0].signal?.aborted).toBe(true);
++    expect(contexts[1].signal?.aborted).toBe(false);
++    expect(contexts[0].sessionId).toBe(contexts[1].sessionId);
++  });
++
++  it('keeps real stdio requests on the one-argument transport contract', async () => {
++    const input = new PassThrough();
++    const output = new PassThrough();
++    const transport = new StdioTransport(logger, { inputStream: input, outputStream: output });
++    let seen: unknown = 'not called';
++    transport.onRequest(async (request, context) => {
++      seen = context;
++      return { jsonrpc: '2.0', id: request.id, result: { ok: true } };
++    });
++    const response = new Promise<string>(resolve => {
++      let text = '';
++      output.on('data', chunk => { text += chunk.toString(); if (text.includes('\n')) resolve(text); });
++    });
++    try {
++      await transport.start();
++      input.write(JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'probe', params: { signal: { aborted: true } } }) + '\n');
++      expect(JSON.parse(await response)).toMatchObject({ id: 7, result: { ok: true } });
++      expect(seen).toBeUndefined();
++    } finally {
++      await transport.stop();
++      input.destroy(); output.destroy();
++    }
++  });
++});
+diff --git a/vitest.config.ts b/vitest.config.ts
+new file mode 100644
+index 0000000..b3c02d5
+--- /dev/null
++++ b/vitest.config.ts
+@@ -0,0 +1,15 @@
++import { defineConfig } from 'vitest/config';
++import { fileURLToPath } from 'node:url';
++
++export default defineConfig({
++  resolve: {
++    alias: [
++      // The root ratchet must exercise the workspace MCP implementation, just
++      // like the CLI suite, without requiring or trusting a stale dist build.
++      {
++        find: /^@claude-flow\/mcp$/,
++        replacement: fileURLToPath(new URL('./v3/@claude-flow/mcp/src/index.ts', import.meta.url)),
++      },
++    ],
++  },
++});

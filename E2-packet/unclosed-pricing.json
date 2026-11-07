@@ -1,0 +1,42 @@
+{
+  "execution_enabled": false,
+  "blockers": [],
+  "proposed_time_caps_are_not_estimates": true,
+  "optional_onnx": {
+    "required": false,
+    "unpriced": [
+      "model identity/license/cache/native backend acquisition only if separately requested"
+    ],
+    "absence_does_not_block_mandatory_hash_BM25_proof": true
+  },
+  "not_run": [
+    "full all-plugins/external fleet",
+    "full host matrix/Codex remote marketplace",
+    "Claude2.1.289vendorbinary",
+    "CodeQL",
+    "live advisory/security/published-alpha/simulated global workflows",
+    "macOS/Windows",
+    "stabletag/sign/publish"
+  ],
+  "cached_resource_inputs": "cached-resource-inputs.json",
+  "execution_time_admission_requirements": [
+    "Actual LinuxDockerhost architecture/CPUaffinity/MemAvailable/free disk and cumulative preservedbatchdisk must meet proposed thresholds beforeimage/G0",
+    "Immutableimage/sourcepack/pnpm/lifecycleallowlist hashes and G0positive/negative verifier fixtures must match beforeexpensivedependencies",
+    "Preparation andfocusedactualworker cgrouppeak/noOOM plusactualpostmeasurementhostheadroom mustmeet proposal beforefullsuite",
+    "Boundedacquisition records actualcold/cachebytes, time, nativeprebuild/headerpayloads andstopson sampledRX/deadline/diskbreach; unknownactualcost isnotzero",
+    "Afterbuild/pack only:resolveconsumerlocksmetadataonly, exactretainedversion/SRI/lifecycle/currentbundleadmission, STOPbeforetarballs/scriptsonunknownormismatch; sameclock/noreset",
+    "Freshnative/omitofflineconsumerinstall, actualbindings/ANNcalls, allnewcases/threefallbackcases andhelpermismatchbehavior arevalidationoutcomes; PARKwholeissueifblocked",
+    "Singleworkfloworigin UTCepoch +3420harddeadline sharedby14isolatedubuntu24VMs; latestart recordsNOT_STARTED_DEADLINE; no reruns"
+  ],
+  "genuinely_unresolved_fields": [
+    "approval.json intentionallyabsent; executionauthorizationnotgranted",
+    "manifest.execution_enabled false/stateDRAFT: wholepacketreview andindependentagreement stillrequired"
+  ],
+  "unpriced_actuals_not_preexecution_paperwork": [
+    "currenthostcapacity/currentcgroupmeasurements",
+    "coldnativeprebuild/headerbytes andacquisitionseconds",
+    "postpacknewconsumergraph unknown exactversions/SRI (mustmatchretainedinputselseSTOP)",
+    "actualfreshinstall/test/ANN/helperoutcomes",
+    "Newtwofreshconsumerfootprints includingofflinebetter-sqlite3/hnswlib-node sourcecompile; oldshipping nevercompletedtheseinstalls; optionalsharpdrop recordednotnativeproof"
+  ]
+}

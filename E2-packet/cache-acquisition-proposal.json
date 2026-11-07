@@ -1,0 +1,16 @@
+{
+  "state": "UNRUN_BOUNDED_STRATEGY_NOT_PRICE_CLOSURE",
+  "retained_source": "ruflo4834-implementation/shipping-pricing/actual-warmup-tarballs.json",
+  "retained_sha256": "96b492241848acbd77dc07af6d48e3fc59aaa9c8079a33f3323bbf65d438ac80",
+  "unique_registry_urls": {
+    "baseline": 173,
+    "candidate": 173
+  },
+  "current_graph": "Unknownuntilsameattemptpostpackadmission;actualcountrecorded",
+  "max_parallel_npm_processes": 4,
+  "cache_total_cap_seconds": 300,
+  "per_artifact_cap_seconds": 60,
+  "outer": "Sameconsumer-warmphase/sharedorigin3375/3420; existing12GiBmemory anddiskcapunchanged",
+  "uncertainty": "173npmstartups pluscoldpayloadtime notmeasured; boundedpoolmitigatesserialstartupcost, noclaimof300sfit; focusedreviewrequired",
+  "warm_ci_trees": 0
+}

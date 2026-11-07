@@ -1,0 +1,92 @@
+name: Ruflo 4876 E2 exact validation proposal
+on:
+  push:
+    branches: [validation/ruflo-4876-e2]
+permissions:
+  contents: read
+concurrency:
+  group: ruflo-4876-e2-single-attempt
+  cancel-in-progress: false
+jobs:
+  origin:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      epoch: ${{ steps.origin.outputs.epoch }}
+    steps:
+      - name: Single attempt only
+        run: test "$GITHUB_RUN_ATTEMPT" = 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - id: origin
+        name: Verify exact seal and record current capacity
+        env:
+          GITHUB_REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+        run: python3 E2-packet/origin.py
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        timeout-minutes: 2
+        with:
+          name: origin
+          path: origin.json
+          retention-days: 3
+          if-no-files-found: warn
+  lanes:
+    needs: origin
+    runs-on: ubuntu-24.04
+    timeout-minutes: 62
+    strategy:
+      fail-fast: false
+      max-parallel: 14
+      matrix:
+        profile: [root20, v3test22, v3build20, cli22, mcp22, affected-smokes22, pack22]
+        variant: [baseline, candidate]
+    steps:
+      - name: Single attempt only
+        run: test "$GITHUB_RUN_ATTEMPT" = 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Bounded exact lane under shared workflow origin
+        env:
+          E2_ORIGIN: ${{ needs.origin.outputs.epoch }}
+          E2_PROFILE: ${{ matrix.profile }}
+          E2_VARIANT: ${{ matrix.variant }}
+        run: python3 E2-packet/host.py "$E2_PROFILE" "$E2_VARIANT" "$GITHUB_WORKSPACE/runs/$E2_PROFILE-$E2_VARIANT" --origin "$E2_ORIGIN"
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        timeout-minutes: 2
+        with:
+          name: ${{ matrix.profile }}-${{ matrix.variant }}
+          path: |
+            runs/${{ matrix.profile }}-${{ matrix.variant }}/host-evidence/
+            runs/${{ matrix.profile }}-${{ matrix.variant }}/evidence/
+          retention-days: 3
+          if-no-files-found: warn
+          include-hidden-files: false
+  aggregate:
+    needs: [origin, lanes]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Single attempt only
+        run: test "$GITHUB_RUN_ATTEMPT" = 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        timeout-minutes: 3
+        with:
+          path: artifacts
+      - name: Aggregate complete lane evidence outside shared lane clock
+        run: python3 E2-packet/aggregate.py artifacts aggregate.json
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        timeout-minutes: 2
+        with:
+          name: aggregate
+          path: aggregate.json
+          retention-days: 3
+          if-no-files-found: warn

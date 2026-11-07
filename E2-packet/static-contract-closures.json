@@ -1,0 +1,78 @@
+{
+  "runtime": false,
+  "source_only": true,
+  "pin": "3fe9d70ba7d08ff12233003a9342037ab80af3ce",
+  "files": [
+    {
+      "path": "v3/@claude-flow/cli/src/commands/mcp.ts",
+      "sha256": "eec60d3c783c2531be06b6b81d453eea99d1631ca4289fa08bd4723f7f91330f"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/commands/init.ts",
+      "sha256": "fa983de55b224d99d96d0da639cdacbae02b3801d13ccbd5bd96cb454162965e"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/commands/policy.ts",
+      "sha256": "5b55a6fa20e7160456c8127446a478e3ebc3c665ab710fb954129d4517739a64"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/fs-secure.ts",
+      "sha256": "131497d6192eb0e5bf0060b96a095fed85da83c4a0ac4aa6d409a6b8abcd61f1"
+    },
+    {
+      "path": "scripts/ci-test-ratchet.mjs",
+      "sha256": "e4f6311150e18e6ef8af595be2f6ec255fa002ae59f9bbf7b1e3d431827c29cc"
+    },
+    {
+      "path": "v3/vitest.config.ts",
+      "sha256": "ef674d9af36f5f2705b555fe62c036bb6ee1efc90b1f11e5a1d4c9ab7b95ef39"
+    },
+    {
+      "path": "package.json",
+      "sha256": "2bb50a53969c985910cf4a3f28cc1bf09170c3fae01fb35f7e1fe2360b26200c"
+    },
+    {
+      "path": "ruflo/package.json",
+      "sha256": "c47903ee3ad539c1f084c4e1111d0eb34ab3fa845d20f4709c1e23588ef8866a"
+    },
+    {
+      "path": "v3/@claude-flow/cli/package.json",
+      "sha256": "af528fcd1a2fdb3166c8f16ca622a1a09ab0c961c653ab605c81f263434b37c5"
+    }
+  ],
+  "contracts": {
+    "mcp": "mcp.ts options host/port/transport/tools/request-timeout-ms; env RUFLO_MCP_REQUEST_TIMEOUT_MS passed to MCPServerOptions.requestTimeoutMs. daemon boolean defaultfalse. Normal HTTP foreground untilownedSIGTERM.",
+    "init": "init.ts literaloptions codex,force,plugin-install defaulttrue (--no-plugin-install),no-signup,no-global. defaultstart-all/start-daemonfalse. Optional no-telemetry-prompt exists. AllfuturetestsusesyntheticHOME/CWDonly.",
+    "policy": "policy.ts actionargs[0] defaultsstatus; explicitstatus readsprojectpolicy/verifyledger, nointeractiveadministrator requirement forstatus.",
+    "bins": {
+      "root": {
+        "claude-flow": "bin/cli.js"
+      },
+      "ruflo": {
+        "ruflo": "bin/ruflo.js"
+      },
+      "cli": {
+        "cli": "bin/cli.js",
+        "claude-flow": "bin/cli.js",
+        "claude-flow-mcp": "bin/mcp-server.js"
+      }
+    },
+    "ratchet": "evaluateTestReport ok=unexpected.length===0; fixedbaselineentries arepermitted andreported; do NOT edit failurebaseline.",
+    "filesystem": "fs-secure.ts importsreadFileSync fromnode:fs; I4 dualmock nowsharesoneactualforwardingspy.",
+    "v3suite": "Ownv3/vitest.config.ts applies to wholev3run; I4 exactMCPSrCaliasrequiredandwritten; include/exclude/quarantineunchanged.",
+    "root_config_shadowing": {
+      "base": "3fe9d70ba7d08ff12233003a9342037ab80af3ce",
+      "command": [
+        "git",
+        "ls-tree",
+        "--name-only",
+        "3fe9d70ba7d08ff12233003a9342037ab80af3ce"
+      ],
+      "root_tree_names_sha256": "bd534b7aab7f72aed56b84fda9fa0625061667a426a05d2973ba0d7ae22cd953",
+      "matching_root_vite_vitest_variants": [],
+      "source_only": true,
+      "runtime": false,
+      "conclusion": "No root vite.config.* or vitest.config.* variants at exactpin; candidatevitest.config.ts shadowsnone"
+    }
+  }
+}

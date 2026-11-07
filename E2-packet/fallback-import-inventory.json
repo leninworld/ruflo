@@ -1,0 +1,554 @@
+{
+  "status": "STATIC_LITERAL_IMPORT_INVENTORY_NOT_RUNTIME_RESOLUTION",
+  "files": 34,
+  "local_edges": [
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./append-conditions.js",
+      "v3/@claude-flow/cli/src/memory/append-conditions.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./shared-sqlite.js",
+      "v3/@claude-flow/cli/src/memory/shared-sqlite.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./memory-root.js",
+      "v3/@claude-flow/cli/src/memory/memory-root.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./search-defaults.js",
+      "v3/@claude-flow/cli/src/memory/search-defaults.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./search-request.js",
+      "v3/@claude-flow/cli/src/memory/search-request.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./live-memory-row.js",
+      "v3/@claude-flow/cli/src/memory/live-memory-row.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./embedding-q8.js",
+      "v3/@claude-flow/cli/src/memory/embedding-q8.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "../fs-secure.js",
+      "v3/@claude-flow/cli/src/memory/../fs-secure.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "../services/memory-backup.js",
+      "v3/@claude-flow/cli/src/memory/../services/memory-backup.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "../mcp-tools/validate-input.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/validate-input.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./model-cache-dir.js",
+      "v3/@claude-flow/cli/src/memory/model-cache-dir.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./graph-edge-writer.js",
+      "v3/@claude-flow/cli/src/memory/graph-edge-writer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./memory-bridge.js",
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./memory-bridge.js",
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./memory-bridge.js",
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./embedding-policy.js",
+      "v3/@claude-flow/cli/src/memory/embedding-policy.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "./rabitq-index.js",
+      "v3/@claude-flow/cli/src/memory/rabitq-index.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/rabitq-index.ts",
+      "./memory-bridge.js",
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/rabitq-index.ts",
+      "./memory-bridge.js",
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./append-conditions.js",
+      "v3/@claude-flow/cli/src/memory/append-conditions.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./live-memory-row.js",
+      "v3/@claude-flow/cli/src/memory/live-memory-row.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./shared-sqlite.js",
+      "v3/@claude-flow/cli/src/memory/shared-sqlite.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./search-defaults.js",
+      "v3/@claude-flow/cli/src/memory/search-defaults.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./search-request.js",
+      "v3/@claude-flow/cli/src/memory/search-request.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./embedding-q8.js",
+      "v3/@claude-flow/cli/src/memory/embedding-q8.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./feedback-patterns.js",
+      "v3/@claude-flow/cli/src/memory/feedback-patterns.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./intelligence.js",
+      "v3/@claude-flow/cli/src/memory/intelligence.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./memory-initializer.js",
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./memory-initializer.js",
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./intelligence.js",
+      "v3/@claude-flow/cli/src/memory/intelligence.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./rabitq-index.js",
+      "v3/@claude-flow/cli/src/memory/rabitq-index.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./memory-initializer.js",
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./memory-initializer.js",
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./memory-initializer.js",
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "./intelligence.js",
+      "v3/@claude-flow/cli/src/memory/intelligence.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "../ruvector/lora-adapter.js",
+      "v3/@claude-flow/cli/src/memory/../ruvector/lora-adapter.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "../mcp-tools/types.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/types.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "./stats-file-lock.js",
+      "v3/@claude-flow/cli/src/memory/stats-file-lock.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "./ewc-consolidation.js",
+      "v3/@claude-flow/cli/src/memory/ewc-consolidation.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "./ewc-consolidation.js",
+      "v3/@claude-flow/cli/src/memory/ewc-consolidation.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "./memory-bridge.js",
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "../mcp-tools/neural-tools.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "./memory-bridge.js",
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "./memory-initializer.js",
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "./memory-initializer.js",
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "./memory-bridge.js",
+      "v3/@claude-flow/cli/src/memory/memory-bridge.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/intelligence.ts",
+      "./memory-initializer.js",
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+      "./types.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/types.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+      "./record-store.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/record-store.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+      "./validate-input.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/validate-input.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+      "../ruvector/wasm-embedder.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/../ruvector/wasm-embedder.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+      "../memory/embedding-policy.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/../memory/embedding-policy.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+      "../memory/hybrid-retrieval.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/../memory/hybrid-retrieval.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+      "../memory/cross-encoder-rerank.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/../memory/cross-encoder-rerank.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+      "../memory/hybrid-retrieval.js",
+      "v3/@claude-flow/cli/src/memory/../mcp-tools/../memory/hybrid-retrieval.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/graph-edge-writer.ts",
+      "./memory-initializer.js",
+      "v3/@claude-flow/cli/src/memory/memory-initializer.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/graph-edge-writer.ts",
+      "./embedding-quantization.js",
+      "v3/@claude-flow/cli/src/memory/embedding-quantization.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/graph-edge-writer.ts",
+      "./shared-sqlite.js",
+      "v3/@claude-flow/cli/src/memory/shared-sqlite.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/graph-edge-writer.ts",
+      "../encryption/vault.js",
+      "v3/@claude-flow/cli/src/memory/../encryption/vault.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../services/memory-backup.ts",
+      "../fs-secure.js",
+      "v3/@claude-flow/cli/src/memory/../services/../fs-secure.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../services/memory-backup.ts",
+      "../memory/shared-sqlite.js",
+      "v3/@claude-flow/cli/src/memory/../services/../memory/shared-sqlite.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../services/memory-backup.ts",
+      "../memory/memory-root.js",
+      "v3/@claude-flow/cli/src/memory/../services/../memory/memory-root.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../services/../fs-secure.ts",
+      "./encryption/vault.js",
+      "v3/@claude-flow/cli/src/memory/../services/../encryption/vault.ts"
+    ],
+    [
+      "v3/@claude-flow/cli/src/memory/../fs-secure.ts",
+      "./encryption/vault.js",
+      "v3/@claude-flow/cli/src/memory/../encryption/vault.ts"
+    ]
+  ],
+  "bare_specifiers": {
+    "@ruvector/core": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 656,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    "sql.js": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 720,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 828,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 1360,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 1472,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 1969,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 2146,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 2215,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 2818,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 3130,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 3330,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 3404,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 3447,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 3660,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 3895,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 4048,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 4293,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/rabitq-index.ts",
+        "line": 139,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/rabitq-index.ts",
+        "line": 344,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../services/memory-backup.ts",
+        "line": 275,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    "loaded": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 994,
+        "import_kind": "static"
+      }
+    ],
+    "agentic-flow/reasoningbank": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 2442,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+        "line": 153,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    "ruvector": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+        "line": 2472,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+        "line": 78,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+        "line": 126,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    "@ruvector/rabitq-wasm": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/rabitq-index.ts",
+        "line": 61,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    "@claude-flow/memory": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+        "line": 280,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    "agentdb": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+        "line": 356,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    "no controller registered": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+        "line": 2777,
+        "import_kind": "static"
+      }
+    ],
+    "@claude-flow/embeddings": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+        "line": 164,
+        "import_kind": "dynamic-or-require"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+        "line": 183,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    "@claude-flow/neural": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/neural-tools.ts",
+        "line": 1115,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    ",": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/../memory/hybrid-retrieval.ts",
+        "line": 15,
+        "import_kind": "static"
+      }
+    ],
+    "@xenova/transformers": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/../memory/cross-encoder-rerank.ts",
+        "line": 42,
+        "import_kind": "dynamic-or-require"
+      }
+    ],
+    "@claude-flow/cli-core/mcp-tools/validate-input": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/validate-input.ts",
+        "line": 12,
+        "import_kind": "static"
+      },
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/validate-input.ts",
+        "line": 14,
+        "import_kind": "static"
+      }
+    ],
+    "@claude-flow/cli-core/mcp-tools/types": [
+      {
+        "source": "v3/@claude-flow/cli/src/memory/../mcp-tools/types.ts",
+        "line": 8,
+        "import_kind": "static"
+      }
+    ]
+  },
+  "unresolved_local_literals": [],
+  "limitations": [
+    "Regex inventory does not prove computed dynamic imports or guarded optional availability; finalinstalledresolverchecks stillneeded.",
+    "Optional modelproviders may deliberately beabsent; do not inventall-bare-must-exist productgate.",
+    "Fallback source validation should retain installedCLI bundled and hoisted dependency ancestry, notonly consumer topnode_modules."
+  ]
+}

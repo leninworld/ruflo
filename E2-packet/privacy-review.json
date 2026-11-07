@@ -1,0 +1,10 @@
+{
+  "scope": "NEW_E2_PACKET_ONLY; originalE1/control-plane cachesunchanged",
+  "rewritten_files": [
+    "source-pack-receipt.json",
+    "native-cache-reuse.json"
+  ],
+  "preserve": "ExactI4candidatefiles/patch andpublicupstreamsourcepack unchanged; upstreampublicauthor/license/contactemails retained",
+  "sourcepack": "CurrentbasepublicGitobjectclosure, no host HOME/cache/history material added",
+  "static_scan": "Knownprivatehostprefixes scrubbed in E2 provenance text. No credential mounts/tokens passed tosteps/containers. Wholepubliccontentreview remainsrequired; no claimofbinaryDLPscan."
+}

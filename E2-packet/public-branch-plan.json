@@ -1,0 +1,14 @@
+{
+  "execution_enabled": false,
+  "proposed_orphan_branch": "validation/ruflo-4876-e2",
+  "allowed_top_level": [
+    ".github/workflows/ruflo4876-e2.yml",
+    "E2-packet/"
+  ],
+  "workflow_source": "E2-packet/workflow.yml copiedbyteidentical toexternalworkflowpath andcheckedbyorigin",
+  "excluded": "Allupstreamworkflowfleet; personaldata; oldattemptreceipts/cachepayloads; noSigned-off-byline",
+  "sourcepack_bytes": 71927170,
+  "sourcepack_GitHub_warning": "Under100MBhardlimit; largefilewarningexpected",
+  "authorization": "Nobranch/commit/push/fork/workflowdispatchperformedorauthorizedbythispacket",
+  "actions": "Allactionrefs pinnedfromretainedsourceevidence; currentactionauthorizationreviewrequired; no newfetch"
+}

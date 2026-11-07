@@ -1,0 +1,73 @@
+{
+  "no_network": true,
+  "reused_metadata": [
+    {
+      "path": "co_create/20261106/ruflo4834-implementation/shipping-pricing/exact-observed-metadata.json",
+      "bytes": 141220,
+      "sha256": "da87804eb429ee230f39ba2316090da1fe1468ecb91a99e1afca9e90badf84a6"
+    },
+    {
+      "path": "co_create/20261106/ruflo4834-implementation/shipping-pricing/actual-warmup-tarballs.json",
+      "bytes": 60463,
+      "sha256": "96b492241848acbd77dc07af6d48e3fc59aaa9c8079a33f3323bbf65d438ac80"
+    },
+    {
+      "path": "co_create/20261106/ruflo4834-implementation/shipping-pricing/reviewed-version-graph.json",
+      "bytes": 76660,
+      "sha256": "2d4825c7a74443a0881beb72cca2a44326f741aa7904a5f1062d55f4b4f3dc4c"
+    },
+    {
+      "path": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+      "bytes": 391318,
+      "sha256": "87c583d8cdfac75abf4fd2e71d1d2433294a0fbf802cf49863818cc7d20feca4"
+    },
+    {
+      "path": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+      "bytes": 62894,
+      "sha256": "1dfc445e92b2acf3b6e3fe2a3d95730f268579fb14cecc5b93c3fa94fa23744f"
+    },
+    {
+      "path": "co_create/20261106/ruflo4834-implementation/execution-packet/missing-linux-script-metadata.json",
+      "bytes": 16292,
+      "sha256": "1dc630cac6f8e824a35bbae13a5a4c9e40668b616ba1c9be154e7b6dce3e3577"
+    },
+    {
+      "path": "co_create/20261106/ruflo4834-implementation/execution-packet/workspace-lifecycles.json",
+      "bytes": 994,
+      "sha256": "e1e1ff50d9252d5c4fd5602deeb2fb56eb84ddd0eeecc97c25bd6e7ba2406289"
+    },
+    {
+      "path": "co_create/20261106/ruflo4834-implementation/execution-packet/node20-selected-image.json",
+      "bytes": 1304,
+      "sha256": "a31400876e3b7f10422e41e4c78034aa104a5747ae169e0255611950f55704a3"
+    },
+    {
+      "path": "co_create/20261106/ruflo4834-implementation/execution-packet/node22-selected-image.json",
+      "bytes": 1304,
+      "sha256": "35a151661db6203377d48eff2d310dfafb739c1a7b250164bac0a841003b6f64"
+    }
+  ],
+  "exact_manifest_directories": [
+    "co_create/20261106/ruflo4834-implementation/shipping-pricing/exact-manifests",
+    "co_create/20261106/ruflo4834-implementation/execution-packet/registry-version-metadata"
+  ],
+  "matching_root_scripts": "14/14Linux-applicable current root lifecycle packages have exact-version metadata; only fsevents2.3.3excluded by actualdarwin os declaration",
+  "consumer_caution": "Old observed173registryversions include agentdb3.6.1; current frozenroot locks agentdb3.3.0. Do not conflate consumer resolution with root lock. Rebuild source-bundle manifest expectations from current built source; old bundled-treeaudit failed.",
+  "unresolved_price_is_narrow": "current host/admission; cold/cache byteavailability; directnative prebuild/headerpayloads notcontained by npm lock; newnative-consumeroptionalgraph andexact consumerlock; NOmandatoryONNXmodel",
+  "mechanically_populated_inputs": {
+    "lifecycle_allowlist": {
+      "entries": 1369,
+      "sha256": "beeb01e93ccc0a3eced8bcac11cf9978c3278d2c7b60f4bde573c8c424220852",
+      "status": "Retainedplus exactlocal/workspace sourcecommands; pinisnotapproval"
+    },
+    "pnpm_archive": {
+      "file": "pnpm-8.15.0.tgz",
+      "name": "pnpm",
+      "version": "8.15.0",
+      "bytes": 3805828,
+      "sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
+      "provenance": "Retained4834execution-packet/pnpm-8.15.0.tgz; exact hash equals retainedpacket-seal.json; metadata read only"
+    },
+    "consumer_retained_index_sha256": "73ed9985d82aa9bd37abe8278e31c20f6ccf326347c654a059b5937c177470a0"
+  }
+}

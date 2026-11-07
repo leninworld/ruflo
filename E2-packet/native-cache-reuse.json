@@ -1,0 +1,608 @@
+{
+  "status": "LOCAL_STATIC_METADATA_REUSE_NO_FETCH_OR_RUNTIME",
+  "lock_sha256": "a64678df5dd815ff46c04b8fb162ba3c7e3387fac698a4968ed65bd5898ef138",
+  "root_has_install_script_count": 15,
+  "matched": 14,
+  "rows": [
+    {
+      "path": "node_modules/@huggingface/transformers/node_modules/onnxruntime-node",
+      "name": "onnxruntime-node",
+      "version": "1.24.3",
+      "integrity": "sha512-JH7+czbc8ALA819vlTgcV+Q214/+VjGeBHDjX81+ZCD0PCVCIFGFNtT0V4sXG/1JXypKPgScQcB3ij/hk3YnTg==",
+      "resolved": "https://registry.npmjs.org/onnxruntime-node/-/onnxruntime-node-1.24.3.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "onnxruntime-node",
+            "version": "1.24.3",
+            "scripts": {
+              "postinstall": "node ./script/install",
+              "prepare": "tsc --build script test ."
+            },
+            "binding_gyp_present": false,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "30510b52b3ba218598fd66d9e958ee1540a259ab474de5fc85365be25767094c"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "onnxruntime-node",
+            "version": "1.24.3",
+            "scripts": {
+              "postinstall": "node ./script/install",
+              "prepare": "tsc --build script test ."
+            },
+            "binding_gyp_present": false,
+            "manifest_sha256": "30510b52b3ba218598fd66d9e958ee1540a259ab474de5fc85365be25767094c",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/@huggingface/transformers/node_modules/onnxruntime-node",
+              "v3:/onnxruntime-node@1.24.3"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/@huggingface/transformers/node_modules/sharp",
+      "name": "sharp",
+      "version": "0.34.5",
+      "integrity": "sha512-Ou9I5Ft9WNcCbXrU9cMgPBcCK8LiwLqcbywW3t4oDV37n1pzpuNLsYiAV8eODnjbtQlSDwZ2cUEeQz4E54Hltg==",
+      "resolved": "https://registry.npmjs.org/sharp/-/sharp-0.34.5.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "sharp",
+            "version": "0.34.5",
+            "scripts": {
+              "install": "node install/check.js || npm run build"
+            },
+            "binding_gyp_present": false,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "e6be69319929151be3aa240bf1485f25a3477cb6d2286f92510b9fceb3cbef26"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "sharp",
+            "version": "0.34.5",
+            "scripts": {
+              "install": "node install/check.js || npm run build"
+            },
+            "binding_gyp_present": false,
+            "manifest_sha256": "e6be69319929151be3aa240bf1485f25a3477cb6d2286f92510b9fceb3cbef26",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/@huggingface/transformers/node_modules/sharp",
+              "v3:/sharp@0.34.5"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/agentdb",
+      "name": "agentdb",
+      "version": "3.3.0",
+      "integrity": "sha512-KcDnlPil+ISxOW4v0yLgntH1ZgkGIsILXznDLzmgM6tcWmvaktVZrcgh2iv9vuJ1f5OvwtRuvJ0YUBbHj1NTUQ==",
+      "resolved": "https://registry.npmjs.org/agentdb/-/agentdb-3.3.0.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "agentdb",
+            "version": "3.3.0",
+            "scripts": {
+              "postinstall": "node scripts/postinstall.cjs || true"
+            },
+            "binding_gyp_present": false,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "493bc27898e52a53021ffd837c61cb342541b110c6c09201ed1669e352514f7e"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "agentdb",
+            "version": "3.3.0",
+            "scripts": {
+              "postinstall": "node scripts/postinstall.cjs || true"
+            },
+            "binding_gyp_present": false,
+            "manifest_sha256": "493bc27898e52a53021ffd837c61cb342541b110c6c09201ed1669e352514f7e",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/agentdb",
+              "v3:/agentdb@3.3.0(@types/node@20.19.27)(zod@3.25.76)"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": false,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/agentic-flow",
+      "name": "agentic-flow",
+      "version": "3.0.0",
+      "integrity": "sha512-HTn8/lMOlQmi2FDRcSCk/9UjHMxLu0RXwfyhpBFJr38q8EAMk5/YEqCe4o9d0Sw/NXc0lrvQ6OgbF8oLjNY/Xw==",
+      "resolved": "https://registry.npmjs.org/agentic-flow/-/agentic-flow-3.0.0.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "agentic-flow",
+            "version": "3.0.0",
+            "scripts": {
+              "postinstall": "node scripts/postinstall.js || true"
+            },
+            "binding_gyp_present": false,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "fb8cb06bbeaa08272aecb0b9123bf722490b2aa173b7a127f0cd43a360d8d4bd"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "agentic-flow",
+            "version": "3.0.0",
+            "scripts": {
+              "postinstall": "node scripts/postinstall.js || true"
+            },
+            "binding_gyp_present": false,
+            "manifest_sha256": "fb8cb06bbeaa08272aecb0b9123bf722490b2aa173b7a127f0cd43a360d8d4bd",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/agentic-flow",
+              "v3:/agentic-flow@3.0.0(@types/node@20.19.27)"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/agentic-flow/node_modules/onnxruntime-node",
+      "name": "onnxruntime-node",
+      "version": "1.27.0",
+      "integrity": "sha512-QEzGwrvNBgv4uPVdnbHsOGG4G6T96mdlcFI8aAKPjMU8wOPpVocPXb6k3QGkaZagVTv2G9Bnnbo6Z3JdXr1fQw==",
+      "resolved": "https://registry.npmjs.org/onnxruntime-node/-/onnxruntime-node-1.27.0.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "onnxruntime-node",
+            "version": "1.27.0",
+            "scripts": {
+              "prepare": "tsc --build script test .",
+              "postinstall": "node ./script/install"
+            },
+            "provenance": "exact-public-version-metadata",
+            "dist_integrity": "sha512-QEzGwrvNBgv4uPVdnbHsOGG4G6T96mdlcFI8aAKPjMU8wOPpVocPXb6k3QGkaZagVTv2G9Bnnbo6Z3JdXr1fQw==",
+            "metadata_sha256": "8602dd14d40a1f4a2b055a988b45ab2f00f8ec9f6e8cc119aa80f66209f32da2"
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/argon2",
+      "name": "argon2",
+      "version": "0.44.0",
+      "integrity": "sha512-zHPGN3S55sihSQo0dBbK0A5qpi2R31z7HZDZnry3ifOyj8bZZnpZND2gpmhnRGO1V/d555RwBqIK5W4Mrmv3ig==",
+      "resolved": "https://registry.npmjs.org/argon2/-/argon2-0.44.0.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "argon2",
+            "version": "0.44.0",
+            "scripts": {
+              "install": "cross-env ZERO_AR_DATE=1 node-gyp-build",
+              "prepare": "tsc"
+            },
+            "binding_gyp_present": true,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "88a7e481c637de1eb247272d3d3e075e965c292848cfd91e9417dc6583d8c65b"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "argon2",
+            "version": "0.44.0",
+            "scripts": {
+              "install": "cross-env ZERO_AR_DATE=1 node-gyp-build",
+              "prepare": "tsc"
+            },
+            "binding_gyp_present": true,
+            "manifest_sha256": "88a7e481c637de1eb247272d3d3e075e965c292848cfd91e9417dc6583d8c65b",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/argon2",
+              "v3:/argon2@0.44.0"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/better-sqlite3",
+      "name": "better-sqlite3",
+      "version": "12.9.0",
+      "integrity": "sha512-wqUv4Gm3toFpHDQmaKD4QhZm3g1DjUBI0yzS4UBl6lElUmXFYdTQmmEDpAFa5o8FiFiymURypEnfVHzILKaxqQ==",
+      "resolved": "https://registry.npmjs.org/better-sqlite3/-/better-sqlite3-12.9.0.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "better-sqlite3",
+            "version": "12.9.0",
+            "scripts": {
+              "install": "prebuild-install || node-gyp rebuild --release"
+            },
+            "binding_gyp_present": true,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "9d2524247288858cfba9fcd1636cf5540b95e87c4be0993eb61ecf9b2d0a8d14"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "better-sqlite3",
+            "version": "12.9.0",
+            "scripts": {
+              "install": "prebuild-install || node-gyp rebuild --release"
+            },
+            "binding_gyp_present": true,
+            "manifest_sha256": "9d2524247288858cfba9fcd1636cf5540b95e87c4be0993eb61ecf9b2d0a8d14",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/better-sqlite3",
+              "v3:/better-sqlite3@12.9.0"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/esbuild",
+      "name": "esbuild",
+      "version": "0.27.2",
+      "integrity": "sha512-HyNQImnsOC7X9PMNaCIeAm4ISCQXs5a5YasTXVliKv4uuBo1dKrG0A+uQS8M5eXjVMnLg3WgXaKvprHlFJQffw==",
+      "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.27.2.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "esbuild",
+            "version": "0.27.2",
+            "scripts": {
+              "postinstall": "node install.js"
+            },
+            "binding_gyp_present": false,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "3139328c2722a5f517e908ef5c3d8aa28cf154fe3931185ed456351e662025df"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "esbuild",
+            "version": "0.27.2",
+            "scripts": {
+              "postinstall": "node install.js"
+            },
+            "binding_gyp_present": false,
+            "manifest_sha256": "3139328c2722a5f517e908ef5c3d8aa28cf154fe3931185ed456351e662025df",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/esbuild",
+              "v3:/esbuild@0.27.2"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": false,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/fsevents",
+      "name": "fsevents",
+      "version": "2.3.3",
+      "integrity": "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==",
+      "resolved": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz",
+      "cached_exact_records": [],
+      "metadata_reused": false,
+      "os": [
+        "darwin"
+      ],
+      "cpu": null,
+      "optional": true,
+      "linux_applicability": "EXCLUDED_BY_LOCK_OS_DARWIN",
+      "script_review_required_for_linux": false
+    },
+    {
+      "path": "node_modules/hnswlib-node",
+      "name": "hnswlib-node",
+      "version": "3.0.0",
+      "integrity": "sha512-fypn21qvVORassppC8/qNfZ5KAOspZpm/IbUkAtlqvbtDNnF5VVk5RWF7O5V6qwr7z+T3s1ePej6wQt5wRQ4Cg==",
+      "resolved": "https://registry.npmjs.org/hnswlib-node/-/hnswlib-node-3.0.0.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "hnswlib-node",
+            "version": "3.0.0",
+            "scripts": {
+              "prepare": "husky install"
+            },
+            "binding_gyp_present": true,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "2ec256b1481fb1cc5fa2bff4ac43cc1f56b4e7c0eb197ff82b2cb8144bf31621"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "hnswlib-node",
+            "version": "3.0.0",
+            "scripts": {
+              "prepare": "husky install"
+            },
+            "binding_gyp_present": true,
+            "manifest_sha256": "2ec256b1481fb1cc5fa2bff4ac43cc1f56b4e7c0eb197ff82b2cb8144bf31621",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/hnswlib-node",
+              "v3:/hnswlib-node@3.0.0"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/sharp",
+      "name": "sharp",
+      "version": "0.32.6",
+      "integrity": "sha512-KyLTWwgcR9Oe4d9HwCwNM2l7+J0dUQwn/yf7S0EnTtb0eVS4RxO0eUSvxPtzT4F3SY+C4K6fqdv/DO27sJ/v/w==",
+      "resolved": "https://registry.npmjs.org/sharp/-/sharp-0.32.6.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "sharp",
+            "version": "0.32.6",
+            "scripts": {
+              "install": "(node install/libvips && node install/dll-copy && prebuild-install) || (node install/can-compile && node-gyp rebuild && node install/dll-copy)"
+            },
+            "binding_gyp_present": true,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "610d9cf008aa9d52925965ec2bf3fcf6870953062becea022212dbf3824eb59b"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "sharp",
+            "version": "0.32.6",
+            "scripts": {
+              "install": "(node install/libvips && node install/dll-copy && prebuild-install) || (node install/can-compile && node-gyp rebuild && node install/dll-copy)"
+            },
+            "binding_gyp_present": true,
+            "manifest_sha256": "610d9cf008aa9d52925965ec2bf3fcf6870953062becea022212dbf3824eb59b",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/sharp",
+              "v3:/sharp@0.32.6"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "node_modules/tldjs",
+      "name": "tldjs",
+      "version": "2.3.2",
+      "integrity": "sha512-EORDwFMSZKrHPUVDhejCMDeAovRS5d8jZKiqALFiPp3cjKjEldPkxBY39ZSx3c45awz3RpKwJD1cCgGxEfy8/A==",
+      "resolved": "https://registry.npmjs.org/tldjs/-/tldjs-2.3.2.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "tldjs",
+            "version": "2.3.2",
+            "scripts": {
+              "postinstall": "node ./bin/postinstall.js"
+            },
+            "binding_gyp_present": false,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "17d23289704112b366a7e413f0903d8d3545369b4c5b3d5f41668f64300fecb5"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "tldjs",
+            "version": "2.3.2",
+            "scripts": {
+              "postinstall": "node ./bin/postinstall.js"
+            },
+            "binding_gyp_present": false,
+            "manifest_sha256": "17d23289704112b366a7e413f0903d8d3545369b4c5b3d5f41668f64300fecb5",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:node_modules/tldjs",
+              "v3:/tldjs@2.3.2"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": false,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "v3/@claude-flow/plugin-agent-federation/node_modules/agentic-flow",
+      "name": "agentic-flow",
+      "version": "2.0.12-fix.8",
+      "integrity": "sha512-pp36lAT7lXF9cyXA7KqUBe8pg7nUrGrhb3hplzTJ1V2B6y7n+jBG8/wH1gTNWk+i1+Zzzgl2zfngmY9u2qEOFg==",
+      "resolved": "https://registry.npmjs.org/agentic-flow/-/agentic-flow-2.0.12-fix.8.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "agentic-flow",
+            "version": "2.0.12-fix.8",
+            "scripts": {
+              "postinstall": "node scripts/postinstall.js || true"
+            },
+            "binding_gyp_present": false,
+            "provenance": "retained-public-package-manifest",
+            "manifest_sha256": "12880d34ecdc1a512d0de098ee77b6ffbeab22f021d4afe6e25f2e27a36cc3ff"
+          }
+        },
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/cached-lifecycle-review-input.json",
+          "record": {
+            "name": "agentic-flow",
+            "version": "2.0.12-fix.8",
+            "scripts": {
+              "postinstall": "node scripts/postinstall.js || true"
+            },
+            "binding_gyp_present": false,
+            "manifest_sha256": "12880d34ecdc1a512d0de098ee77b6ffbeab22f021d4afe6e25f2e27a36cc3ff",
+            "cache_manifest": "retained-path:package.json",
+            "lock_inputs": [
+              "root:v3/@claude-flow/plugin-agent-federation/node_modules/agentic-flow",
+              "v3:/agentic-flow@2.0.12-fix.8(@types/node@20.19.27)"
+            ]
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": false,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "v3/@claude-flow/plugin-agent-federation/node_modules/better-sqlite3",
+      "name": "better-sqlite3",
+      "version": "11.10.0",
+      "integrity": "sha512-EwhOpyXiOEL/lKzHz9AW1msWFNzGc/z+LzeB3/jnFJpxu+th2yqvzsSWas1v9jgs9+xiXJcD5A8CJxAG2TaghQ==",
+      "resolved": "https://registry.npmjs.org/better-sqlite3/-/better-sqlite3-11.10.0.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "better-sqlite3",
+            "version": "11.10.0",
+            "scripts": {
+              "install": "prebuild-install || node-gyp rebuild --release"
+            },
+            "provenance": "exact-public-version-metadata",
+            "dist_integrity": "sha512-EwhOpyXiOEL/lKzHz9AW1msWFNzGc/z+LzeB3/jnFJpxu+th2yqvzsSWas1v9jgs9+xiXJcD5A8CJxAG2TaghQ==",
+            "metadata_sha256": "ec64eed2ce31089243e034e330d9d874b547a77ef6bbef562386787c98376c49"
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": null,
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    },
+    {
+      "path": "v3/@claude-flow/plugin-agent-federation/node_modules/onnxruntime-node",
+      "name": "onnxruntime-node",
+      "version": "1.27.0",
+      "integrity": "sha512-QEzGwrvNBgv4uPVdnbHsOGG4G6T96mdlcFI8aAKPjMU8wOPpVocPXb6k3QGkaZagVTv2G9Bnnbo6Z3JdXr1fQw==",
+      "resolved": "https://registry.npmjs.org/onnxruntime-node/-/onnxruntime-node-1.27.0.tgz",
+      "cached_exact_records": [
+        {
+          "source": "co_create/20261106/ruflo4834-implementation/execution-packet/lifecycle-review-inventory.json",
+          "record": {
+            "name": "onnxruntime-node",
+            "version": "1.27.0",
+            "scripts": {
+              "prepare": "tsc --build script test .",
+              "postinstall": "node ./script/install"
+            },
+            "provenance": "exact-public-version-metadata",
+            "dist_integrity": "sha512-QEzGwrvNBgv4uPVdnbHsOGG4G6T96mdlcFI8aAKPjMU8wOPpVocPXb6k3QGkaZagVTv2G9Bnnbo6Z3JdXr1fQw==",
+            "metadata_sha256": "8602dd14d40a1f4a2b055a988b45ab2f00f8ec9f6e8cc119aa80f66209f32da2"
+          }
+        }
+      ],
+      "metadata_reused": true,
+      "os": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "cpu": null,
+      "optional": true,
+      "script_review_required_for_linux": true
+    }
+  ],
+  "limitation": "Exact metadata/scripts retained are inspection evidence, not current cold network bytes or fresh runtime admission; no old attempts reset."
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "path": "AGENTS.md",
+    "git_blob": "68590f47c3a5cd47a0599548bf16ac7e4d0655b9"
+  },
+  {
+    "path": "CLAUDE.md",
+    "git_blob": "ada0d646294b95ca4abdbba4d657500633bd549e"
+  },
+  {
+    "path": "CONTRIBUTING.md",
+    "git_blob": "303ca272f501657ee7898db98f075a951f6a823c"
+  },
+  {
+    "path": "SECURITY.md",
+    "git_blob": "1e4d66fdcf22d51855fe012e62920cd3aae9338b"
+  },
+  {
+    "path": "LICENSE",
+    "git_blob": "5c4718198a4156beacc780980077043a98b0dd6a"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/mcp-server.ts",
+    "git_blob": "e14e2211a8a34952d66d529093a36414fc450b1b"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts",
+    "git_blob": "24fbd6ac6d67b2e8f46d3d252746bd723aa42156"
+  },
+  {
+    "path": "v3/@claude-flow/mcp/src/transport/http.ts",
+    "git_blob": "b5589a14188215fd1c60fa4bb8d812cdf838523a"
+  },
+  {
+    "path": "v3/@claude-flow/mcp/src/types.ts",
+    "git_blob": "6c001d19d7d9aaf040ce458c9e789783336d9a13"
+  }
+]

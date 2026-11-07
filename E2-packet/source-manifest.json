@@ -1,0 +1,152 @@
+{
+  "at": "2026-11-07T08:19:23.978837+00:00",
+  "base": "3fe9d70ba7d08ff12233003a9342037ab80af3ce",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 39909,
+      "sha256": "577885deb5e26f0bba510992972702ecb771718f7cafee22373a37411833f57a",
+      "before_blob": "f72d861324cd5c240dc2c2451b4a3a7c3bd701c3"
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/issue-3375-rescue-local-embedder.test.ts",
+      "bytes": 10064,
+      "sha256": "4afd695c0bf2af422444246433def2ced05783c3b3846c3c88ee6aa153c16215",
+      "before_blob": "9b19ae3a345b24705ab422f125e87886faf0e7f6"
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/memory-search-http-chain-4876.test.ts",
+      "bytes": 8565,
+      "sha256": "ed912cbd08cf476798339f63b7b39dfb2a94d1cbb3afbe7eecd3f136669e762c",
+      "before_blob": null
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/memory-search-native-query-reuse-4876.test.ts",
+      "bytes": 8063,
+      "sha256": "01771367a23eff6fad49a6bc955ebc06f631b7e19c5382563a4c9e9c6c00c98a",
+      "before_blob": null
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/memory-search-sqljs-fallback-4876.test.ts",
+      "bytes": 3892,
+      "sha256": "d1e64b85b47333d924b9fd58a7c3bb99765ed3a20c6a425f835300aabb4228a2",
+      "before_blob": null
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/memory-search-unified-errors-4876.test.ts",
+      "bytes": 5727,
+      "sha256": "ced4834f6ad393e7aa8df9ac28588d867a2a574036c1308907d1a3ae6390e748",
+      "before_blob": null
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/search-cancellation-fallback-4876.test.ts",
+      "bytes": 5526,
+      "sha256": "fedece8e516fc4cd51c3c290cb4b6b2933545122ed2fc7acbd5f3ab1310631ac",
+      "before_blob": null
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/search-request-4876.test.ts",
+      "bytes": 2983,
+      "sha256": "cc1c11f35520234c41f96f187b9ff2e819abb7c365f6923d985e6fcfcc297b69",
+      "before_blob": null
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/mcp-server.ts",
+      "bytes": 54504,
+      "sha256": "b89d0a9fc70c5ad0bab13c4edcc94abeb1a3236a8e67a4d828f7267c6cb0575a",
+      "before_blob": "e14e2211a8a34952d66d529093a36414fc450b1b"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts",
+      "bytes": 89864,
+      "sha256": "c224e1bc29edb0cfe08d6543b039a8aece217c52b12163bb6281b2dc66811086",
+      "before_blob": "24fbd6ac6d67b2e8f46d3d252746bd723aa42156"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/memory/memory-bridge.ts",
+      "bytes": 183425,
+      "sha256": "d8c3301c8c47b761b20b21b3479413fd27ec4fa85dfbf7fd88ae0f25cdf58421",
+      "before_blob": "920c97042839e5ccb2b423d63f482c48a57fa698"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/memory/memory-initializer.ts",
+      "bytes": 157291,
+      "sha256": "b022b05701b4fd0de3c68d60aa249d508c9fe8f697c8ca1f8aa76a472fb45880",
+      "before_blob": "e88b6cf2a7e5c88316cb59233403f43e1c4aec29"
+    },
+    {
+      "path": "v3/@claude-flow/cli/src/memory/search-request.ts",
+      "bytes": 3148,
+      "sha256": "91e8e86b3ea318963eb21696115be92ab263f308268c736d136c302a28312288",
+      "before_blob": null
+    },
+    {
+      "path": "v3/@claude-flow/cli/vitest.config.ts",
+      "bytes": 3865,
+      "sha256": "6c9009dab90cd5f151873bd871aa1096a63b54fc801b5ad822b47b34438df20c",
+      "before_blob": "4e66a62cb53ac132aa436c1427abfcd695432333"
+    },
+    {
+      "path": "v3/@claude-flow/mcp/__tests__/http-transport-timeout-3158.test.ts",
+      "bytes": 12287,
+      "sha256": "18c0a7170ebab080f340a14c470e6ab46677bdcd0bf119488cc11d8f68161986",
+      "before_blob": "0370094fc9a015e89eae73a4f13ac3ecb600d192"
+    },
+    {
+      "path": "v3/@claude-flow/mcp/__tests__/request-cancellation-dispatch-4876.test.ts",
+      "bytes": 4875,
+      "sha256": "e7e49d22d484bf7f6d4952705d2beb6d805e3e13d281990311647a9d37a3117e",
+      "before_blob": null
+    },
+    {
+      "path": "v3/@claude-flow/mcp/src/index.ts",
+      "bytes": 5936,
+      "sha256": "7fb1b6d9f00cf46e7933861c30d9fa7748215ef09eb021edc709f8f43483c306",
+      "before_blob": "870e46bb64a046ec31fad433fd6743e1b4a63917"
+    },
+    {
+      "path": "v3/@claude-flow/mcp/src/server.ts",
+      "bytes": 35016,
+      "sha256": "fdbd0d1f681256afa2ed5f403a13122ac9a1f48a6cf0956f909bfb3079082eaa",
+      "before_blob": "1c773c744954d0eae4bca9b936e5ce2a0fcf364e"
+    },
+    {
+      "path": "v3/@claude-flow/mcp/src/transport/http.ts",
+      "bytes": 21214,
+      "sha256": "1a752a006a265dfd552e82b01cb20527a47a29b066cb3df357f5070090fd7021",
+      "before_blob": "b5589a14188215fd1c60fa4bb8d812cdf838523a"
+    },
+    {
+      "path": "v3/@claude-flow/mcp/src/types.ts",
+      "bytes": 17520,
+      "sha256": "f4834e6b15aa6a5e3021c666223baaad8cabf4683bea611bf006172599f2c666",
+      "before_blob": "6c001d19d7d9aaf040ce458c9e789783336d9a13"
+    },
+    {
+      "path": "v3/vitest.config.ts",
+      "bytes": 8348,
+      "sha256": "ef674d9af36f5f2705b555fe62c036bb6ee1efc90b1f11e5a1d4c9ab7b95ef39",
+      "before_blob": "6db693f6eebbb92d3a2af7239f89cde2c58e95eb"
+    },
+    {
+      "path": "vitest.config.ts",
+      "bytes": 473,
+      "sha256": "862d8e49b2cb627ae5da1520295d76635c100c62cd76d18e23727745207673e1",
+      "before_blob": null
+    }
+  ],
+  "patch": "I5-source.patch",
+  "patch_sha256": "0f5b261d68b4544cea5c9ff5324b8fe1660f1da126c15d43c628978ad0f4f66e",
+  "patch_bytes": 108829,
+  "reverse_patch_applicability": true,
+  "compiled": false,
+  "tested": false,
+  "project_runtime": false,
+  "corrections_authored": [
+    "S1 restore actual filesystem forwarding after v3 mockReset in beforeEach; preserve dual fs mocks"
+  ],
+  "changed_since_I4": [
+    "v3/@claude-flow/cli/__tests__/search-cancellation-fallback-4876.test.ts"
+  ],
+  "parent_manifest_sha256": "28ecea80163488ef55646fc926f38006725ca16ace386203f6d346b24199209a"
+}

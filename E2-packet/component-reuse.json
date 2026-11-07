@@ -1,0 +1,32 @@
+[
+  {
+    "old_component": "co_create/20261106/ruflo4834-implementation/execution-packet/safe_extract.py",
+    "sha256": "9fe3909b256bf2e9b174f73f98d76a3ae1b96951855a3899d43827ad9c81b9d6",
+    "reuse": "unchanged extraction/lifecycle parser only"
+  },
+  {
+    "old_component": "co_create/20261106/ruflo4834-implementation/execution-packet/check_lifecycles.py",
+    "sha256": "5a3df06bdf02c24bcbff42e4210304d383796113a9ea26f1ab414be16cebbcfa",
+    "reuse": "unchanged extraction/lifecycle parser only"
+  },
+  {
+    "old_component": "co_create/20261106/ruflo4834-implementation/execution-packet/compare_reports.py",
+    "sha256": "0c949d1de229acac69f4cd81f82fcf9d5c627125d4dd34a7468563445ba3ac26",
+    "reuse": "report inspector only"
+  },
+  {
+    "old_component": "co_create/20261106/ruflo4834-implementation/execution-packet/source_cache.py",
+    "sha256": "ec635ce1b6a1bf2434c3eef430a3830dec5da36ee815e6766fce78f467983c4a",
+    "reuse": "import functions only; oldseed/apply absent"
+  },
+  {
+    "old_component": "co_create/20261106/ruflo4834-implementation/execution-packet/host.py",
+    "sha256": "bd41fc5cfc26728d70a88c50e6b4c9571e384808e5331b38693766537cedfc88",
+    "reuse": "inspected; not copied, no old clocks/state/names/cache ownership"
+  },
+  {
+    "old_component": "co_create/20261106/ruflo4834-implementation/execution-packet/aggregate.py",
+    "sha256": "569444efe52482b74829053bd853792e6dd2b7b4cbe27316d3fece0cbaa222c5",
+    "reuse": "inspected; not copied, no old clocks/state/names/cache ownership"
+  }
+]

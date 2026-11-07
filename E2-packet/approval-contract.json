@@ -1,0 +1,11 @@
+{
+  "not_an_approval": true,
+  "required_future_approval_fields": {
+    "execution_authorized": true,
+    "packet_sha256": "exact_final_reviewed_enabled_packet_digest",
+    "public_image_pull_authorized": true,
+    "dependency_network_authorized": true,
+    "output_uid_policy": "actual_runner_uid_gid"
+  },
+  "note": "approval.json excludedfrombyteseal byspecifiedcontract, butmustmatch exactsealedpacketdigest; absentnow. Switchingdraftexecutionflag requiresnewseal andexplicitapproval."
+}

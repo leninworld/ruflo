@@ -1,0 +1,759 @@
+{
+  "schema": 2,
+  "issue": 4876,
+  "execution_enabled": true,
+  "state": "SEALED_AFTER_EXACT_PACKET_REVIEW",
+  "base": "3fe9d70ba7d08ff12233003a9342037ab80af3ce",
+  "root_tree": "2cdd3faf13550c8e1022726bdbf436efd1631575",
+  "profiles": {
+    "g0": {
+      "node": "22",
+      "prepare": [],
+      "commands": []
+    },
+    "root20": {
+      "node": "20",
+      "prepare": [
+        {
+          "label": "root-install",
+          "run": "npm ci --legacy-peer-deps",
+          "cwd": ".",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        }
+      ],
+      "commands": [
+        {
+          "label": "security-build",
+          "run": "npm run build --workspace=@claude-flow/security",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "cli-core-overlay",
+          "run": "npm run build --prefix v3/@claude-flow/cli-core\ntest ! -L node_modules/@claude-flow/cli-core\nrm -rf node_modules/@claude-flow/cli-core/dist\ncp -r v3/@claude-flow/cli-core/dist node_modules/@claude-flow/cli-core/dist",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "root-ratchet",
+          "run": "node scripts/ci-test-ratchet.mjs",
+          "cwd": ".",
+          "cap_seconds": 1500,
+          "differential": true,
+          "report": ".test-results/vitest.json"
+        },
+        {
+          "label": "root-build",
+          "run": "npm run build:ts",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "root-pack",
+          "run": "npm pack --ignore-scripts --json --pack-destination /work/root-pack",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "local-registry20-0",
+          "run": "node --test tests/external-plugins.test.mjs tests/check-guard-tool-names.test.mjs tests/check-status-forwarding.test.mjs tests/all-plugins-smoke-workflow.test.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "local-registry20-1",
+          "run": "node scripts/check-guard-tool-names.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "local-registry20-2",
+          "run": "node scripts/audit-skill-mcp-tools.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "local-registry20-3",
+          "run": "node scripts/audit-plugin-mcp-prefix.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "local-registry20-4",
+          "run": "node scripts/check-status-forwarding.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "differential": true,
+          "report": null
+        }
+      ]
+    },
+    "v3test22": {
+      "node": "22",
+      "prepare": [
+        {
+          "label": "v3-install",
+          "run": "pnpm install --frozen-lockfile --reporter=ndjson",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        }
+      ],
+      "commands": [
+        {
+          "label": "stdio-policy",
+          "run": "node scripts/test-mcp-policy-stdio.mjs",
+          "cwd": "v3/@claude-flow/cli",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "v3-build",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "flywheel-proof",
+          "run": "node scripts/smoke-flywheel-proof.mjs",
+          "cwd": "v3/@claude-flow/cli",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "replay",
+          "run": "node scripts/replay-generation.mjs",
+          "cwd": "v3/@claude-flow/cli",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "v3-full",
+          "run": "REPORT=\"$RUNNER_TEMP/vitest-report.json\"\nrm -f \"$REPORT\"\nset +e\n# The bin shim execs node, so a segfault surfaces as 139. Through\n# `pnpm exec` a signalled child is reported as exit 1 instead.\n./node_modules/.bin/vitest run --reporter=default --reporter=json --outputFile.json=\"$REPORT\" 2>&1 | tee \"$RUNNER_TEMP/vitest-output.log\"\nEXIT=${PIPESTATUS[0]}\nset -e\nif [ \"$EXIT\" -eq 139 ]; then\n  # Count error lines explicitly: a scanner failure leaves ERRORS empty\n  # and fails closed instead of reading as \"no errors\".\n  ERRORS=\"$(sed -E 's/\\x1b\\[[0-9;]*m//g' \"$RUNNER_TEMP/vitest-output.log\" | grep -cE '^ *Errors +[0-9]+ errors?|Unhandled Errors|error during close' || true)\"\n  if [ -s \"$REPORT\" ] && [ -s \"$RUNNER_TEMP/vitest-output.log\" ] && [ \"$ERRORS\" = \"0\" ] \\\n    && node -e 'const r=JSON.parse(require(\"fs\").readFileSync(process.argv[1],\"utf8\")); process.exit(r.success===true && r.numTotalTestSuites>0 && r.numFailedTestSuites===0 && r.numFailedTests===0 ? 0 : 1)' \"$REPORT\"; then\n    echo \"::warning::vitest exited with SIGSEGV (139) after it reported a passing run with no unhandled errors \u2014 tolerated as a shutdown crash\"\n    exit 0\n  fi\n  echo \"::error::vitest exited with SIGSEGV (139) without a passing report (report present: $([ -s \"$REPORT\" ] && echo yes || echo no); error lines: ${ERRORS:-unreadable}); the suite did not finish, or it reported failures or unhandled errors\"\nfi\nexit \"$EXIT\"\n",
+          "cwd": "v3",
+          "cap_seconds": 1500,
+          "differential": true,
+          "report": "$RUNNER_TEMP/vitest-report.json"
+        }
+      ]
+    },
+    "v3build20": {
+      "node": "20",
+      "prepare": [
+        {
+          "label": "v3-install",
+          "run": "pnpm install --frozen-lockfile --reporter=ndjson",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        }
+      ],
+      "commands": [
+        {
+          "label": "strict-v3-build",
+          "run": "pnpm build",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "typecheck",
+          "run": "pnpm typecheck",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": true,
+          "report": null
+        }
+      ]
+    },
+    "cli22": {
+      "node": "22",
+      "prepare": [
+        {
+          "label": "v3-install",
+          "run": "pnpm install --frozen-lockfile --reporter=ndjson",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        }
+      ],
+      "commands": [
+        {
+          "label": "v3-build",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "strict-cli-build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "cli-full",
+          "run": "pnpm exec vitest run --reporter=default --reporter=json --outputFile.json=/work/evidence/cli-full.json",
+          "cwd": "v3/@claude-flow/cli",
+          "cap_seconds": 1200,
+          "differential": true,
+          "report": "/work/evidence/cli-full.json"
+        }
+      ]
+    },
+    "mcp22": {
+      "node": "22",
+      "prepare": [
+        {
+          "label": "v3-install",
+          "run": "pnpm install --frozen-lockfile --reporter=ndjson",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        }
+      ],
+      "commands": [
+        {
+          "label": "mcp-build",
+          "run": "pnpm --filter @claude-flow/mcp... --filter @claude-flow/shared... run build",
+          "cwd": "v3",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "mcp-full",
+          "run": "pnpm exec vitest run --reporter=default --reporter=json --outputFile.json=/work/evidence/mcp-full.json",
+          "cwd": "v3/@claude-flow/mcp",
+          "cap_seconds": 900,
+          "differential": true,
+          "report": "/work/evidence/mcp-full.json"
+        }
+      ]
+    },
+    "affected-smokes22": {
+      "node": "22",
+      "prepare": [
+        {
+          "label": "root-ignore",
+          "run": "npm ci --legacy-peer-deps --ignore-scripts",
+          "cwd": ".",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "native-root-binding",
+          "run": "npm rebuild better-sqlite3",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "v3-install",
+          "run": "pnpm install --frozen-lockfile --reporter=ndjson",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        }
+      ],
+      "commands": [
+        {
+          "label": "strict-workspace-build",
+          "run": "pnpm -r build",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "sqljs-symlink",
+          "run": "mkdir -p v3/node_modules\nln -sfn /work/source/node_modules/sql.js v3/node_modules/sql.js",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "smoke-memory-stats-legacy-db",
+          "run": "node scripts/smoke-memory-stats-legacy-db.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "smoke-graph-schema-migration",
+          "run": "node scripts/smoke-graph-schema-migration.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "smoke-graph-query-dispatch",
+          "run": "node scripts/smoke-graph-query-dispatch.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "smoke-graph-pathfinder",
+          "run": "node scripts/smoke-graph-pathfinder.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "smoke-trajectory-graph-edges",
+          "run": "node scripts/smoke-trajectory-graph-edges.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "smoke-graph-plugin-adapter",
+          "run": "node scripts/smoke-graph-plugin-adapter.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "benchmark-graph",
+          "run": "node scripts/benchmark-graph.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "test-mcp-protocol",
+          "run": "node plugins/ruflo-core/scripts/test-mcp-protocol.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "test-memory-import",
+          "run": "node plugins/ruflo-core/scripts/test-memory-import.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "test-mcp-roundtrips",
+          "run": "node plugins/ruflo-core/scripts/test-mcp-roundtrips.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "test-cli-no-crash",
+          "run": "node plugins/ruflo-core/scripts/test-cli-no-crash.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "test-consensus-transport",
+          "run": "node plugins/ruflo-core/scripts/test-consensus-transport.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "audit-tool-descriptions",
+          "run": "node scripts/audit-tool-descriptions.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "audit-cli-mcp-tools",
+          "run": "node scripts/audit-cli-mcp-tools.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "audit-vector-dim",
+          "run": "node scripts/audit-vector-dim.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "audit-fix-invariants",
+          "run": "node scripts/audit-fix-invariants.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "audit-env-var-precedence",
+          "run": "node scripts/audit-env-var-precedence.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "check-guard-tool-names",
+          "run": "node scripts/check-guard-tool-names.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "audit-skill-mcp-tools",
+          "run": "node scripts/audit-skill-mcp-tools.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "audit-plugin-mcp-prefix",
+          "run": "node scripts/audit-plugin-mcp-prefix.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "check-status-forwarding",
+          "run": "node scripts/check-status-forwarding.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        }
+      ]
+    },
+    "pack22": {
+      "node": "22",
+      "prepare": [
+        {
+          "label": "root-audit-deps",
+          "run": "npm ci --ignore-scripts --no-audit --no-fund --workspaces=false",
+          "cwd": ".",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "v3-install",
+          "run": "pnpm install --frozen-lockfile --reporter=ndjson",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": false,
+          "report": null
+        }
+      ],
+      "commands": [
+        {
+          "label": "tui-esbuild-native-probe",
+          "run": "node -e 'require(\"esbuild\").transformSync(\"const probe = 4876\")'",
+          "cwd": ".",
+          "cap_seconds": 30,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "release-build",
+          "run": "pnpm build",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "release-cli-tests",
+          "run": "pnpm --dir @claude-flow/cli exec vitest run __tests__/guidance-brain.test.ts __tests__/mcp-client-guardrail.test.ts __tests__/x-federation-join.test.ts",
+          "cwd": "v3",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "release-codex",
+          "run": "pnpm --dir @claude-flow/codex exec vitest run",
+          "cwd": "v3",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "release-security",
+          "run": "pnpm --dir @claude-flow/security exec vitest run",
+          "cwd": "v3",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "release-plugin-agent-federation",
+          "run": "pnpm --dir @claude-flow/plugin-agent-federation exec vitest run",
+          "cwd": "v3",
+          "cap_seconds": 300,
+          "differential": true,
+          "report": null
+        },
+        {
+          "label": "stage-test",
+          "run": "node scripts/__tests__/stage-internal-runtime-bundles.test.mjs",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        },
+        {
+          "label": "pack",
+          "run": "bash /inputs/pack.sh",
+          "cwd": ".",
+          "cap_seconds": 300,
+          "differential": false,
+          "report": null
+        }
+      ],
+      "followup": "same fresh lane: bounded consumer-warm then offline consumer-test; no clockreset"
+    }
+  },
+  "images": {
+    "20": "node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a",
+    "22": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa"
+  },
+  "source_manifest": "source-manifest.json",
+  "source_pack": {
+    "base": "3fe9d70ba7d08ff12233003a9342037ab80af3ce",
+    "root_tree": "2cdd3faf13550c8e1022726bdbf436efd1631575",
+    "shallow": [
+      "3fe9d70ba7d08ff12233003a9342037ab80af3ce"
+    ],
+    "bytes": 71927170,
+    "sha256": "6d639f6c489e27b384c496205c9010b44e4fa5194b9cabf50241010d0100b3e8"
+  },
+  "sealed_packet_sha256": "5e2ed1a69f65c6e9f6703a08fef6da62dd8402c4a3fc4e851b90bb08acef16c8",
+  "required_host_available_bytes": 15032385536,
+  "required_free_disk_bytes": 17179869184,
+  "owned_byte_cap": 12884901888,
+  "network_byte_cap": 21474836480,
+  "clock": {
+    "origin": "single workflow origin UTCepoch, shared byall14lanes",
+    "deadline_offset_seconds": 3420,
+    "evidence_reserve_seconds": 120,
+    "no_clock_reset": true
+  },
+  "source_snapshot_status": "I5parent22-fileexactsnapshot; S1mockforwardingresetonlyvsI4; disabledunapproved",
+  "optional_onnx": false,
+  "source_manifest_sha256": "05d49f747661ac2bcb06bda51aa06f67c5cb3414370b1fe10016b5d09e31ab0f",
+  "candidate_patch_sha256": "0f5b261d68b4544cea5c9ff5324b8fe1660f1da126c15d43c628978ad0f4f66e",
+  "pnpm_archive_sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
+  "lock_hashes": {
+    "package-lock.json": "a64678df5dd815ff46c04b8fb162ba3c7e3387fac698a4968ed65bd5898ef138",
+    "v3/pnpm-lock.yaml": "40feeb585435a403505a427a814e68dfefe764ead188ace3611554bcb6a0a2c1"
+  },
+  "lifecycle_allowlist_sha256": "beeb01e93ccc0a3eced8bcac11cf9978c3278d2c7b60f4bde573c8c424220852",
+  "measurement_commands": {
+    "root20": [
+      {
+        "label": "security-build",
+        "run": "npm run build --workspace=@claude-flow/security",
+        "cwd": ".",
+        "cap_seconds": 300,
+        "differential": false,
+        "report": null
+      },
+      {
+        "label": "cli-core-overlay",
+        "run": "npm run build --prefix v3/@claude-flow/cli-core\ntest ! -L node_modules/@claude-flow/cli-core\nrm -rf node_modules/@claude-flow/cli-core/dist\ncp -r v3/@claude-flow/cli-core/dist node_modules/@claude-flow/cli-core/dist",
+        "cwd": ".",
+        "cap_seconds": 300,
+        "differential": false,
+        "report": null
+      },
+      {
+        "label": "measure-root-actual-workers",
+        "run": "node node_modules/vitest/vitest.mjs run --maxWorkers=2 v3/@claude-flow/mcp/__tests__/http-transport-timeout-3158.test.ts v3/@claude-flow/cli/__tests__/memory-search-unified-2246.test.ts --reporter=json --outputFile=/work/evidence/measure-root.json",
+        "cwd": ".",
+        "cap_seconds": 120,
+        "differential": true
+      }
+    ],
+    "v3test22": [
+      {
+        "label": "measure-build",
+        "run": "pnpm --recursive --no-bail run build || true",
+        "cwd": "v3",
+        "cap_seconds": 600,
+        "differential": true
+      },
+      {
+        "label": "measure-real-candidate-chain",
+        "run": "pnpm exec vitest run __tests__/memory-search-http-chain-4876.test.ts __tests__/search-cancellation-fallback-4876.test.ts --reporter=json --outputFile=/work/evidence/measure-chain.json",
+        "cwd": "v3/@claude-flow/cli",
+        "cap_seconds": 120,
+        "candidate_only": true,
+        "report": "/work/evidence/measure-chain.json"
+      }
+    ],
+    "v3build20": [
+      {
+        "label": "measure-build",
+        "run": "pnpm --recursive --no-bail run build || true",
+        "cwd": "v3",
+        "cap_seconds": 600,
+        "differential": true
+      }
+    ],
+    "cli22": [
+      {
+        "label": "measure-build",
+        "run": "pnpm --recursive --no-bail run build || true",
+        "cwd": "v3",
+        "cap_seconds": 600,
+        "differential": true
+      },
+      {
+        "label": "measure-real-candidate-chain",
+        "run": "pnpm exec vitest run __tests__/memory-search-http-chain-4876.test.ts __tests__/search-cancellation-fallback-4876.test.ts --reporter=json --outputFile=/work/evidence/measure-chain.json",
+        "cwd": "v3/@claude-flow/cli",
+        "cap_seconds": 120,
+        "candidate_only": true,
+        "report": "/work/evidence/measure-chain.json"
+      }
+    ],
+    "mcp22": [
+      {
+        "label": "measure-build",
+        "run": "pnpm --recursive --no-bail run build || true",
+        "cwd": "v3",
+        "cap_seconds": 600,
+        "differential": true
+      },
+      {
+        "label": "measure-real-mcp-dispatch-timeout",
+        "run": "pnpm exec vitest run __tests__/request-cancellation-dispatch-4876.test.ts __tests__/http-transport-timeout-3158.test.ts --reporter=json --outputFile.json=/work/evidence/measure-mcp.json",
+        "cwd": "v3/@claude-flow/mcp",
+        "cap_seconds": 120,
+        "differential": true,
+        "report": "/work/evidence/measure-mcp.json"
+      }
+    ],
+    "affected-smokes22": [
+      {
+        "label": "measure-build",
+        "run": "pnpm --recursive --no-bail run build || true",
+        "cwd": "v3",
+        "cap_seconds": 600,
+        "differential": true
+      },
+      {
+        "label": "measure-real-candidate-chain",
+        "run": "pnpm exec vitest run __tests__/memory-search-http-chain-4876.test.ts __tests__/search-cancellation-fallback-4876.test.ts --reporter=json --outputFile=/work/evidence/measure-chain.json",
+        "cwd": "v3/@claude-flow/cli",
+        "cap_seconds": 120,
+        "candidate_only": true,
+        "report": "/work/evidence/measure-chain.json"
+      }
+    ],
+    "pack22": [
+      {
+        "label": "measure-build",
+        "run": "pnpm --recursive --no-bail run build || true",
+        "cwd": "v3",
+        "cap_seconds": 600,
+        "differential": true
+      },
+      {
+        "label": "measure-real-candidate-chain",
+        "run": "pnpm exec vitest run __tests__/memory-search-http-chain-4876.test.ts __tests__/search-cancellation-fallback-4876.test.ts --reporter=json --outputFile=/work/evidence/measure-chain.json",
+        "cwd": "v3/@claude-flow/cli",
+        "cap_seconds": 120,
+        "candidate_only": true,
+        "report": "/work/evidence/measure-chain.json"
+      }
+    ]
+  },
+  "current_admission_rule": {
+    "maximum_measured_peak_bytes": 10737418240,
+    "container_cap_bytes": 12884901888,
+    "minimum_actual_host_headroom_bytes": 2147483648,
+    "note": "Ceiling proposal only. Review currenthost and actualworker measurement before approving; not a sufficiencyclaim.",
+    "status": "Approved fail-closed execution-time ceilings; actual capacity and focused worker measurement remain mandatory."
+  },
+  "consumer_admission_command": "node /inputs/consumer-admission.mjs",
+  "current_admission_rule_proposal": {
+    "maximum_measured_peak_bytes": 10737418240,
+    "container_cap_bytes": 12884901888,
+    "minimum_actual_host_headroom_bytes": 2147483648,
+    "note": "Ceiling proposal only. Review currenthost and actualworker measurement before approving; not a sufficiencyclaim."
+  },
+  "execution_target": "GitHub-hosted public personal-fork Docker validation, exact workflow.yml and public-branch-plan.json; actual capacity gates remain mandatory.",
+  "image_network_byte_cap": 2147483648,
+  "resource_caps_status": "APPROVED FAIL-CLOSED CEILINGS: owned12GiB/free16GiB derive from retained maximumdisk10167320576B plusmargin; oldshipping nevercompletednewtwofreshnativeconsumers; newfootprints/compilepeak unknown; memoryfloor14GiBunchanged andgatedat origin/everylane",
+  "network_bound_proposal": {
+    "container_rx_bytes": 21474836480,
+    "host_image_rx_bytes": 2147483648,
+    "monitor_interval_seconds": 1,
+    "limits": "Sampled stop-on-breach, bounded by deadlines; not strict kernel byte firewall. Host image RX conservatively includes unrelated host traffic. No new gateway/service.",
+    "grounding": "Retained old root candidate Docker stats maximum sampled RX435000000 bytes, not cold total; image receipts uncompressed1095273994/1131415237 bytes. 20GiB is conservative proposed ceiling, not measured cold network price."
+  },
+  "lifecycle_allowlist_status": "Mechanically pinned retained command inventory; exact packet review required, not execution approval",
+  "pnpm_archive": {
+    "file": "pnpm-8.15.0.tgz",
+    "name": "pnpm",
+    "version": "8.15.0",
+    "bytes": 3805828,
+    "sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
+    "provenance": "Retained4834execution-packet/pnpm-8.15.0.tgz; exact hash equals retainedpacket-seal.json; metadata read only"
+  },
+  "consumer_retained_index_sha256": "73ed9985d82aa9bd37abe8278e31c20f6ccf326347c654a059b5937c177470a0"
+}

@@ -1,0 +1,129 @@
+{
+  "status": "PROPOSED_NOT_CAPACITY_OR_EXECUTION_APPROVAL",
+  "disk_measurements": [
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/D0/evidence/host-terminal.json",
+      "sha256": "aaca8f241f376f5ab4994a8ab170363937c58b61dedb9e0b33ad2aae1197c130",
+      "bytes": 10167320576,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-v3-test22-baseline/evidence/host-terminal.json",
+      "sha256": "706e046a3f585a52fd3f4d973b35357f164c592f68462435cba2df06e9dbe6f1",
+      "bytes": 6797774848,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-smokes22-baseline/evidence/host-terminal.json",
+      "sha256": "507d166e26b0f495e5c146e9a9f8825c66916608ad7d18dc46a5e57125fd6991",
+      "bytes": 6654492672,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-v3-test22-candidate/evidence/host-terminal.json",
+      "sha256": "a34c3581026bb25868cd229dd8a9e63fa0525ed107d1939c9d86199c3f04cdeb",
+      "bytes": 6797447168,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-cli22-baseline/evidence/host-terminal.json",
+      "sha256": "0ba920bf921d6db44f5772e6aed7650ad2199a20069ff641042c73e415df585a",
+      "bytes": 6735212544,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-root20-candidate/evidence/host-terminal.json",
+      "sha256": "7bc3f9a57610b31a01eda2a66b0dd7d8423b4a84011bf4461c7b04ce8e19267f",
+      "bytes": 7043219456,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-smokes22-candidate/evidence/host-terminal.json",
+      "sha256": "e4f7d8721ecfcdfd254a4244e62ee6af963626cf6c95ffd9fb9661e3c5b70084",
+      "bytes": 6654345216,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-quality20-candidate/evidence/host-terminal.json",
+      "sha256": "b1d6739eb8152de283ebb3305d079c024475643c6ee06c7e09e9905603231a3d",
+      "bytes": 6662643712,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-cli22-candidate/evidence/host-terminal.json",
+      "sha256": "1b322d1c483fb2c11a16a937f4cda986f34c1d68cc4bbb4a5720bd36f3fbc8a0",
+      "bytes": 6733590528,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-quality20-baseline/evidence/host-terminal.json",
+      "sha256": "0c1d52eb4c0240e6e6e858473c554e8e23ea23e5713b5a8dc1cb087ea6b333b4",
+      "bytes": 6662778880,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    },
+    {
+      "retained_id": "ruflo4834-implementation/hosted-evidence/ruflo4834-result-root20-baseline/evidence/host-terminal.json",
+      "sha256": "7639ce429df0cfa4200936a1227fe408f654c6550d8ccac399ee5138d990241d",
+      "bytes": 7219216384,
+      "basis": "preexisting cache/workspace blocks plus exclusive-runner free-space delta"
+    }
+  ],
+  "maximum_retained_disk_bytes": 10167320576,
+  "owned_cap_bytes": 12884901888,
+  "free_floor_bytes": 17179869184,
+  "margin_note": "12GiB exceeds retained maximum10167320576by2717581312; freefloor adds4GiBreserve; newpackconsumer/droppedoptional/sourcecompile usage stillunknown. Rootfilesystemonly; no /mnt or externaldata.",
+  "memory": {
+    "old_root20_cgroup_peak_bytes": 8281808896,
+    "old_cli22_cgroup_peak_bytes": 6434279424,
+    "container_cap_bytes": 12884901888,
+    "host_available_floor_bytes": 15032385536,
+    "note": "14GiBfloor retainedunchanged; originrecord andeachlanegateactual. Unknownubuntu24availability mayreject; noquietlowering.",
+    "retained_receipts": [
+      {
+        "retained_id": "ruflo4834-implementation/hosted-evidence/D0/root20-baseline/evidence/state.json",
+        "sha256": "8059ba309aeac34d497fb3389b82117279c96b3d2cb1a7479c88a979f50c6200",
+        "memory_admission": {
+          "cgroup_peak_bytes": 8281808896,
+          "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n",
+          "effective_workers": 2,
+          "probe_workers": 1,
+          "test_window_samples": {
+            "anon_peak": 216301568,
+            "max_node_procs": 2,
+            "errors": []
+          },
+          "conservative_scaled_bytes": 1614495744.0,
+          "cap_bytes": 12884901888,
+          "admitted": true
+        },
+        "note": "Oldsource09bd1bf, identicalroot/V3locks; notcurrentfullsuiteornewnativeconsumercapacityproof"
+      },
+      {
+        "retained_id": "ruflo4834-implementation/hosted-evidence/D0/cli22-baseline/evidence/state.json",
+        "sha256": "f4095ca0ec2d724933eee7cf3ec16ef403cce3a23f121cb92e64c717ab7302f0",
+        "memory_admission": {
+          "cgroup_peak_bytes": 6434279424,
+          "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n",
+          "effective_workers": 4,
+          "probe_workers": 5,
+          "test_window_samples": {
+            "anon_peak": 394694656,
+            "max_node_procs": 6,
+            "errors": []
+          },
+          "conservative_scaled_bytes": 1567110144.0,
+          "cap_bytes": 12884901888,
+          "admitted": true
+        },
+        "note": "Oldsource09bd1bf, identicalroot/V3locks; notcurrentfullsuiteornewnativeconsumercapacityproof"
+      }
+    ]
+  },
+  "new_native_consumers_unpriced": {
+    "oldshipping_status": "No earlier fullnativeconsumerinstallcompleted",
+    "proposed_disk_margin_bytes": 2717581312,
+    "expected_native_install_footprints": null,
+    "actual_sourcecompile_peak_bytes": null,
+    "rule": "Proposedcap applies, unknownfootprintsarenotzero; breachendsattempt"
+  }
+}

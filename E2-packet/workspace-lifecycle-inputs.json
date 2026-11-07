@@ -1,0 +1,209 @@
+[
+  {
+    "path": "package.json",
+    "name": "claude-flow",
+    "version": "3.72.2",
+    "scripts": {
+      "prepublishOnly": "node scripts/prepare-root-publish.mjs"
+    },
+    "manifest_sha256": "2bb50a53969c985910cf4a3f28cc1bf09170c3fae01fb35f7e1fe2360b26200c"
+  },
+  {
+    "path": "ruflo/package.json",
+    "name": "ruflo",
+    "version": "3.72.2",
+    "scripts": {
+      "prepublishOnly": "node scripts/prepare-publish.mjs"
+    },
+    "manifest_sha256": "c47903ee3ad539c1f084c4e1111d0eb34ab3fa845d20f4709c1e23588ef8866a"
+  },
+  {
+    "path": "v3/package.json",
+    "name": "@claude-flow/v3-monorepo",
+    "version": "3.0.0-alpha.1",
+    "scripts": {},
+    "manifest_sha256": "36a436f92ea5211db2be7c677b336d6481a9f74256dfc51d13a2f6113686f426"
+  },
+  {
+    "path": "v3/@claude-flow/swarm/package.json",
+    "name": "@claude-flow/swarm",
+    "version": "3.0.4",
+    "scripts": {},
+    "manifest_sha256": "a7c632516528e29cbfab8306c5a6996d3723a5d9bebde3a114ef43076f693392"
+  },
+  {
+    "path": "v3/@claude-flow/embeddings/package.json",
+    "name": "@claude-flow/embeddings",
+    "version": "3.0.0-alpha.18",
+    "scripts": {},
+    "manifest_sha256": "8d754c10745c59fcf04ac193bc106f6eacdcf4e3588a1cbd1fe21bb902a3b915"
+  },
+  {
+    "path": "v3/@claude-flow/memory/package.json",
+    "name": "@claude-flow/memory",
+    "version": "3.2.3",
+    "scripts": {
+      "prepublishOnly": "npm run build && node -e \"const m = await import('./dist/index.js'); const required = ['ControllerRegistry','MemoryService','UnifiedMemoryService','PersistentSonaCoordinator','RvfLearningStore','RvfMigrator']; const missing = required.filter(k => !m[k]); if (missing.length) { console.error('Missing exports:', missing); process.exit(1); } const forbidden = ['HnswLite','RvfBackend']; const leaks = forbidden.filter(k => k in m); if (leaks.length) { console.error('Forbidden public exports present (ADR-125):', leaks); process.exit(1); } console.log('All required exports present; ADR-125 surface clean');\""
+    },
+    "manifest_sha256": "400d4cb6e10e50eedcf9d56b8b3d003e1069c2c904c381abafdf85ea3055258c"
+  },
+  {
+    "path": "v3/@claude-flow/security/package.json",
+    "name": "@claude-flow/security",
+    "version": "3.0.6",
+    "scripts": {
+      "prepare": "npm run build",
+      "prepublishOnly": "npm run build && npm run test:oauth-surface"
+    },
+    "manifest_sha256": "89be5a9f02077cd9b9f3a1ed37540ffa32f7084ed0f38db20800268bc77ba2c6"
+  },
+  {
+    "path": "v3/@claude-flow/guidance/package.json",
+    "name": "@claude-flow/guidance",
+    "version": "3.0.0",
+    "scripts": {},
+    "manifest_sha256": "03b1f9b02a4dac2c44de0f9b537075140abc654fa24b2297fd75befaec2efc73"
+  },
+  {
+    "path": "v3/@claude-flow/plugins/package.json",
+    "name": "@claude-flow/plugins",
+    "version": "3.0.2",
+    "scripts": {},
+    "manifest_sha256": "f9c42ade6d6d3f76037fccb69803c3b59a3482816d9638d8c0ad1e8254ba7292"
+  },
+  {
+    "path": "v3/@claude-flow/plugin-iot-cognitum/package.json",
+    "name": "@claude-flow/plugin-iot-cognitum",
+    "version": "1.0.0",
+    "scripts": {},
+    "manifest_sha256": "ee54ed0cb3bdeb55046121e3b61ab66bbc2ca2d62912366fa78daa382e72b846"
+  },
+  {
+    "path": "v3/@claude-flow/integration/package.json",
+    "name": "@claude-flow/integration",
+    "version": "3.0.1",
+    "scripts": {},
+    "manifest_sha256": "bd76acd4f43a2b3646f487d100ffa2cddef4802483d355849793756666fdbca7"
+  },
+  {
+    "path": "v3/@claude-flow/aidefence/package.json",
+    "name": "@claude-flow/aidefence",
+    "version": "3.1.0",
+    "scripts": {
+      "prepublishOnly": "npm run build"
+    },
+    "manifest_sha256": "af2e53cb899e6cc2482912c0d328882273ef917fc9c5f2e348a6f7739966b02a"
+  },
+  {
+    "path": "v3/@claude-flow/providers/package.json",
+    "name": "@claude-flow/providers",
+    "version": "3.0.1",
+    "scripts": {},
+    "manifest_sha256": "246324ec728b3b2d9824cdf10511b1dd9d46dfba99301e62c03313f65b79e26d"
+  },
+  {
+    "path": "v3/@claude-flow/plugin-agent-federation/package.json",
+    "name": "@claude-flow/plugin-agent-federation",
+    "version": "1.0.5",
+    "scripts": {},
+    "manifest_sha256": "c5eadf5afa229b409484843f464d84d3b96c326e4c9a4ef9785b95d0390c3bdf"
+  },
+  {
+    "path": "v3/@claude-flow/codex/package.json",
+    "name": "@claude-flow/codex",
+    "version": "3.0.6",
+    "scripts": {
+      "prepublishOnly": "npm run build"
+    },
+    "manifest_sha256": "e7e2a78e70b990e200b94471d30cb7861d63ea7998cdcb5619a3e1453cdd3e31"
+  },
+  {
+    "path": "v3/@claude-flow/mcp/package.json",
+    "name": "@claude-flow/mcp",
+    "version": "3.1.6",
+    "scripts": {},
+    "manifest_sha256": "ff2df1e9f67c64992104c3a6e990d3a65817e02c2f0f173331fe6f7ba34a20b9"
+  },
+  {
+    "path": "v3/@claude-flow/shared/package.json",
+    "name": "@claude-flow/shared",
+    "version": "3.0.7",
+    "scripts": {},
+    "manifest_sha256": "3db61dacb7279bd5d8bcac7418ea93ae926625a34e649d53f20b62188b8b658d"
+  },
+  {
+    "path": "v3/@claude-flow/cli/package.json",
+    "name": "@claude-flow/cli",
+    "version": "3.72.2",
+    "scripts": {
+      "postinstall": "node ./scripts/postinstall.cjs",
+      "prepublishOnly": "node scripts/prepare-publish.mjs"
+    },
+    "manifest_sha256": "af528fcd1a2fdb3166c8f16ca622a1a09ab0c961c653ab605c81f263434b37c5"
+  },
+  {
+    "path": "v3/@claude-flow/testing/package.json",
+    "name": "@claude-flow/testing",
+    "version": "3.0.0",
+    "scripts": {},
+    "manifest_sha256": "3d48b9922aef242e015b7e2a0f2c26b870b7326b1a3ed839c38c7ee67774ea80"
+  },
+  {
+    "path": "v3/@claude-flow/browser/package.json",
+    "name": "@claude-flow/browser",
+    "version": "3.0.1",
+    "scripts": {
+      "postinstall": "node -e \"const{execSync}=require('child_process');const v=require('./package.json').dependencies['agent-browser'];try{execSync('agent-browser --version',{stdio:'ignore'});}catch{console.log('\\n\ud83d\udce6 Installing agent-browser globally...');try{execSync('npm install -g agent-browser@'+v,{stdio:'inherit'});console.log('\u2705 agent-browser installed successfully!');}catch(e){console.log('\u26a0\ufe0f  Could not install agent-browser globally. Run manually:\\n   npm install -g agent-browser@'+v);}}\""
+    },
+    "manifest_sha256": "3e39e75b732f1e34e0eb040de07d1cfcc9a7e3e3eb3860e8c2403aaa0b31f205"
+  },
+  {
+    "path": "v3/@claude-flow/watermark/package.json",
+    "name": "@claude-flow/watermark",
+    "version": "0.2.0",
+    "scripts": {},
+    "manifest_sha256": "60d72b31de491ec0b526b2811b88bb7290a7b486984c657c22448a1d7765031c"
+  },
+  {
+    "path": "v3/@claude-flow/deployment/package.json",
+    "name": "@claude-flow/deployment",
+    "version": "3.0.0",
+    "scripts": {},
+    "manifest_sha256": "187e5163d41c09c181eb1c0f42f159c88d21145b0a6dee6c69daee26f50f591c"
+  },
+  {
+    "path": "v3/@claude-flow/hooks/package.json",
+    "name": "@claude-flow/hooks",
+    "version": "3.0.2",
+    "scripts": {},
+    "manifest_sha256": "433db0f7083b3a819c98c83e3ccd7dd769cb8b0b5f8671b98fcab211c92a37eb"
+  },
+  {
+    "path": "v3/@claude-flow/cli-core/package.json",
+    "name": "@claude-flow/cli-core",
+    "version": "3.7.5",
+    "scripts": {},
+    "manifest_sha256": "a351d7e30c98dc8a165a9441179d0d8b2baa85b394a0ed653f6b978d7c85d64b"
+  },
+  {
+    "path": "v3/@claude-flow/performance/package.json",
+    "name": "@claude-flow/performance",
+    "version": "3.0.2",
+    "scripts": {},
+    "manifest_sha256": "9b25d9fb43c70ab257bc13dab3b9628b2f3f54efa147027f1c7cebee41bf0dcf"
+  },
+  {
+    "path": "v3/@claude-flow/neural/package.json",
+    "name": "@claude-flow/neural",
+    "version": "3.0.3",
+    "scripts": {},
+    "manifest_sha256": "7026e316b0e3a9f6ac04c49dd637f166b91e7a6fc2507507edf65b447821ec23"
+  },
+  {
+    "path": "v3/@claude-flow/claims/package.json",
+    "name": "@claude-flow/claims",
+    "version": "3.0.0",
+    "scripts": {},
+    "manifest_sha256": "c3b1d698777d17bb1fa7188b33da66d64723cd577b79af4411e349bc069ba38f"
+  }
+]

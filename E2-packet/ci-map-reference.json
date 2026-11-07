@@ -1,0 +1,9 @@
+{
+  "path": "../ci-closure-final.json",
+  "sha256": "430c76cb2f13562d1339126f172b84fba7fa163e20ae76d260f82680bec422b0",
+  "workflows": 37,
+  "jobs": 126,
+  "triggered_workflows": 9,
+  "source_files": 21,
+  "runtime_executed": false
+}

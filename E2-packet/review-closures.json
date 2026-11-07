@@ -1,0 +1,113 @@
+{
+  "status": "STATIC_AUTHORING_NOT_RUNTIME_OR_APPROVAL",
+  "source": "I5parent22files; sourceS1forwardingresetauthoredbyroot",
+  "controller_corrections": {
+    "R7": [
+      "aggregate.py:baseline_directories"
+    ],
+    "R8": [
+      "host.py:verify_packet",
+      "inside.py:verify_packet",
+      "seal.py",
+      "manifest.json:consumer_retained_index_sha256"
+    ],
+    "R9": [
+      "consumer-admission.mjs:admitManifest/nestedhostmapping"
+    ],
+    "R10": [
+      "lifecycle-admission.py",
+      "pnpm-build-obligations.json",
+      "workspace-lifecycle-inputs.json",
+      "inside.py:g0"
+    ],
+    "R11": [
+      "g0-native.sh",
+      "inside.py:npm_config_nodedir",
+      "README.md:nativesourcecompile/droppedsharp"
+    ],
+    "R12": [
+      "consumer.sh:npm-ls",
+      "aggregate.py:npm_ls",
+      "static-contract-closures.json"
+    ],
+    "R13": [
+      "cli-child-smoke.mjs",
+      "consumer.sh",
+      "aggregate.py:cli-child",
+      "packed-smoke.mjs:timeoutMechanism"
+    ],
+    "R14": [
+      "ann-smoke.mjs:4rows/2namespaces/limit1/returnedWindows/sameparentdynamicimportsentinel"
+    ],
+    "R15": [
+      "fallback-source.sh:installedCLIsubtree",
+      "fallback-resolution-check.mjs",
+      "fallback-import-inventory.json",
+      "manifest.json:fullrootignore-scriptsesbuildprobe"
+    ],
+    "R16": [
+      "manifest.json:measurement_commands.mcp22",
+      "static-contract-closures.json"
+    ],
+    "R17": [
+      "host.py:disk-delta"
+    ],
+    "R18": [
+      "host.py:actualuid/sharedorigin/diskdelta",
+      "inside.py:sharedorigindeadline",
+      "origin.py",
+      "resource-proposal.json"
+    ],
+    "R19": [
+      "privacy-review.json",
+      "public-branch-plan.json"
+    ],
+    "W1": [
+      "public-branch-plan.json"
+    ],
+    "W2": [
+      "workflow.yml:push/concurrency/run_attempt"
+    ],
+    "W3": [
+      "workflow.yml:permissions/actionSHA/ubuntu24"
+    ],
+    "W4": [
+      "workflow.yml:origin/14lanes/evidence/aggregate"
+    ],
+    "W5": [
+      "schedule.json",
+      "host.py:shared3420"
+    ],
+    "W6": [
+      "seal.py",
+      "approval-contract.json",
+      "manifest.json:disabledDRAFTbyteseal/profilesonlyauthoritative"
+    ]
+  },
+  "remaining_uncertainties": "Unknowncurrentrunnercapacity/newnativeconsumerfootprints/livegraphacquisition/fullsuiteoutcomes; eachfailsclosedwithinoneattempt",
+  "mandatory_models": false,
+  "required_final_delta": {
+    "E1": [
+      "cli-child-smoke.mjs:synthetictoken/Bearer/lastHTTP/stderrtail/guarddelta/diagnosticclassification",
+      "aggregate.py:preservefailureclassification;PARKonlyhelperattributed"
+    ],
+    "E2": [
+      "fallback-runner-config.mjs:server.deps.inline validation subtree"
+    ],
+    "E3": [
+      "consumer-admission.mjs:resolvedartifactreceipts",
+      "inside.py:uniqueadmittednpmcacheadd;nowarmcitrees",
+      "cache-acquire.py:max4processpool/same300sbudget/173retainedURLs/currentgraphuncertain"
+    ],
+    "E4": [
+      "manifest.json:measure-build600",
+      "host.py:measurephase900/consumertest1200;sharedoriginnorenewal"
+    ],
+    "E5": [
+      "static-contract-closures.json:exactrootnoexistingconfigvariants"
+    ],
+    "base_browser": [
+      "browser-postinstall-disclosure.json:expectednonrootEACCESbasefallback"
+    ]
+  }
+}
