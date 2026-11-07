@@ -1,4 +1,4 @@
-name: Ruflo 4876 E2 exact validation proposal
+name: Ruflo 4876 E3 final attempt2 correction proposal
 on:
   push:
     branches: [validation/ruflo-4876-e2]
@@ -23,7 +23,7 @@ jobs:
         name: Verify exact seal and record current capacity
         env:
           GITHUB_REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
-        run: python3 E2-packet/origin.py
+        run: python3 E3-packet/origin.py
       - if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         timeout-minutes: 2
@@ -53,7 +53,7 @@ jobs:
           E2_ORIGIN: ${{ needs.origin.outputs.epoch }}
           E2_PROFILE: ${{ matrix.profile }}
           E2_VARIANT: ${{ matrix.variant }}
-        run: python3 E2-packet/host.py "$E2_PROFILE" "$E2_VARIANT" "$GITHUB_WORKSPACE/runs/$E2_PROFILE-$E2_VARIANT" --origin "$E2_ORIGIN"
+        run: python3 E3-packet/host.py "$E2_PROFILE" "$E2_VARIANT" "$GITHUB_WORKSPACE/runs/$E2_PROFILE-$E2_VARIANT" --origin "$E2_ORIGIN"
       - if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         timeout-minutes: 2
@@ -81,7 +81,7 @@ jobs:
         with:
           path: artifacts
       - name: Aggregate complete lane evidence outside shared lane clock
-        run: python3 E2-packet/aggregate.py artifacts aggregate.json
+        run: python3 E3-packet/aggregate.py artifacts aggregate.json
       - if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         timeout-minutes: 2

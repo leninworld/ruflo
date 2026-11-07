@@ -109,5 +109,10 @@
     "base_browser": [
       "browser-postinstall-disclosure.json:expectednonrootEACCESbasefallback"
     ]
-  }
+  },
+  "E3_routine_delta": [
+    "host.py:createbridge/trustedsleep/immediatedetach/offlineproof/G0/realreattachproof/dependencyphase/detachproof",
+    "network-transition-check.py:stdlibinterfaces/routes/loopbackonly",
+    "mechanicalE3packetpaths/disabledmanifest/newattemptledger"
+  ]
 }

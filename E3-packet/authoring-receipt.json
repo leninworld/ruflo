@@ -1,0 +1,27 @@
+{
+  "state": "E3_ROUTINE_NETWORK_CORRECTION_DRAFT_ONLY",
+  "execution_enabled": false,
+  "source": "I5exact22filesunchangedfromexecutedE2",
+  "source_patch_sha256": "0f5b261d68b4544cea5c9ff5324b8fe1660f1da126c15d43c628978ad0f4f66e",
+  "checks": [
+    "PythonASTparseonly",
+    "JSONparseonly",
+    "I5payloadandbinaryhashesidenticaltoexecutedE2",
+    "executedE2allbytespreserved"
+  ],
+  "not_run": [
+    "E3networkfixture",
+    "Docker",
+    "Node",
+    "packethelperimports",
+    "projectcode",
+    "dependencyinstall",
+    "build",
+    "tests",
+    "network",
+    "Claude",
+    "publicwrites"
+  ],
+  "attempt1": "terminalactualfailedafter14G0passes,beforepreparation/producttests",
+  "proposed_attempt2": "finalof2; notauthorized; actualcombinedreview/freshgatesrequired"
+}

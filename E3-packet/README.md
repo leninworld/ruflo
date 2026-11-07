@@ -1,9 +1,6 @@
-# Ruflo4876 E2 whole execution proposal
+# Ruflo4876 E3 minimal network correction proposal
 
-This packet is statically authored, disabled and unapproved. It preserves the
-reviewed E1 packet and uses the parent's exact22-file I5 snapshot plus the
-current3fe9d70 source pack. No runtime, dependency install, build, test, Docker,
-network or Claude call occurred during E2 authoring.
+This final attempt2of2 has actual Claude conditional approval, the specified N1/N2 corrections, independent Codex agreement and fresh F2 gates. Executed attempt1 remains terminal failed. This packet preserves the reviewed E1/E2 evidence and exact22-file I5 snapshot at 3fe9d70; no E3 execution result is claimed.
 
 ## Scope and evidence
 
@@ -37,8 +34,8 @@ network or scripts. Post-execution event receipts remain an independent check.
 
 ## One shared attempt and bounded resources
 
-The proposed orphan branch contains only the external workflow and E2-packet.
-No branch, commit or push has been performed or authorized. The workflow only
+The approved diagnostic update contains only the external workflow and E3-packet.
+Executed E2 remains in commit575d5f0 and retained evidence. The workflow only
 triggers on a push to that exact branch; no workflow_dispatch/default-branch
 write is proposed. Every job rejects run_attempt other than1. Actions are pinned
 by SHA from retained evidence; permissions are contents:read, credentials are
@@ -73,7 +70,7 @@ new service/gateway is proposed.
 Acquisition uses existing Docker bridge only during preparation and consumer
 metadata/tarball acquisition, with proposed20GiB cumulative container RX and2GiB
 host image RX sampled caps plus deadlines. Tests and actual scriptful fresh
-consumers run with Docker network none and a Node loopback-only guard. Sampled
+consumers run with detached Docker networking (zero attached Networks) and a Node loopback-only guard. Sampled
 stop-on-breach is not a kernel bandwidth firewall; Docker daemon transfers can
 outlive a terminated pull client. Actual cold payload bytes and time remain
 unknown and are recorded within the same attempt, never priced as zero.
@@ -141,10 +138,10 @@ required. A subset is never labelled as a full external workflow.
 
 E2 provenance rewrites private host prefixes to retained IDs while preserving
 original E1/caches and exact public upstream source, licenses and author/contact
-emails. No private history or host cache is added. A whole public-content review
-and exact execution review remain required. approval.json is intentionally absent;
-execution_enabled remains false. The draft byte seal identifies bytes only and
-is neither a passing validation result nor execution authorization.
+emails. No private history or host cache is added. The public-content and exact execution reviews are complete, with the
+specified final corrections and fresh checks recorded in approval.json. The
+execution flag is enabled for final attempt2of2. Its byte seal identifies the
+approved packet; it is not a passing validation result.
 
 ## Required final controller delta
 
@@ -167,3 +164,27 @@ at most4 npm cache-add processes, a shared300s cache budget and60s perartifact,
 within the existing preparation/phase/origin limits. Current graph size and cold
 startup/transfer time remain unknown; no300s fit or price closure is claimed.
 The pool creates no warm consumer install trees and does not raise resource caps.
+
+## Actual attempt1 and sole proposed correction
+
+Run42356340284 completed G0 in all14lanes, then every lane failed the Docker
+bridge attachment before dependency preparation or product tests. All14owned
+containers stopped. E2 bytes, authorization and all744retained evidence files
+remain immutable; no attempt1 outcome is relabelled or replayed. The precise
+Docker error was: container cannot be connected to multiple networks with one
+of the networks in private(none)mode.
+
+E3 changes the main container creation network from none to defaultbridge. Only
+the trusted image entrypoint and sleep run initially; the controller immediately
+disconnects bridge and verifies zero DockerNetworks before offline G0. A tiny
+owned stdlib fixture inspects real interfaces/default routes and exchanges two
+bytes over loopback, with no external request. After G0, the real bridge attach
+is inspected and checked before dependency preparation. Detach/zeroNetworks
+and the same offline fixture are required before all product tests. Pack22
+repeats the exact attach/check/acquire/detach/check pattern for consumers. No
+new service, gateway, image, host, source change or resource/deadline increase
+is introduced. Tiny proof calls use existing clock and bounded15s commands.
+
+This would be finalattempt2of2 only after one combined actual-results/exactdelta
+Claude review, independent agreement, fresh mutable gates and explicit user
+authorization. No runtime or network check of E3 has been performed.

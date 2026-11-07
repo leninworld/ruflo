@@ -580,7 +580,7 @@
     "bytes": 71927170,
     "sha256": "6d639f6c489e27b384c496205c9010b44e4fa5194b9cabf50241010d0100b3e8"
   },
-  "sealed_packet_sha256": "5e2ed1a69f65c6e9f6703a08fef6da62dd8402c4a3fc4e851b90bb08acef16c8",
+  "sealed_packet_sha256": "89772e7447bc3eb398c4d0f2330cfe593dc2312e6cb72b16b83a79ef1bf16c93",
   "required_host_available_bytes": 15032385536,
   "required_free_disk_bytes": 17179869184,
   "owned_byte_cap": 12884901888,
@@ -755,5 +755,13 @@
     "sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
     "provenance": "Retained4834execution-packet/pnpm-8.15.0.tgz; exact hash equals retainedpacket-seal.json; metadata read only"
   },
-  "consumer_retained_index_sha256": "73ed9985d82aa9bd37abe8278e31c20f6ccf326347c654a059b5937c177470a0"
+  "consumer_retained_index_sha256": "73ed9985d82aa9bd37abe8278e31c20f6ccf326347c654a059b5937c177470a0",
+  "attempt_policy": {
+    "closed_attempt": 1,
+    "proposed_attempt": 2,
+    "maximum_attempts": 2,
+    "retry_authorized": false,
+    "requires": "Actualcombinedattempt1results+exactE3correctionClaude review, independentagreement,freshgates,explicitauthorization",
+    "oldattempt1": "terminalfailedbeforepreparation/producttests; neverreplay/reset"
+  }
 }

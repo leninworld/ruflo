@@ -1,14 +1,14 @@
 {
-  "execution_enabled": false,
+  "execution_enabled": true,
   "proposed_orphan_branch": "validation/ruflo-4876-e2",
   "allowed_top_level": [
     ".github/workflows/ruflo4876-e2.yml",
-    "E2-packet/"
+    "E3-packet/"
   ],
-  "workflow_source": "E2-packet/workflow.yml copiedbyteidentical toexternalworkflowpath andcheckedbyorigin",
+  "workflow_source": "E3-packet/workflow.yml copiedbyteidentical toexternalworkflowpath andcheckedbyorigin",
   "excluded": "Allupstreamworkflowfleet; personaldata; oldattemptreceipts/cachepayloads; noSigned-off-byline",
   "sourcepack_bytes": 71927170,
   "sourcepack_GitHub_warning": "Under100MBhardlimit; largefilewarningexpected",
-  "authorization": "Nobranch/commit/push/fork/workflowdispatchperformedorauthorizedbythispacket",
+  "authorization": "One ordinary fast-forward diagnostic update on existing validation/ruflo-4876-e2 after actualClaude103240ms approval, specifiedN1/N2 corrections, independentCodexagreement and freshF2gates. Finalattempt2of2; no force, dispatch, rerun, contributionPR, release or accountchange.",
   "actions": "Allactionrefs pinnedfromretainedsourceevidence; currentactionauthorizationreviewrequired; no newfetch"
 }

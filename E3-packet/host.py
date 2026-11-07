@@ -1,4 +1,4 @@
-"""E2 proposed hosted controller; disabled until exact review/authorization."""
+"""E3 proposed minimal network-mode correction; disabled until exact review/authorization."""
 import argparse,hashlib,json,os,signal,subprocess,sys,time,uuid
 from pathlib import Path
 sys.dont_write_bytecode=True
@@ -19,7 +19,7 @@ def verify_packet(root):
  return manifest,digest
 
 M,packet_digest=verify_packet(P)
-assert M['execution_enabled'] is True and M['state']=='SEALED_AFTER_EXACT_PACKET_REVIEW','E2_DRAFT_DISABLED'
+assert M['execution_enabled'] is True and M['state']=='SEALED_AFTER_EXACT_PACKET_REVIEW','E3_DRAFT_DISABLED'
 A=json.loads((P/'approval.json').read_text());assert A['output_uid_policy']=='actual_runner_uid_gid','OUTPUT_UID_POLICY_NOT_AUTHORIZED';assert A['execution_authorized'] is True and A['packet_sha256']==packet_digest,'APPROVAL_MISMATCH'
 assert not json.loads((P/'unclosed-pricing.json').read_text())['blockers'],'UNAPPROVED_PACKET'
 parser=argparse.ArgumentParser();parser.add_argument('profile');parser.add_argument('variant');parser.add_argument('output');parser.add_argument('--origin',type=float,required=True);args=parser.parse_args()
@@ -66,6 +66,10 @@ def run(label,argv,cap=30,cleanup=False):
  finally:
   kill_group(child);record.update(exit=child.returncode if child else None,failure=failure,seconds=time.time()-begin,stdout=stem.with_suffix('.stdout').name,stderr=stem.with_suffix('.stderr').name);stem.with_suffix('.json').write_text(json.dumps(record)+'\n')
 def inspect():return json.loads(run('inspect',['docker','inspect',container]))[0]
+def check_network(stage,online):
+ d=inspect();networks=d['NetworkSettings']['Networks']
+ assert (set(networks)=={'bridge'} and networks['bridge'].get('IPAddress')) if online else not networks,('NETWORK_TRANSITION_STATE',stage,networks)
+ run('network-proof-'+stage,['docker','exec',container,'python3','/inputs/network-transition-check.py','online' if online else 'offline',stage],15)
 def rx_counter(reset=False):
  global network_used,last_rx
  rx=int(run('container-rx',['docker','exec',container,'sh','-c',"for p in /sys/class/net/*/statistics/rx_bytes; do case \"$p\" in */lo/*) continue;; esac; cat \"$p\"; done | awk '{n+=$1} END {print n+0}'"]).strip())
@@ -100,16 +104,20 @@ try:
  image=M['images'][M['profiles'][profile]['node']];assert A['public_image_pull_authorized'] is True
  run('pull-image',['docker','pull','--platform','linux/amd64',image],180)
  image_info=json.loads(run('image-inspect',['docker','image','inspect',image]))[0];assert image_info['Architecture']=='amd64' and image_info['Os']=='linux' and image in image_info['RepoDigests']
- container='ruflo4876-e2-'+attempt
- run('create',['docker','create','--name',container,'--platform','linux/amd64','--network','none','--init','--user',f'{uid}:{gid}','--memory','12g','--memory-swap','12g','--pids-limit','1024','--cap-drop','ALL','--security-opt','no-new-privileges','--env','PROFILE='+profile,'--env','VARIANT='+variant,'--env','EXPECTED_UID='+str(uid),'--env','EXPECTED_GID='+str(gid),'--mount',f'type=bind,src={P},dst=/inputs,readonly','--mount',f'type=bind,src={W},dst=/work',image,'sleep','infinity'])
- run('start',['docker','start',container]);d=inspect();assert d['HostConfig']['Memory']==d['HostConfig']['MemorySwap']==12*2**30
- phase('g0',180);assert A['dependency_network_authorized'] is True
- run('connect',['docker','network','connect','bridge',container]);rx_counter(True);phase('prepare',900);run('disconnect',['docker','network','disconnect','bridge',container]);assert not inspect()['NetworkSettings']['Networks']
+ assert A['dependency_network_authorized'] is True,'BRIDGE_LIFECYCLE_NOT_AUTHORIZED'
+ container='ruflo4876-e3-'+attempt
+ run('create',['docker','create','--name',container,'--platform','linux/amd64','--network','bridge','--init','--user',f'{uid}:{gid}','--memory','12g','--memory-swap','12g','--pids-limit','1024','--cap-drop','ALL','--security-opt','no-new-privileges','--env','PROFILE='+profile,'--env','VARIANT='+variant,'--env','EXPECTED_UID='+str(uid),'--env','EXPECTED_GID='+str(gid),'--mount',f'type=bind,src={P},dst=/inputs,readonly','--mount',f'type=bind,src={W},dst=/work',image,'sleep','infinity'])
+ run('start',['docker','start',container])
+ # Only trusted sleep ran while attached; detach before G0/source helpers.
+ run('initial-disconnect',['docker','network','disconnect','bridge',container]);check_network('before-g0',False)
+ d=inspect();assert d['HostConfig']['Memory']==d['HostConfig']['MemorySwap']==12*2**30
+ phase('g0',180)
+ run('connect',['docker','network','connect','bridge',container]);check_network('before-prepare',True);rx_counter(True);phase('prepare',900);run('disconnect',['docker','network','disconnect','bridge',container]);check_network('before-product-tests',False)
  phase('measure',900)
  mem={l.split(':')[0]:int(l.split()[1])*1024 for l in Path('/proc/meminfo').read_text().splitlines()};(E/'post-measure-memory.json').write_text(json.dumps(mem)+'\n');assert mem['MemAvailable']>=M['current_admission_rule']['minimum_actual_host_headroom_bytes']
  phase('test',1800)
  if profile=='pack22':
-  run('consumer-connect',['docker','network','connect','bridge',container]);rx_counter(True);phase('consumer-warm',600);run('consumer-disconnect',['docker','network','disconnect','bridge',container]);assert not inspect()['NetworkSettings']['Networks'];phase('consumer-test',1200)
+  run('consumer-connect',['docker','network','connect','bridge',container]);check_network('before-consumer-acquisition',True);rx_counter(True);phase('consumer-warm',600);run('consumer-disconnect',['docker','network','disconnect','bridge',container]);check_network('before-consumer-tests',False);phase('consumer-test',1200)
  (E/'terminal.json').write_text(json.dumps({'state':'LANE_COMPLETE_NOT_AGGREGATE_PASS','origin_epoch':origin,'deadline_epoch':deadline,'completed_epoch':time.time(),'elapsed_seconds':time.time()-origin,'profile':profile,'variant':variant})+'\n')
 except BaseException as error:
  (E/'terminal.json').write_text(json.dumps({'state':'FAILED','failure':repr(error),'origin_epoch':origin,'deadline_epoch':deadline,'observed_epoch':time.time(),'profile':profile,'variant':variant})+'\n');raise

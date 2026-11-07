@@ -1,5 +1,5 @@
 {
-  "execution_enabled": false,
+  "execution_enabled": true,
   "blockers": [],
   "proposed_time_caps_are_not_estimates": true,
   "optional_onnx": {
@@ -29,8 +29,8 @@
     "Singleworkfloworigin UTCepoch +3420harddeadline sharedby14isolatedubuntu24VMs; latestart recordsNOT_STARTED_DEADLINE; no reruns"
   ],
   "genuinely_unresolved_fields": [
-    "approval.json intentionallyabsent; executionauthorizationnotgranted",
-    "manifest.execution_enabled false/stateDRAFT: wholepacketreview andindependentagreement stillrequired"
+    "ActualClaude103240ms conditionalexecutionapproval and independentN1/N2 agreement recorded; finalattempt2of2",
+    "Actualhostcapacity,dependencygraph,resourceusage and fullproductresults remain unproven and failclosed within unchangedlimits"
   ],
   "unpriced_actuals_not_preexecution_paperwork": [
     "currenthostcapacity/currentcgroupmeasurements",

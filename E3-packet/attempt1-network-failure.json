@@ -1,0 +1,17 @@
+{
+  "state": "ATTEMPT1_TERMINAL_FAILED_NO_RETRY_AUTHORIZATION",
+  "run": 42356340284,
+  "head": "575d5f0ba29b73680dd970bde01fe0332a12b43d",
+  "assessment_retained_id": "E2-run-assessment.json",
+  "assessment_sha256": "f5cf2e96b225fa9fe3dde6143249ed00c9f46df507b448b7e3c60f131b151012",
+  "all14G0_complete": true,
+  "all14_bridge_connect_failed": true,
+  "preparation_started": false,
+  "product_tests_started": false,
+  "all14_owned_containers_stopped": true,
+  "cause": "Dockercreate--networknone selectsprivate networkmode; Docker rejects connectingbridge tothatcontainer",
+  "correction": "Createonbridge; onlytrustedsleep untilimmediatedetach+offlineproof; G0offline; reattach+inspect+tinyroute/interface/loopbackfixture beforeacquisition; detach+offlineproof beforetests",
+  "attempt2_authorized": false,
+  "source_patch_sha256": "0f5b261d68b4544cea5c9ff5324b8fe1660f1da126c15d43c628978ad0f4f66e",
+  "scope_resources_deadlines_counters": "unchanged; finalattempt2of2onlyafteractualreview/freshgates/explicitapproval"
+}
