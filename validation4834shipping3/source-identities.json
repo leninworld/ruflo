@@ -1,0 +1,286 @@
+[
+  {
+    "path": "v3/@claude-flow/cli/src/commands/providers.ts",
+    "git_blob": "1efd9499d2481d621d3af37c76a57110cca43d18"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/mcp-tools/agent-execute-core.ts",
+    "git_blob": "8bf9b0766374977b472774ef3836092bcf6b747d"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/mcp-tools/agent-tools.ts",
+    "git_blob": "ebf874e8ce0e7d5d5e661a2a1d61e11bab64d5fb"
+  },
+  {
+    "path": "v3/@claude-flow/cli/package.json",
+    "git_blob": "fb493af0da3d2c783d4b0aac3fffe55330e36b25"
+  },
+  {
+    "path": "v3/@claude-flow/cli/vitest.config.ts",
+    "git_blob": "4e66a62cb53ac132aa436c1427abfcd695432333"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/services/config-file-manager.ts",
+    "git_blob": "c26c038bd32deb861ac9675dee090fa67981367a"
+  },
+  {
+    "path": "v3/@claude-flow/cli/__tests__/agent-provider-selection.test.ts",
+    "git_blob": "b2fadf0cb0d9dc639167f3cf7501ac1bdfdfa10e"
+  },
+  {
+    "path": ".github/workflows/ci.yml",
+    "git_blob": "2db381503d3272b4a064b631608fa75be5380a10"
+  },
+  {
+    "path": ".github/workflows/v3-ci.yml",
+    "git_blob": "eec8d6ef56ef47b19bff251ffa032e9a7aa84402"
+  },
+  {
+    "path": "scripts/smoke-agent-execute-providers.mjs",
+    "git_blob": "7dfcc64b53dbe1a20bafd95219064c085a294a17"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/commands/agent.ts",
+    "git_blob": "ac87de84417d6d4b598d22f0b3fcbf5e54131146"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/mcp-tools/types.ts",
+    "git_blob": "bd8201c0742439203245861bb748a68ebc806ba0"
+  },
+  {
+    "path": "AGENTS.md",
+    "git_blob": "68590f47c3a5cd47a0599548bf16ac7e4d0655b9"
+  },
+  {
+    "path": "CLAUDE.md",
+    "git_blob": "ada0d646294b95ca4abdbba4d657500633bd549e"
+  },
+  {
+    "path": "CONTRIBUTING.md",
+    "git_blob": "303ca272f501657ee7898db98f075a951f6a823c"
+  },
+  {
+    "path": "SKILL.md",
+    "git_blob": "b41415aafb2ca8c073edad92b0bd4f46d231c9a4"
+  },
+  {
+    "path": "LICENSE",
+    "git_blob": "5c4718198a4156beacc780980077043a98b0dd6a"
+  },
+  {
+    "path": "SECURITY.md",
+    "git_blob": "1e4d66fdcf22d51855fe012e62920cd3aae9338b"
+  },
+  {
+    "path": "CLAUDE.local.md",
+    "git_blob": "2f5d2db29ce2b06c3678895abbc3c3ad23990132"
+  },
+  {
+    "path": ".github/ISSUE_TEMPLATE/rollback-incident.md",
+    "git_blob": "2783f6a3fab7a5470eba807994e71a60d8556dad"
+  },
+  {
+    "path": "v3/CLAUDE.md",
+    "git_blob": "69cd8e39c874c3c6682269cb526769d42cf9315c"
+  },
+  {
+    "path": "v3/@claude-flow/cli/CLAUDE.md",
+    "git_blob": "733464a8cccb80a60185af62ca1e7fe9c65eedd2"
+  },
+  {
+    "path": "package-lock.json",
+    "git_blob": "16c676aed47b11a2ce60d8c9e51ad973a6edd8ce"
+  },
+  {
+    "path": "v3/pnpm-lock.yaml",
+    "git_blob": "63ebcc880dbaeb0690592aca938e82f4fe56b031"
+  },
+  {
+    "path": "scripts/ci-test-ratchet.mjs",
+    "git_blob": "46a611807ab2941aa6bf468ee07e43de232237b3"
+  },
+  {
+    "path": "scripts/audit-tool-descriptions.mjs",
+    "git_blob": "9a13182f1a7abd65fe4b2723ff371880cfb2fa5d"
+  },
+  {
+    "path": "scripts/audit-cli-mcp-tools.mjs",
+    "git_blob": "88c26997e11472adddd50fe9d103eeb682bf18d8"
+  },
+  {
+    "path": "scripts/audit-fix-invariants.mjs",
+    "git_blob": "8cd0ab33149ffbe85cee8c6fb280fe29510f9e55"
+  },
+  {
+    "path": "scripts/audit-env-var-precedence.mjs",
+    "git_blob": "8a37356f5618301549e4ce3def438f6d8b809af3"
+  },
+  {
+    "path": "scripts/smoke-witness-marker-drift.mjs",
+    "git_blob": "2c717f983cb154d80ff33ef68729004ce9e0512d"
+  },
+  {
+    "path": "plugins/ruflo-core/scripts/witness/verify.mjs",
+    "git_blob": "ad0f865178828e8921f45c7b6ec766892edc0896"
+  },
+  {
+    "path": "plugins/ruflo-core/scripts/test-mcp-roundtrips.mjs",
+    "git_blob": "582f89e6a697026d33ee03f6c74ef7f7c7ed6e9e"
+  },
+  {
+    "path": "plugins/ruflo-core/scripts/test-cli-no-crash.mjs",
+    "git_blob": "a196caf8850778ee131f6dc968f29c5f0200271e"
+  },
+  {
+    "path": "plugins/ruflo-core/scripts/test-consensus-transport.mjs",
+    "git_blob": "fa479b054ace0ca93a6a2f5a18c4f20672dea783"
+  },
+  {
+    "path": "scripts/smoke-wasm-provider-bridge.mjs",
+    "git_blob": "940bae6ab310c44a3e50ce70143a48e6b420cf41"
+  },
+  {
+    "path": "scripts/smoke-cli-npx-install.mjs",
+    "git_blob": "bcca1dfde7b403371b69be09ad1412cc3e37e06f"
+  },
+  {
+    "path": "verification/linux/manifest.md.json",
+    "git_blob": "56965e2e8cf6973d111ae78c0126d749c889b7fd"
+  },
+  {
+    "path": "package.json",
+    "git_blob": "f33eb68f5eab1cf6ff817d44810084ecd14c6919"
+  },
+  {
+    "path": "ruflo/package.json",
+    "git_blob": "29a8ef5173dc06ee6393b25f77c3bc6665b9c5c6"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/commands/neural.ts",
+    "git_blob": "1a8bb1c9e312c8f0884d17314fa2c32f12cee0ca"
+  },
+  {
+    "path": "v3/@claude-flow/neural/package.json",
+    "git_blob": "2c343b296030bfba9f8aadceb1cd357b98ba9fda"
+  },
+  {
+    "path": ".claude-plugin/marketplace.json",
+    "git_blob": "a51c35b06f020af46540d42841822b8f4c7b8a8b"
+  },
+  {
+    "path": ".github/workflows/clone-tracker.yml",
+    "git_blob": "ffac6eb7c5a6304e4ed8e11053637667b8ac7caf"
+  },
+  {
+    "path": "docs/privacy/funnel-legitimate-interest-assessment.md",
+    "git_blob": "946d8006b7c6a6e753ce4938fad736e7f322939b"
+  },
+  {
+    "path": "scripts/track-clones.mjs",
+    "git_blob": "0f5c83a4d24d3087561f9e9e7cfc6344cbe0df6e"
+  },
+  {
+    "path": "v3/@claude-flow/cli/__tests__/funnel-telemetry-optout.test.ts",
+    "git_blob": "b587904121edcf42ef350af649b4ac8f8688e7fd"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/commands/funnel.ts",
+    "git_blob": "5fbf5190927c344695506ff7341be38ff6e99d6e"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/commands/hooks.ts",
+    "git_blob": "e0ce9917424663c6719f3161ffb7ab0f3506c186"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/funnel/index.ts",
+    "git_blob": "6948890f8d2f22905835722c9eac32cd9698a23a"
+  },
+  {
+    "path": "v3/@claude-flow/cli/src/funnel/message-transport.ts",
+    "git_blob": "2556141b4f188eeb7aa79cca5f1c31c8db9770c2"
+  },
+  {
+    "path": "v3/@claude-flow/performance/package.json",
+    "git_blob": "541cf59803aab97e7920ccbe925a58d4d75d478d"
+  },
+  {
+    "path": "v3/docs/adr/ADR-309-funnel-governance-privacy-ecosystem.md",
+    "git_blob": "8935290471f8c228876bf1652979e0fb3a79e76f"
+  },
+  {
+    "path": "v3/docs/adr/ADR-310-funnel-rollout-measurement-emergency-controls.md",
+    "git_blob": "ba4b5fe453865e74dfef36f31d77202c65205191"
+  },
+  {
+    "path": "v3/plugins/cognitive-kernel/package-lock.json",
+    "git_blob": "81730ddbec41963da2dbc9ea03c162921e11cdda"
+  },
+  {
+    "path": "v3/plugins/cognitive-kernel/package.json",
+    "git_blob": "7ad3d19eb0cc665885d5048a1221d6a78a8c26b4"
+  },
+  {
+    "path": "v3/plugins/financial-risk/package-lock.json",
+    "git_blob": "4eb555f52e5bc8073a1f7612960793f7f253e154"
+  },
+  {
+    "path": "v3/plugins/financial-risk/package.json",
+    "git_blob": "153b4d948b5ca3be3fde35281539b72bbd22af6d"
+  },
+  {
+    "path": "v3/plugins/gastown-bridge/package-lock.json",
+    "git_blob": "229d2956b51742ae1706286a10193598553ea59a"
+  },
+  {
+    "path": "v3/plugins/gastown-bridge/package.json",
+    "git_blob": "d7e90f7d43bb791da25881b95308ead4993f7737"
+  },
+  {
+    "path": "v3/plugins/hyperbolic-reasoning/package-lock.json",
+    "git_blob": "77d7292f3702a9cecfff0a500f49c9f480136ead"
+  },
+  {
+    "path": "v3/plugins/hyperbolic-reasoning/package.json",
+    "git_blob": "3d7037ad5b7899f0e753e13a8696860d38496b0a"
+  },
+  {
+    "path": "v3/plugins/neural-coordination/package-lock.json",
+    "git_blob": "9ac3f1ced21b92840678be13c9deb3f8a77d93ea"
+  },
+  {
+    "path": "v3/plugins/neural-coordination/package.json",
+    "git_blob": "e9ec0a96533bef59d74bfd1bdd4d456598959eb9"
+  },
+  {
+    "path": "v3/plugins/prime-radiant/package-lock.json",
+    "git_blob": "fe39a4005997918d5ce014fe15dc693d4245f82f"
+  },
+  {
+    "path": "v3/plugins/prime-radiant/package.json",
+    "git_blob": "f52e4e475acbc7bfec74735089c1a068ccc94325"
+  },
+  {
+    "path": "v3/plugins/quantum-optimizer/package-lock.json",
+    "git_blob": "4f58b814cca31cfbd3b7a2b6f9db52e2dd7cb456"
+  },
+  {
+    "path": "v3/plugins/quantum-optimizer/package.json",
+    "git_blob": "10f4c9089ed31aee8004644d2bd5b1c2a4a3132d"
+  },
+  {
+    "path": "v3/plugins/ruvector-upstream/package.json",
+    "git_blob": "24e7b9b74a77346f23b82b60bd2379ed877bf55b"
+  },
+  {
+    "path": "v3/plugins/test-intelligence/package-lock.json",
+    "git_blob": "333917daa08bb191fa3e8fceaca432f7ce317c0c"
+  },
+  {
+    "path": "v3/plugins/test-intelligence/package.json",
+    "git_blob": "7fc64cf466fb42ff203e3585b56791032dadc4b2"
+  },
+  {
+    "path": "v3/@claude-flow/cli/README.md",
+    "git_blob": "8382cbddbe7e8f7597db9d9097b80c64fe8dd35d"
+  }
+]
