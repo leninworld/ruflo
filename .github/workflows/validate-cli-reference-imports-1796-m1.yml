@@ -1,0 +1,41 @@
+name: Measure native CLI reference imports
+on:
+  push:
+    branches: [validate-cli-reference-imports-1796-m1]
+permissions:
+  contents: read
+concurrency:
+  group: ruflo1796-native-import-m1
+  cancel-in-progress: false
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [root20, workspace-build20, workspace-test22]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: packet
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: ruvnet/ruflo
+          ref: 3fe9d70ba7d08ff12233003a9342037ab80af3ce
+          path: upstream
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Execute one isolated import measurement
+        env:
+          APPROVED_DIAGNOSTIC_COMMIT: ${{ github.sha }}
+          APPROVED_PLAN_SHA256: '7a36230b9a7752279edbe7f9772cdd42c4dd16d54fa4bcd856d0b3113f44ddc7'
+        run: python3 packet/validation/ruflo1796/hosted.py "${{ matrix.lane }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: ruflo1796-${{ matrix.lane }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/ruflo1796-${{ github.run_id }}-${{ matrix.lane }}/evidence
+          if-no-files-found: warn
+          retention-days: 7

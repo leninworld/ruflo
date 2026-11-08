@@ -1,0 +1,94 @@
+{
+  "issue": "https://github.com/ruvnet/ruflo/issues/1796",
+  "source_pin": "3fe9d70ba7d08ff12233003a9342037ab80af3ce",
+  "attempt": "ruflo1796-native-import-m1",
+  "target_seconds": 3000,
+  "absolute_seconds": 3600,
+  "phase_caps": {
+    "prepare": 300,
+    "install": 660,
+    "build": 1000,
+    "probe": 120
+  },
+  "retained_peak_bytes": 8233701376,
+  "resource_basis": "Actual M0 root peak 8,233,701,376 B (7.668 GiB) plus tmpfs up to 1 GiB inside 10 GiB cap; thin 1.332 GiB residual if peak plus full tmpfs. Each independent hosted job has own frozen install/native ABI. One launch admission: 12 GiB MemAvailable,4CPU,16GiBdisk; actual pressure stops terminal.",
+  "lanes": {
+    "root20": {
+      "node_major": "20",
+      "image": "node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a"
+    },
+    "workspace-build20": {
+      "node_major": "20",
+      "image": "node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a"
+    },
+    "workspace-test22": {
+      "node_major": "22",
+      "image": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa"
+    }
+  },
+  "locked_inputs": {
+    "package.json": "2bb50a53969c985910cf4a3f28cc1bf09170c3fae01fb35f7e1fe2360b26200c",
+    "package-lock.json": "a64678df5dd815ff46c04b8fb162ba3c7e3387fac698a4968ed65bd5898ef138",
+    "v3/pnpm-lock.yaml": "40feeb585435a403505a427a814e68dfefe764ead188ace3611554bcb6a0a2c1",
+    "v3/pnpm-workspace.yaml": "188e1960dd374744c0d2e891f4db251bae072b7c6d70be625f0acdd97059e473",
+    "v3/@claude-flow/cli/package.json": "af528fcd1a2fdb3166c8f16ca622a1a09ab0c961c653ab605c81f263434b37c5",
+    "v3/@claude-flow/cli/vitest.config.ts": "ce8f8043810d34bb21b9559008755d4891526333736d040a36bdd993879b4747",
+    "v3/@claude-flow/cli/tsconfig.json": "9700b59dfdeb3e3c5a03d0e26bb0823d60ccd7c0e9d285f889a2c25cc8e5f29f"
+  },
+  "pnpm_sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
+  "packet_files": [
+    {
+      "path": "hosted.py",
+      "bytes": 12778,
+      "sha256": "c1c20a0bb4eadeb65d4d5f41e8a22d91693c650c7ef65aa404689ab223dfee3e"
+    },
+    {
+      "path": "inside.py",
+      "bytes": 10729,
+      "sha256": "a4f01cfc972a222e6fa6f79720cb700eb7c5eea2a60cf67eae4c2abac4df7c7d"
+    },
+    {
+      "path": "probe.mjs",
+      "bytes": 6181,
+      "sha256": "f1cb169b8202a5ed6d7f73fa4229deff2908b49a79b8206bdbe2721cf55a9ea4"
+    },
+    {
+      "path": "probe-fixture.mjs",
+      "bytes": 5940,
+      "sha256": "30bc7c3446b9347884fd4d6eaf4f75ae1a31952a8f7385159c9c5f7e3ee8b6a9"
+    },
+    {
+      "path": "import-guard.cjs",
+      "bytes": 4112,
+      "sha256": "230bfddddccd18cf2912b35bcb2ab1a737e28c73665e5c789a6356da2ea506a1"
+    },
+    {
+      "path": "install-global-guard.cjs",
+      "bytes": 718,
+      "sha256": "6bfcd26f154e97c5fe39c3f63f54402005ad54e0e08a7666dcb243e48294dec6"
+    },
+    {
+      "path": "pnpm-8.15.0.tgz",
+      "bytes": 3805828,
+      "sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665"
+    }
+  ],
+  "scope": "Only diagnostic upstream import closure, no product authoring or full tests. Both closures faithful x64. Stops terminal, no retry/newnamespace/deadlinereset. Fullbaseline/candidate/CLI/rootratchet/workspace/types/build/docs/generator/shipping remain later required.",
+  "native_observer_limit": "JS network/subprocess/worker attempts recorded. Docker none network/read-only root+source independently constrain native addons; no claim observer detects every possible native syscall.",
+  "root_ci_fidelity": "npm-ci composite action defaults to npm ci --legacy-peer-deps; one attempt preserves policy. root build:ts is upstream fail-tolerant; this is import measurement, no build pass. Built-output root imports approximate dependency resolution, not vitest transforms.",
+  "diagnostic_tree_contract": "Orphan commit, exactly9 allowlisted paths. External publication preflight must match reviewed public-packet-manifest.json tree_oid/fullSHA256/Gitblobmap. Exact manifest placed in commit message after Reviewed-Diagnostic-Tree marker; runtime verifies root-parentlessness, complete tree, workflow and allblob/SHA256 identities. No self-referential treehash hardcoded inside tree; publisher is the independent approval binding.",
+  "measurement_exit_contract": {
+    "0": "Report valid, no import findings",
+    "2": "Report valid with retained import/resolution/alias findings; block product authoring pending resultsreview",
+    "1": "Harness crash or missing/invalid report; terminal"
+  },
+  "tmpfs": {
+    "path": "/tmp",
+    "bytes": 1073741824,
+    "flags": "rw,exec,nosuid,nodev,mode=1777",
+    "resource_basis": "Actual M0 root7.668GiB +1GiB tmpfs <10GiBcap, thin margin; no assumption of v3 equality. Separate native ABI installs, once-only admission and pressure stops."
+  },
+  "attempt_authority": "PREPARATION ONLY. M0 terminal failure unchanged. Second and final attempt requires new exact Claude execution approval, independent Codex agreement and exact public-tree authority before publication. If no valid v3 measurement: PARK, no retry/reset.",
+  "workspace_fidelity": "Node20 strict build: frozen install then pnpm build (all25). Independent Node22 test closure: frozen install then pnpm --recursive --no-bail run build || true. No Node ABI reuse. This measures imports only, not upstream MCP policy smoke, later smoke scripts or full vitest.",
+  "denial_policy": "Every denial records stack and arguments. Exactly one expected blocked agent-browser --version call from getBrowserTools at exact built mcp-client path; still throws. All other denials fatal. Four attribution fixtures before installs, plus five original extraction fixtures."
+}
