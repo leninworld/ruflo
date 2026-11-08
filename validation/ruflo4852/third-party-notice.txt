@@ -1,0 +1,1 @@
+pnpm 8.15.0: MIT. Unmodified official npm archive; original license is package/LICENSE. sha256 fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665. Reused verified archive.

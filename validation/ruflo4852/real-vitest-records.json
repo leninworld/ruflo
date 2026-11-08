@@ -1,0 +1,130 @@
+{
+  "provenance": {
+    "actual_reports": [
+      {
+        "source": "older-root20-baseline-report",
+        "sha256": "7fc42e1df21a3afac9cabe48e528d19df2198f22a6d2c146638f9345f11eabe3"
+      },
+      {
+        "source": "older-cli22-baseline-report",
+        "sha256": "a454e29d0fa9a4f9b2d154b321eb34f69f27c945547a14ec3b8652911bcfc276"
+      },
+      {
+        "source": "older-workspace22-baseline-report",
+        "sha256": "3fda94674c27ea89e08f022e19657436a1ecc1d94ec0e870aef258a51b2e2d1b"
+      }
+    ],
+    "kind": "Six curated actual passing/failing assertion records across root/CLI/workspace from older synthetic Docker runs; envelope counts regenerated, not current fulltest results",
+    "default_failure_stderr": {
+      "path": "older-cli22-baseline-default-reporter-stderr",
+      "sha256": "e1084763400e65498a09f87d95969fa80fdc1fcddf97623dda1563877d87f5b6"
+    }
+  },
+  "files": [
+    {
+      "name": "/work/source/tests/adr-context-end-anchor.test.mjs",
+      "status": "passed",
+      "message": "",
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "fullName": "context at EOF",
+          "status": "passed",
+          "title": "context at EOF",
+          "failureMessages": []
+        }
+      ]
+    },
+    {
+      "name": "/work/source/v3/__tests__/integration/swarm-integration.test.ts",
+      "status": "failed",
+      "message": "",
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "Swarm Integration Tests"
+          ],
+          "fullName": "Swarm Integration Tests should handle dynamic agent scaling",
+          "status": "failed",
+          "title": "should handle dynamic agent scaling",
+          "failureMessages": [
+            "AssertionError: expected 3 to be 4 // Object.is equality\n    at /work/source/v3/__tests__/integration/swarm-integration.test.ts:210:27\n    at file:///work/source/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "/work/source/v3/@claude-flow/cli/__tests__/adr-323-memory-provenance.test.ts",
+      "status": "passed",
+      "message": "",
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "ADR-323 typed memory provenance"
+          ],
+          "fullName": "ADR-323 typed memory provenance store rejects an invalid --provenance value with a non-zero exit",
+          "status": "passed",
+          "title": "store rejects an invalid --provenance value with a non-zero exit",
+          "failureMessages": []
+        }
+      ]
+    },
+    {
+      "name": "/work/source/v3/@claude-flow/cli/__tests__/commands.test.ts",
+      "status": "failed",
+      "message": "",
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "Memory Commands",
+            "memory search"
+          ],
+          "fullName": "Memory Commands memory search should search memory",
+          "status": "failed",
+          "title": "should search memory",
+          "failureMessages": [
+            "AssertionError: expected false to be true // Object.is equality\n    at /work/source/v3/@claude-flow/cli/__tests__/commands.test.ts:607:30\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at file:///work/source/v3/node_modules/.pnpm/@vitest+runner@4.1.8/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "/work/source/v3/__tests__/features/feature-gaps.test.ts",
+      "status": "passed",
+      "message": "",
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "performance_profile is real"
+          ],
+          "fullName": "performance_profile is real should NOT contain _stub: true",
+          "status": "passed",
+          "title": "should NOT contain _stub: true",
+          "failureMessages": []
+        }
+      ]
+    },
+    {
+      "name": "/work/source/v3/@claude-flow/cli/__tests__/http-fetch-dns-pinning.test.ts",
+      "status": "failed",
+      "message": "",
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "a hostname that resolves to loopback is refused on the connection"
+          ],
+          "fullName": "a hostname that resolves to loopback is refused on the connection refuses it and the internal server never sees a request",
+          "status": "failed",
+          "title": "refuses it and the internal server never sees a request",
+          "failureMessages": [
+            "AssertionError: expected 'FETCH_ERROR' to be 'PRIVATE_ADDRESS' // Object.is equality\n    at /work/source/v3/@claude-flow/cli/__tests__/http-fetch-dns-pinning.test.ts:52:30\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at file:///work/source/v3/node_modules/.pnpm/@vitest+runner@4.1.8/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+          ]
+        }
+      ]
+    }
+  ],
+  "actual_default_failure_lines": [
+    "\u001b[41m\u001b[1m FAIL \u001b[22m\u001b[49m __tests__/commands.test.ts\u001b[2m > \u001b[22mMemory Commands\u001b[2m > \u001b[22mmemory search\u001b[2m > \u001b[22mshould search memory",
+    "\u001b[41m\u001b[1m FAIL \u001b[22m\u001b[49m __tests__/commands.test.ts\u001b[2m > \u001b[22mMemory Commands\u001b[2m > \u001b[22mmemory list\u001b[2m > \u001b[22mshould list memory entries"
+  ]
+}

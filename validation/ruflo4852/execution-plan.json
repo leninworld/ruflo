@@ -1,0 +1,935 @@
+{
+  "state": "AUTHORED_FOR_EXACT_REVIEW_NOT_EXECUTED",
+  "source_base": "3fe9d70ba7d08ff12233003a9342037ab80af3ce",
+  "manifest_path": "v3/@claude-flow/cli/.claude/helpers/helpers.manifest.json",
+  "pnpm_sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
+  "locked_inputs": {
+    "package.json": "2bb50a53969c985910cf4a3f28cc1bf09170c3fae01fb35f7e1fe2360b26200c",
+    "package-lock.json": "a64678df5dd815ff46c04b8fb162ba3c7e3387fac698a4968ed65bd5898ef138",
+    "v3/pnpm-lock.yaml": "40feeb585435a403505a427a814e68dfefe764ead188ace3611554bcb6a0a2c1",
+    "v3/package.json": "36a436f92ea5211db2be7c677b336d6481a9f74256dfc51d13a2f6113686f426",
+    "v3/pnpm-workspace.yaml": "188e1960dd374744c0d2e891f4db251bae072b7c6d70be625f0acdd97059e473",
+    "v3/@claude-flow/cli/package.json": "af528fcd1a2fdb3166c8f16ca622a1a09ab0c961c653ab605c81f263434b37c5",
+    "v3/vitest.config.ts": "42f50b26ed47dc181a4d3180e2e224e7829ba9af4b0e144e93fa6bd283b05413",
+    "v3/@claude-flow/cli/vitest.config.ts": "ce8f8043810d34bb21b9559008755d4891526333736d040a36bdd993879b4747",
+    "scripts/ci-test-ratchet.mjs": "e4f6311150e18e6ef8af595be2f6ec255fa002ae59f9bbf7b1e3d431827c29cc",
+    "scripts/ci-test-baseline.txt": "12f9052bc629b7a85de6f0a418e4aa69973166632c570a489c0c97651369923c",
+    "scripts/ci-test-excluded.txt": "421c60875b017f87ef97ca19b65eb4ac8bd1bb4909d7f6c5802174877a9f0a6b"
+  },
+  "candidate_files": [
+    {
+      "path": ".claude/helpers/auto-memory-hook.mjs",
+      "sha256": "a47fe6cf215398b1b889942f8b0067c5062908c8cf8943a90fec5ac88cbb67bb",
+      "baseline_sha256": "6078bd1c6b02dd3f80097f8d7f28904d48b3cdf7a534d2aa13966590694ca403"
+    },
+    {
+      "path": "v3/@claude-flow/cli/.claude/helpers/auto-memory-hook.mjs",
+      "sha256": "a47fe6cf215398b1b889942f8b0067c5062908c8cf8943a90fec5ac88cbb67bb",
+      "baseline_sha256": "6078bd1c6b02dd3f80097f8d7f28904d48b3cdf7a534d2aa13966590694ca403"
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/auto-memory-read-matches-4852.test.ts",
+      "sha256": "0d224baf2701337d1362e9d3766efa8f78c8ea5dce3852b7a26b5080de7a006e",
+      "baseline_sha256": null
+    }
+  ],
+  "lanes": {
+    "root20": {
+      "image": "node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a",
+      "phase_caps": {
+        "fixture": 60,
+        "prepare": 120,
+        "install": 300,
+        "offline": 1200,
+        "compare": 60
+      },
+      "lane_window_seconds": 2400,
+      "prerequisite": [
+        {
+          "label": "root-lint-wrapper",
+          "command": "npm run lint",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "reason": "Upstream ||true/missing CLI lint script is NOT a lint pass.",
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "root-security-build",
+          "command": "npm run build --workspace=@claude-flow/security",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/ci.yml",
+            "job": "test",
+            "index": 3,
+            "name": "Build workspace-linked packages needed at runtime by tests",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "root-cli-core-overlay",
+          "command": "npm run build --prefix v3/@claude-flow/cli-core\nrm -rf node_modules/@claude-flow/cli-core/dist\ncp -r v3/@claude-flow/cli-core/dist node_modules/@claude-flow/cli-core/dist\n",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/ci.yml",
+            "job": "test",
+            "index": 4,
+            "name": "Build local @claude-flow/cli-core and overlay onto the installed package",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        }
+      ],
+      "offline": [
+        {
+          "label": "root-full-ratchet",
+          "command": "node scripts/ci-test-ratchet.mjs",
+          "cwd": ".",
+          "cap_seconds": 1100,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/ci.yml",
+            "job": "test",
+            "index": 5,
+            "name": "Run all tests",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        }
+      ],
+      "registry": []
+    },
+    "cli22": {
+      "image": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa",
+      "phase_caps": {
+        "fixture": 60,
+        "prepare": 120,
+        "install": 300,
+        "offline": 720,
+        "compare": 60
+      },
+      "lane_window_seconds": 1200,
+      "prerequisite": [
+        {
+          "label": "workspace-runtime-bootstrap",
+          "command": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "reason": "Upstream prerequisite wrapper success is not proof that every build passed.",
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        }
+      ],
+      "offline": [
+        {
+          "label": "helper-guard-3",
+          "command": "set -euo pipefail\ntest -f v3/@claude-flow/cli/scripts/sign-helpers.mjs   || { echo '::error::scripts/sign-helpers.mjs missing (#2593)';   exit 1; }\ntest -f v3/@claude-flow/cli/scripts/verify-helpers.mjs || { echo '::error::scripts/verify-helpers.mjs missing (#2593)'; exit 1; }\n",
+          "cwd": ".",
+          "cap_seconds": 60,
+          "allowed_exit_codes": [
+            0
+          ],
+          "source_step": {
+            "workflow": ".github/workflows/helpers-manifest-guard.yml",
+            "job": "guard",
+            "index": 3,
+            "name": "sign-helpers.mjs and verify-helpers.mjs exist",
+            "continue_on_error": false
+          }
+        },
+        {
+          "label": "helper-guard-4",
+          "command": "node scripts/smoke-helper-signing-security.mjs",
+          "cwd": ".",
+          "cap_seconds": 60,
+          "allowed_exit_codes": [
+            0
+          ],
+          "source_step": {
+            "workflow": ".github/workflows/helpers-manifest-guard.yml",
+            "job": "guard",
+            "index": 4,
+            "name": "Helper signing key transport + single-source guard",
+            "continue_on_error": false
+          }
+        },
+        {
+          "label": "helper-guard-5",
+          "command": "set -euo pipefail\npp=$(node -e \"process.stdout.write(require('./v3/@claude-flow/cli/package.json').scripts.prepublishOnly || '')\")\necho \"prepublishOnly: $pp\"\necho \"$pp\" | grep -q 'prepare-publish.mjs' || { echo '::error::prepublishOnly must call scripts/prepare-publish.mjs (#2593)'; exit 1; }\ngrep -q 'sign-helpers.mjs' v3/@claude-flow/cli/scripts/prepare-publish.mjs   || { echo '::error::prepare-publish.mjs must call scripts/sign-helpers.mjs (#2593)';   exit 1; }\ngrep -q 'verify-helpers.mjs' v3/@claude-flow/cli/scripts/prepare-publish.mjs || { echo '::error::prepare-publish.mjs must call scripts/verify-helpers.mjs (#2593)'; exit 1; }\n",
+          "cwd": ".",
+          "cap_seconds": 60,
+          "allowed_exit_codes": [
+            0
+          ],
+          "source_step": {
+            "workflow": ".github/workflows/helpers-manifest-guard.yml",
+            "job": "guard",
+            "index": 5,
+            "name": "prepublishOnly wires sign-helpers + verify-helpers",
+            "continue_on_error": false
+          }
+        },
+        {
+          "label": "helper-guard-6",
+          "command": "set -euo pipefail\npp=v3/@claude-flow/cli/scripts/prepare-publish.mjs\nsign_pos=$(grep -bo 'sign-helpers.mjs' \"$pp\"   | head -1 | cut -d: -f1)\nver_pos=$(grep -bo 'verify-helpers.mjs' \"$pp\" | head -1 | cut -d: -f1)\nif [ \"$sign_pos\" -ge \"$ver_pos\" ]; then\n  echo \"::error::sign-helpers.mjs must run BEFORE verify-helpers.mjs in prepublishOnly (#2593)\"\n  exit 1\nfi\n",
+          "cwd": ".",
+          "cap_seconds": 60,
+          "allowed_exit_codes": [
+            0
+          ],
+          "source_step": {
+            "workflow": ".github/workflows/helpers-manifest-guard.yml",
+            "job": "guard",
+            "index": 6,
+            "name": "sign runs before verify in prepublishOnly",
+            "continue_on_error": false
+          }
+        }
+      ],
+      "registry": []
+    },
+    "workspace22": {
+      "image": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa",
+      "phase_caps": {
+        "fixture": 60,
+        "prepare": 120,
+        "install": 300,
+        "offline": 1200,
+        "compare": 60
+      },
+      "lane_window_seconds": 1800,
+      "prerequisite": [],
+      "offline": [
+        {
+          "label": "workspace-4",
+          "command": "node scripts/test-mcp-policy-stdio.mjs",
+          "cwd": "v3/@claude-flow/cli",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "test",
+            "index": 4,
+            "name": "Verify opt-in MCP policy through both shipped stdio launchers",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "workspace-5",
+          "command": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "test",
+            "index": 5,
+            "name": "Build (so workspace dist/ exists for runtime imports)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "workspace-6",
+          "command": "node scripts/smoke-flywheel-proof.mjs",
+          "cwd": "v3/@claude-flow/cli",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "test",
+            "index": 6,
+            "name": "ADR-176/177 \u2014 self-learning proof artifacts must stay valid",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "workspace-7",
+          "command": "node scripts/replay-generation.mjs",
+          "cwd": "v3/@claude-flow/cli",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "test",
+            "index": 7,
+            "name": "ADR-176 \u2014 clean-room replay acceptance test (offline, identical hashes)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "workspace-8",
+          "command": "REPORT=\"$RUNNER_TEMP/vitest-report.json\"\nrm -f \"$REPORT\"\nset +e\n# The bin shim execs node, so a segfault surfaces as 139. Through\n# `pnpm exec` a signalled child is reported as exit 1 instead.\n./node_modules/.bin/vitest run --reporter=default --reporter=json --outputFile.json=\"$REPORT\" 2>&1 | tee \"$RUNNER_TEMP/vitest-output.log\"\nEXIT=${PIPESTATUS[0]}\nset -e\nif [ \"$EXIT\" -eq 139 ]; then\n  # Count error lines explicitly: a scanner failure leaves ERRORS empty\n  # and fails closed instead of reading as \"no errors\".\n  ERRORS=\"$(sed -E 's/\\x1b\\[[0-9;]*m//g' \"$RUNNER_TEMP/vitest-output.log\" | grep -cE '^ *Errors +[0-9]+ errors?|Unhandled Errors|error during close' || true)\"\n  if [ -s \"$REPORT\" ] && [ -s \"$RUNNER_TEMP/vitest-output.log\" ] && [ \"$ERRORS\" = \"0\" ] \\\n    && node -e 'const r=JSON.parse(require(\"fs\").readFileSync(process.argv[1],\"utf8\")); process.exit(r.success===true && r.numTotalTestSuites>0 && r.numFailedTestSuites===0 && r.numFailedTests===0 ? 0 : 1)' \"$REPORT\"; then\n    echo \"::warning::vitest exited with SIGSEGV (139) after it reported a passing run with no unhandled errors \u2014 tolerated as a shutdown crash\"\n    exit 0\n  fi\n  echo \"::error::vitest exited with SIGSEGV (139) without a passing report (report present: $([ -s \"$REPORT\" ] && echo yes || echo no); error lines: ${ERRORS:-unreadable}); the suite did not finish, or it reported failures or unhandled errors\"\nfi\nexit \"$EXIT\"\n",
+          "cwd": "v3",
+          "cap_seconds": 600,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "test",
+            "index": 8,
+            "name": "Run tests",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "workspace-typecheck",
+          "command": "pnpm typecheck",
+          "cwd": "v3",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "typecheck",
+            "index": 4,
+            "name": "Type check",
+            "continue_on_error": true
+          },
+          "source_continue_on_error": "Upstream continue-on-error: raw failure is recorded, never called passing.",
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "workspace-strict-build",
+          "command": "pnpm build",
+          "cwd": "v3",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "build",
+            "index": 5,
+            "name": "Build",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        }
+      ],
+      "registry": []
+    },
+    "smokes22": {
+      "image": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa",
+      "phase_caps": {
+        "fixture": 60,
+        "prepare": 120,
+        "install": 600,
+        "offline": 780,
+        "registry": 300,
+        "compare": 60
+      },
+      "lane_window_seconds": 1500,
+      "prerequisite": [
+        {
+          "label": "workspace-runtime-bootstrap",
+          "command": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "reason": "Upstream prerequisite wrapper success is not proof that every build passed.",
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "strict-cli-build-before-smokes",
+          "command": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli",
+          "cap_seconds": 120,
+          "allowed_exit_codes": [
+            0
+          ],
+          "reason": ""
+        }
+      ],
+      "offline": [
+        {
+          "label": "agent-execute-providers-smoke-2",
+          "command": "node scripts/smoke-agent-execute-providers.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "agent-execute-providers-smoke",
+            "index": 2,
+            "name": "Run agent_execute providers smoke",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "github-safe-injection-smoke-2",
+          "command": "node scripts/smoke-github-safe-injection.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "github-safe-injection-smoke",
+            "index": 2,
+            "name": "Run github-safe injection smoke",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "pre-bash-hook-smoke-2",
+          "command": "node scripts/smoke-pre-bash-hook.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "pre-bash-hook-smoke",
+            "index": 2,
+            "name": "Drive Claude-Code-shaped PreToolUse JSON through both handler copies",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "hook-command-audit-2",
+          "command": "node scripts/audit-hook-commands.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "hook-command-audit",
+            "index": 2,
+            "name": "Run hook-command audit",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "hook-command-audit-3",
+          "command": "node scripts/audit-hook-handler-prompt.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "hook-command-audit",
+            "index": 3,
+            "name": "Run hook-handler prompt-resolution audit (#1944)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "hook-command-audit-4",
+          "command": "node scripts/audit-fix-invariants.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "hook-command-audit",
+            "index": 4,
+            "name": "Run fix-invariants audit (presence-check guard for",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "hook-command-audit-5",
+          "command": "node scripts/audit-neural-trader-safety.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "hook-command-audit",
+            "index": 5,
+            "name": "Run neural-trader install-safety audit (#1974)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "hook-command-audit-6",
+          "command": "# Every shim must be valid bash and exit 0 even when no CLI is\n# reachable (the #1921 contract). Probe with an empty PATH (invoke\n# bash by full path since PATH= can't find it otherwise).\nBASH=\"$(command -v bash)\"\nfor sh in $(git ls-files '**/scripts/ruflo-hook.sh'); do\n  echo \"checking $sh\"\n  bash -n \"$sh\"\n  PATH= \"$BASH\" \"$sh\" modify-bash </dev/null || { echo \"::error::$sh did not exit 0 with no CLI on PATH\"; exit 1; }\ndone\n",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "hook-command-audit",
+            "index": 6,
+            "name": "Lint the ruflo-hook shims",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "init-scaffold-references-smoke-2",
+          "command": "node scripts/smoke-init-scaffold-references.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "init-scaffold-references-smoke",
+            "index": 2,
+            "name": "Run init-scaffold references smoke",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "statusline-generator-delegation-smoke-2",
+          "command": "# #2679: generator now READS .claude/helpers/statusline.cjs as its\n# single source of truth rather than duplicating the content in an\n# inline template. The delegation contract lives in the HELPER\n# file now \u2014 grep that instead. Also verify the generator still\n# reads it (i.e. the read-and-substitute pattern is intact) so a\n# future refactor can't silently break the delegation contract\n# by dropping the file read.\nHELPER=v3/@claude-flow/cli/.claude/helpers/statusline.cjs\nGEN=v3/@claude-flow/cli/src/init/statusline-generator.ts\n\necho \"Checking that the helper delegates to 'hooks statusline --json'...\"\ngrep -q \"hooks statusline --json\" \"$HELPER\" \\\n  || { echo \"::error::$HELPER no longer delegates to 'hooks statusline --json' \u2014 regression of #2195\"; exit 1; }\necho \"ok: delegation pattern found in helper\"\n\necho \"Checking that the generator reads the helper (#2679 sync pattern)...\"\ngrep -q \"statusline.cjs\" \"$GEN\" \\\n  || { echo \"::error::$GEN no longer references statusline.cjs \u2014 regression of #2679 read-and-substitute pattern\"; exit 1; }\ngrep -qE \"readFileSync.*helperContent|helperContent.*readFileSync\" \"$GEN\" \\\n  || { echo \"::error::$GEN no longer reads helper via readFileSync \u2014 regression of #2679\"; exit 1; }\necho \"ok: read-and-substitute pattern intact\"\n\necho \"Checking that the old fragile heuristics are NOT present (in helper)...\"\n# The buggy fallback computed domains from file-based pattern counts \u2014\n# this produced domainsCompleted=0 when AgentDB had 26k+ patterns.\n! grep -q \"getLearningStats\\b\" \"$HELPER\" \\\n  || { echo \"::error::$HELPER still has getLearningStats (old local reader) \u2014 regression of #2195\"; exit 1; }\n! grep -q \"getV3Progress\\b\" \"$HELPER\" \\\n  || { echo \"::error::$HELPER still has getV3Progress (old local reader) \u2014 regression of #2195\"; exit 1; }\necho \"ok: old local-reader heuristics removed\"\n\necho \"Checking that both ADR directories are counted...\"\ngrep -q \"v3/docs/adr\" \"$HELPER\" \\\n  || { echo \"::error::$HELPER missing v3/docs/adr ADR directory \u2014 regression of #2195 ADR-count bug\"; exit 1; }\ngrep -q \"v3/implementation/adrs\" \"$HELPER\" \\\n  || { echo \"::error::$HELPER missing v3/implementation/adrs ADR directory\"; exit 1; }\necho \"ok: both ADR directories present\"\n",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "statusline-generator-delegation-smoke",
+            "index": 2,
+            "name": "Guard 1 \u2014 static delegation contract",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "statusline-generator-delegation-smoke-4-assert",
+          "command": "test -f @claude-flow/cli/dist/src/init/statusline-generator.js \\\n  || { echo \"::error::statusline-generator.js not built\"; exit 1; }\n",
+          "cwd": "v3",
+          "cap_seconds": 120,
+          "allowed_exit_codes": [
+            0
+          ],
+          "reason": "Retain upstream post-build product assertions from reused setup verbatim."
+        },
+        {
+          "label": "statusline-generator-delegation-smoke-5",
+          "command": "node scripts/smoke-statusline-generator-delegation.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "statusline-generator-delegation-smoke",
+            "index": 5,
+            "name": "Guard 2 \u2014 smoke: generate .cjs and validate output ranges",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "wizard-init-regression-guard-2",
+          "command": "echo \"=== Guard 1: mcp-generator must write the claude-flow key ===\"\n\necho \"Checking mcp-generator uses 'claude-flow' as the server key...\"\ngrep -qE \"mcpServers\\['claude-flow'\\]|mcpServers\\[\\\"claude-flow\\\"\\]\" \\\n  v3/@claude-flow/cli/src/init/mcp-generator.ts \\\n  || { echo \"::error::mcp-generator no longer writes 'claude-flow' server key \u2014 #2206 regression\"; exit 1; }\necho \"ok: 'claude-flow' key found\"\n\necho \"Checking mcp-generator does NOT use bare 'ruflo' as the server key...\"\n! grep -qE \"mcpServers\\['ruflo'\\]|mcpServers\\[\\\"ruflo\\\"\\]\" \\\n  v3/@claude-flow/cli/src/init/mcp-generator.ts \\\n  || { echo \"::error::mcp-generator writes 'ruflo' server key \u2014 breaks mcp__claude-flow__* tool naming (#2206)\"; exit 1; }\necho \"ok: bare 'ruflo' server key absent\"\n\necho \"Checking command args still invoke ruflo@latest (must NOT change)...\"\ngrep -q \"ruflo@latest\" v3/@claude-flow/cli/src/init/mcp-generator.ts \\\n  || { echo \"::error::mcp-generator no longer invokes ruflo@latest \u2014 command args must be preserved (#2206)\"; exit 1; }\necho \"ok: ruflo@latest invocation present\"\n\necho \"Guard 1 passed.\"\n",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "wizard-init-regression-guard",
+            "index": 2,
+            "name": "Guard 1 \u2014 static",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "wizard-init-regression-guard-4-assert",
+          "command": "test -f @claude-flow/cli/dist/src/init/executor.js \\\n  || { echo \"::error::executor.js not built \u2014 CLI build failed\"; exit 1; }\ntest -f @claude-flow/cli/dist/src/init/mcp-generator.js \\\n  || { echo \"::error::mcp-generator.js not built\"; exit 1; }\n",
+          "cwd": "v3",
+          "cap_seconds": 120,
+          "allowed_exit_codes": [
+            0
+          ],
+          "reason": "Retain upstream post-build product assertions from reused setup verbatim."
+        },
+        {
+          "label": "wizard-init-regression-guard-5",
+          "command": "echo \"=== Guard 2: generated .mcp.json key and CLAUDE.md backup ===\"\n\nTMP=$(mktemp -d)\ncd \"$TMP\"\n\n# Seed CLAUDE.md with sentinel content so #2208 backup is observable\nprintf '# Sentinel Project Content \u2014 do not lose\\n' > CLAUDE.md\n\n# Run init --force (non-interactive); ignore non-zero exit from\n# optional components that need extra deps (skills, helpers, etc.)\nHOME=\"$TMP\" node \"$GITHUB_WORKSPACE/v3/@claude-flow/cli/bin/cli.js\" \\\n  init --force 2>&1 || true\n\necho \"--- .mcp.json contents ---\"\ncat .mcp.json 2>/dev/null || echo \"(not found)\"\n\n# #2206: 'claude-flow' key must exist\nnode -e \"\n  const cfg = JSON.parse(require('fs').readFileSync('.mcp.json','utf-8'));\n  if (!cfg.mcpServers || !('claude-flow' in cfg.mcpServers)) {\n    console.error('FAIL: .mcp.json missing claude-flow server key (#2206)');\n    process.exit(1);\n  }\n  console.log('ok: claude-flow key present in .mcp.json');\n\" || { echo \"::error::generated .mcp.json missing 'claude-flow' server key (#2206)\"; exit 1; }\n\n# #2206: stray 'ruflo' key must NOT exist\nnode -e \"\n  const cfg = JSON.parse(require('fs').readFileSync('.mcp.json','utf-8'));\n  if (cfg.mcpServers && 'ruflo' in cfg.mcpServers) {\n    console.error('FAIL: .mcp.json has stray ruflo server key (#2206)');\n    process.exit(1);\n  }\n  console.log('ok: stray ruflo key absent');\n\" || { echo \"::error::generated .mcp.json has stray 'ruflo' server key (#2206)\"; exit 1; }\n\n# #2208: CLAUDE.md.pre-ruflo backup must exist with sentinel content\nBACKUP=$(ls CLAUDE.md.pre-ruflo* 2>/dev/null | head -1)\nif [ -z \"$BACKUP\" ]; then\n  echo \"::error::init --force did not create CLAUDE.md.pre-ruflo backup (#2208)\"\n  exit 1\nfi\necho \"ok: backup file created: $BACKUP\"\ngrep -q \"Sentinel Project Content\" \"$BACKUP\" \\\n  || { echo \"::error::CLAUDE.md backup missing original sentinel content (#2208)\"; exit 1; }\necho \"ok: backup contains original content\"\n\necho \"Guard 2 passed.\"\n",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "wizard-init-regression-guard",
+            "index": 5,
+            "name": "Guard 2 \u2014 runtime",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "wizard-init-regression-guard-6",
+          "command": "echo \"=== Guard 3: bare .claude/settings.json must NOT trigger duplicate detection ===\"\n\nTMP=$(mktemp -d)\ncd \"$TMP\"\n\n# Simulate Claude Code's own project settings.json with NO ruflo registration\nmkdir -p .claude\necho '{\"env\": {}, \"hooks\": {}}' > .claude/settings.json\n\n# Run init WITHOUT --force; use a custom HOME with no ~/.claude.json\n# so the real user's global config doesn't interfere\nFAKE_HOME=$(mktemp -d)\nOUT=$(HOME=\"$FAKE_HOME\" node \"$GITHUB_WORKSPACE/v3/@claude-flow/cli/bin/cli.js\" \\\n  init 2>&1 || true)\n\necho \"--- init output ---\"\necho \"$OUT\"\n\n# The init must NOT claim \"already initialized\" due to the bare settings.json\nif echo \"$OUT\" | grep -qi \"existing 'ruflo' MCP registration\\|existing 'claude-flow' MCP registration\"; then\n  echo \"::error::init false-positives on bare .claude/settings.json (#2207)\"\n  exit 1\nfi\necho \"ok: no false-positive on bare .claude/settings.json\"\n\nrm -rf \"$FAKE_HOME\"\necho \"Guard 3 passed.\"\n",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "wizard-init-regression-guard",
+            "index": 6,
+            "name": "Guard 3 \u2014 runtime",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "wasm-provider-bridge-smoke-2",
+          "command": "node scripts/smoke-wasm-provider-bridge.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "wasm-provider-bridge-smoke",
+            "index": 2,
+            "name": "Run wasm provider bridge smoke",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "wasm-compose-smoke-2",
+          "command": "node scripts/smoke-wasm-rvf-compose.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "wasm-compose-smoke",
+            "index": 2,
+            "name": "Run wasm compose smoke",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "wasm-gallery-crud-smoke-2",
+          "command": "node scripts/smoke-wasm-gallery-crud.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "wasm-gallery-crud-smoke",
+            "index": 2,
+            "name": "Run wasm gallery CRUD smoke",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "wasm-plugin-bridge-smoke-2",
+          "command": "node scripts/smoke-wasm-plugin-bridge.mjs",
+          "cwd": ".",
+          "cap_seconds": 120,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "wasm-plugin-bridge-smoke",
+            "index": 2,
+            "name": "Run wasm plugin bridge smoke",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "plugin-builds-for-export-audit",
+          "command": "for d in plugins/*/; do\n  if [ -f \"$d/package.json\" ] && node -e \"process.exit(require('./'+process.argv[1]+'package.json').scripts?.build?0:1)\" \"$d\"; then\n    echo \"::group::build $d\"\n    ( cd \"$d\" && pnpm run build || true )\n    echo \"::endgroup::\"\n  fi\ndone\n",
+          "cwd": "v3",
+          "cap_seconds": 300,
+          "allowed_exit_codes": null,
+          "reason": "Verified workspace globs omit plugins/*. Preserve upstream plugin build loop without unfrozen install fallback.",
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        }
+      ],
+      "registry": [
+        {
+          "label": "package-audit-6",
+          "command": "node scripts/audit-plugin-packages.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 6,
+            "name": "Run plugin package audit",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "package-audit-7",
+          "command": "node scripts/audit-plugin-secrets.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 7,
+            "name": "Run plugin secrets audit (ADR-506)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "package-audit-8",
+          "command": "node scripts/audit-package-dep-overlap.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 8,
+            "name": "Run package dep-overlap audit (#1147 /",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "package-audit-9",
+          "command": "node scripts/audit-wrapper-dep-ranges.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 9,
+            "name": "Run wrapper dep-range audit (#2127)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "package-audit-10",
+          "command": "node scripts/audit-umbrella-version-lockstep.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": [
+            0
+          ],
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 10,
+            "name": "Run umbrella version-lockstep audit (#2151)",
+            "continue_on_error": false
+          }
+        },
+        {
+          "label": "package-audit-12",
+          "command": "node scripts/audit-leaf-package-publish.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 12,
+            "name": "Run leaf-package publish audit (#3335,",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "package-audit-13",
+          "command": "node scripts/audit-leaf-versions-published.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 13,
+            "name": "Run leaf-versions-published audit (#4303)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "package-audit-14",
+          "command": "node scripts/audit-better-sqlite3-override.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 14,
+            "name": "Run better-sqlite3 override audit (#2219)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "package-audit-15",
+          "command": "node scripts/audit-plugin-hooks-cross-platform.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 15,
+            "name": "Run plugin-hooks cross-platform audit (#2132)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        },
+        {
+          "label": "package-audit-16",
+          "command": "node scripts/audit-env-var-precedence.mjs",
+          "cwd": ".",
+          "cap_seconds": 90,
+          "allowed_exit_codes": null,
+          "source_step": {
+            "workflow": ".github/workflows/v3-ci.yml",
+            "job": "plugin-package-audit",
+            "index": 16,
+            "name": "Run env-var-precedence audit (ADR-125 / ADR-130)",
+            "continue_on_error": false
+          },
+          "compare_exit": true,
+          "comparison_note": "Run both variants even on ordinary baseline failure; never accept signal/timeout. Record and compare exits, not a pass claim. Required results checks remain binding."
+        }
+      ]
+    }
+  },
+  "setup_reuse": [
+    {
+      "job": "statusline-generator-delegation-smoke",
+      "index": 4,
+      "reason": "Same frozen install and identical runtime build already executed in this source/variant; runtime guards still run."
+    },
+    {
+      "job": "wizard-init-regression-guard",
+      "index": 4,
+      "reason": "Same frozen install and identical runtime build already executed in this source/variant; runtime guards still run."
+    },
+    {
+      "job": "plugin-package-audit",
+      "index": 11,
+      "reason": "No repeat fetch: immutable current upstream HEAD and base ref already verified at exact pin. Only helper/test paths change; no leaf manifests change."
+    },
+    {
+      "job": "plugin-package-audit",
+      "indices": [
+        3,
+        4
+      ],
+      "reason": "Frozen npm ci and workspace install/build reused. Never execute unfrozen install fallbacks/retries. Export-presence audits remain required."
+    }
+  ],
+  "packet_files": [
+    {
+      "path": "hosted.py",
+      "bytes": 13565,
+      "sha256": "02f29ca4e8034724b3b6911729f553d55b98f18543d11fb768e01eb8ec716615"
+    },
+    {
+      "path": "inside.py",
+      "bytes": 20810,
+      "sha256": "c8124300361574b82bb6ec3ac2ce56a2c099d41eaaabc77155944750aa1ad757"
+    },
+    {
+      "path": "compare_reports.py",
+      "bytes": 8746,
+      "sha256": "2db0b99a6ded1a0c4225e6b460df3ff8b1da10db2b06c272de7d141f3dc5a2ab"
+    },
+    {
+      "path": "compare_reports_fixture.py",
+      "bytes": 6563,
+      "sha256": "805e772765e5c504e123bc91688fd52c6c146d854b276e8cef55c72105d25293"
+    },
+    {
+      "path": "real-vitest-records.json",
+      "bytes": 5326,
+      "sha256": "08cf5eeb514bbdf46376a29f5284085660790f22182f30f92b72f22a9fb49d27"
+    },
+    {
+      "path": "pnpm-8.15.0.tgz",
+      "bytes": 3805828,
+      "sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665"
+    },
+    {
+      "path": "third-party-notice.txt",
+      "bytes": 186,
+      "sha256": "b8f7dfa6d988ea9e31a09f7d06fe86946e6bd6240102d68ad09f09c069a395b1"
+    },
+    {
+      "path": "candidate-files/.claude/helpers/auto-memory-hook.mjs",
+      "bytes": 31250,
+      "sha256": "a47fe6cf215398b1b889942f8b0067c5062908c8cf8943a90fec5ac88cbb67bb"
+    },
+    {
+      "path": "candidate-files/v3/@claude-flow/cli/.claude/helpers/auto-memory-hook.mjs",
+      "bytes": 31250,
+      "sha256": "a47fe6cf215398b1b889942f8b0067c5062908c8cf8943a90fec5ac88cbb67bb"
+    },
+    {
+      "path": "candidate-files/v3/@claude-flow/cli/__tests__/auto-memory-read-matches-4852.test.ts",
+      "bytes": 13913,
+      "sha256": "0d224baf2701337d1362e9d3766efa8f78c8ea5dce3852b7a26b5080de7a006e"
+    }
+  ],
+  "exact_review_decisions_required": [
+    "Approve actual candidate patch, controllers, fixtures and full execution; prior authoring approval is not runtime approval.",
+    "B1 amendment: leave unchanged shared-fresh-consumer auxiliary check to upstream CI. Source shows only unchanged shared dist/events/core/mcp, no changed helper/test; it resolves unfrozen express/ws/zod ranges. Full CLI/root/workspace suites and every package audit remain. If rejected, park rather than run unpriced closure.",
+    "D1 root40/CLI20/workspace30/smokes25min windows approved withF1-F3 within shared50/60 bound. New root-default-config and plugin loop durations unmeasured; no claim of new measurements. Plugins outside workspace get no frozen install; bothvariant ordinary build failures compared, never called passes.",
+    "D4 use native upstream JSON reports for A2 (already permitted by A2) rather than an extra JUnit conversion. All test identities, raw errors and artifact sha256 are retained; explicitly accept this format clarification.",
+    "Same-lock native lifecycle metadata reused, no models/vendorCLI/liveproviders. Registry300s/command90s, npm retry0.",
+    "C1 collection only after exact approval and mandatory receipt fixture: refresh all300 frozen prior accepted sample members, not cherry-picked approvals or another newest300census. Every creation date must remain within fresh33daywindow. Explicitly approve frozen-sample update mode, preserving oldfailedscope andmax3requests/no retry.",
+    "Fresh isolated GitHub-runner work source cleanup only after evidence seal; no Mac/external files or Docker data deletion."
+  ],
+  "resource_basis": "Same locks; actual raw cgroup8.28GB/stats4.61GB.10GiBcap,12GiBhost MemAvailable,16GiBdisk start/12GiBowned work cap/4GiBreserve.1024PID=ceilpow2(2*observed193+128), workload-specific proposal.",
+  "root_configuration_note": "Pinned root has no vitest.config.ts. No generated alias/config added. Prior root resource run had an agent-generated MCP alias; retain that measurement with this input difference disclosed, never as exact current-run proof.",
+  "result_contract": "A1-A5 identities, strict new34/existinghelper tests; officialguard baselinepass and candidateonly expected helperintegrity. Raw nonzero reports retained; no failure called pass."
+}
