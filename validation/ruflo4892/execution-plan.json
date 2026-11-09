@@ -1,0 +1,709 @@
+{
+  "status": "SEALED_FOR_ONE_RUN",
+  "source_pin": "bc480847d868e8f8a1dab83bf3f3e6f657119077",
+  "source_tree": "b921a6c5216895c2029093a0ad1a8ab6e7a9d063",
+  "branch": "validate-hierarchical-value-4892-i1",
+  "target_seconds": 3000,
+  "absolute_seconds": 3600,
+  "no_rerun": true,
+  "phase_caps": {
+    "prepare": 240,
+    "install": 660,
+    "test": 1500,
+    "shipping-warm": 780,
+    "early": 600,
+    "shipping-disconnected-proof": 360
+  },
+  "retained_peak_bytes": 8282333184,
+  "profiles": {
+    "root20": {
+      "node": "20",
+      "gating_suite": true,
+      "install": "npm ci --legacy-peer-deps",
+      "install_cwd": ".",
+      "commands": [
+        {
+          "name": "Build workspace-linked packages needed at runtime by tests",
+          "run": "npm run build --workspace=@claude-flow/security",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "test",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Build local @claude-flow/cli-core and overlay onto the installed package",
+          "run": "npm run build --prefix v3/@claude-flow/cli-core\nrm -rf node_modules/@claude-flow/cli-core/dist\ncp -r v3/@claude-flow/cli-core/dist node_modules/@claude-flow/cli-core/dist\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "test",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run all tests",
+          "run": "node scripts/ci-test-ratchet.mjs",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "test",
+          "cwd": ".",
+          "diagnostic_mode": "structured-test-report-and-crashes"
+        },
+        {
+          "name": "Lint code",
+          "run": "npm run lint",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "security",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Type check",
+          "run": "npm run typecheck",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "security",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Build project",
+          "run": "echo \"Building project for ${{ matrix.platform }}...\"\nnpm run build:ts\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "build",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Test CLI binary (Unix)",
+          "run": "chmod +x ./v3/@claude-flow/cli/bin/cli.js\nnode ./v3/@claude-flow/cli/bin/cli.js --version\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "build",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Package build",
+          "run": "npm pack\nls -la *.tgz\n",
+          "working_directory": null,
+          "upstream_workflow": "ci.yml",
+          "upstream_job": "build",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        }
+      ],
+      "report": ".test-results/vitest.json",
+      "workers": "Upstream ratchet literal --maxWorkers=2; no injected worker flags."
+    },
+    "v3-test22": {
+      "node": "22",
+      "gating_suite": true,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "Verify opt-in MCP policy through both shipped stdio launchers",
+          "run": "node scripts/test-mcp-policy-stdio.mjs",
+          "working_directory": "v3/@claude-flow/cli",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3/@claude-flow/cli",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Build (so workspace dist/ exists for runtime imports)",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "ADR-176/177 \u2014 self-learning proof artifacts must stay valid",
+          "run": "node scripts/smoke-flywheel-proof.mjs",
+          "working_directory": "v3/@claude-flow/cli",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3/@claude-flow/cli",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "ADR-176 \u2014 clean-room replay acceptance test (offline, identical hashes)",
+          "run": "node scripts/replay-generation.mjs",
+          "working_directory": "v3/@claude-flow/cli",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3/@claude-flow/cli",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run tests",
+          "run": "REPORT=\"$RUNNER_TEMP/vitest-report.json\"\nrm -f \"$REPORT\"\nset +e\n# The bin shim execs node, so a segfault surfaces as 139. Through\n# `pnpm exec` a signalled child is reported as exit 1 instead.\n./node_modules/.bin/vitest run --reporter=default --reporter=json --outputFile.json=\"$REPORT\" 2>&1 | tee \"$RUNNER_TEMP/vitest-output.log\"\nEXIT=${PIPESTATUS[0]}\nset -e\nif [ \"$EXIT\" -eq 139 ]; then\n  # Count error lines explicitly: a scanner failure leaves ERRORS empty\n  # and fails closed instead of reading as \"no errors\".\n  ERRORS=\"$(sed -E 's/\\x1b\\[[0-9;]*m//g' \"$RUNNER_TEMP/vitest-output.log\" | grep -cE '^ *Errors +[0-9]+ errors?|Unhandled Errors|error during close' || true)\"\n  if [ -s \"$REPORT\" ] && [ -s \"$RUNNER_TEMP/vitest-output.log\" ] && [ \"$ERRORS\" = \"0\" ] \\\n    && node -e 'const r=JSON.parse(require(\"fs\").readFileSync(process.argv[1],\"utf8\")); process.exit(r.success===true && r.numTotalTestSuites>0 && r.numFailedTestSuites===0 && r.numFailedTests===0 ? 0 : 1)' \"$REPORT\"; then\n    echo \"::warning::vitest exited with SIGSEGV (139) after it reported a passing run with no unhandled errors \u2014 tolerated as a shutdown crash\"\n    exit 0\n  fi\n  echo \"::error::vitest exited with SIGSEGV (139) without a passing report (report present: $([ -s \"$REPORT\" ] && echo yes || echo no); error lines: ${ERRORS:-unreadable}); the suite did not finish, or it reported failures or unhandled errors\"\nfi\nexit \"$EXIT\"\n",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "test",
+          "cwd": "v3",
+          "diagnostic_mode": "structured-test-report-and-crashes"
+        }
+      ],
+      "report": "$RUNNER_TEMP/vitest-report.json",
+      "workers": "Unmodified Vitest4 default; record real availableParallelism/effective worker count."
+    },
+    "cli22": {
+      "node": "22",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "workspace runtime bootstrap",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "strict affected package build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "extra full package-native suite",
+          "cwd": "v3/@claude-flow/cli",
+          "run": "./node_modules/.bin/vitest run --reporter=default --reporter=json --outputFile.json=\"$RUNNER_TEMP/cli-report.json\"",
+          "diagnostic_mode": "structured-test-report-and-crashes"
+        }
+      ],
+      "report": "$RUNNER_TEMP/cli-report.json",
+      "workers": "Unmodified Vitest4 package default; this is an extra suite, not a CI gate."
+    },
+    "quality20": {
+      "node": "20",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "Build",
+          "run": "pnpm -r build",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "build",
+          "cwd": "v3",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Type check",
+          "run": "pnpm typecheck",
+          "working_directory": "v3",
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "typecheck",
+          "cwd": "v3",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run env-var-precedence audit (ADR-125 / ADR-130)",
+          "run": "node scripts/audit-env-var-precedence.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "plugin-package-audit",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Verify witness manifest (via standalone plugin script \u2014 no CLI dep)",
+          "run": "# Use the project-agnostic verifier from ruflo-core plugin. This\n# is the same script external adopters use \u2014 dogfooding ensures\n# the plugin pathway works and avoids CI-specific cli build\n# issues (e.g. missing @ruvector/sona, sharp native postinstall).\n# Capture both streams; analyze regardless of exit code so we\n# always see WHY a verification failed.\n# OS-specific manifest path (verification/<os>/manifest.md.json).\n# Each runner reads its own snapshot \u2014 Linux runner reads\n# verification/linux/, macOS reads verification/macos/, etc.\ncase \"$RUNNER_OS\" in\n  Linux)   OS_DIR=linux ;;\n  macOS)   OS_DIR=macos ;;\n  Windows) OS_DIR=windows ;;\n  *)       OS_DIR=linux ;;\nesac\nMANIFEST=\"verification/$OS_DIR/manifest.md.json\"\necho \"verifying: $MANIFEST\"\nset +e\nnode plugins/ruflo-core/scripts/witness/verify.mjs \\\n  --manifest \"$MANIFEST\" \\\n  --json > \"$RUNNER_TEMP/witness-result.json\" 2> \"$RUNNER_TEMP/witness-result.err\"\nVERIFY_EXIT=$?\nset -e\necho \"--- verify.mjs exit code: $VERIFY_EXIT ---\"\necho \"--- stderr ---\"\ncat \"$RUNNER_TEMP/witness-result.err\" || true\necho \"--- summary ---\"\nnode -e \"\n  const fs = require('fs');\n  const raw = fs.readFileSync(process.env.RUNNER_TEMP + '/witness-result.json', 'utf8');\n  if (!raw.trim()) { console.error('verify.mjs produced no JSON output'); process.exit(1); }\n  const r = JSON.parse(raw);\n  console.log(JSON.stringify({signature: r.signature, summary: r.summary}, null, 2));\n  const failures = (r.results || []).filter(x => x.status !== 'pass' && x.status !== 'drift');\n  if (failures.length) {\n    console.error('non-pass fixes:');\n    for (const f of failures) console.error('  ' + f.status + ': ' + f.id + ' (' + f.file + ')');\n  }\n  if (!r.ok) { console.error('witness verify FAILED'); process.exit(1); }\n  if (r.summary.regressed > 0) { console.error('regressed fixes:', r.summary.regressed); process.exit(1); }\n  console.log('witness verify ok:', r.summary.pass, 'pass,', r.summary.drift, 'drift');\n\"\n",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "witness-verify",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        }
+      ],
+      "caveats": [
+        "pnpm typecheck omits CLI; strict v3 build supplies the CLI compile gate.",
+        "Use the Linux signed manifest, retain upstream drift semantics and reject regressions. No signing."
+      ]
+    },
+    "smokes22": {
+      "node": "22",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "workspace runtime bootstrap",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "strict affected package build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run agent_execute providers smoke",
+          "run": "node scripts/smoke-agent-execute-providers.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "agent-execute-providers-smoke",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Scan every witness marker for drift",
+          "run": "node scripts/smoke-witness-marker-drift.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "witness-marker-drift-smoke",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Drive precondition + built-tree shapes through verify.mjs",
+          "run": "node scripts/smoke-witness-verify-precondition.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "witness-verify-precondition-smoke",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run",
+          "run": "node plugins/ruflo-core/scripts/test-mcp-roundtrips.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "mcp-roundtrip-smoke",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run",
+          "run": "node plugins/ruflo-core/scripts/test-cli-no-crash.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "mcp-roundtrip-smoke",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run ADR-095 G2 consensus-transport guard",
+          "run": "node plugins/ruflo-core/scripts/test-consensus-transport.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "mcp-roundtrip-smoke",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run tool-description audit",
+          "run": "node scripts/audit-tool-descriptions.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "tool-descriptions-audit",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run CLI \u2194 MCP tool coverage audit (#1916)",
+          "run": "node scripts/audit-cli-mcp-tools.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "tool-descriptions-audit",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run vector-dim audit",
+          "run": "node scripts/audit-vector-dim.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "vector-dim-audit",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run init-scaffold references smoke",
+          "run": "node scripts/smoke-init-scaffold-references.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "init-scaffold-references-smoke",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Run fix-invariants audit (presence-check guard for",
+          "run": "node scripts/audit-fix-invariants.mjs",
+          "working_directory": null,
+          "upstream_workflow": "v3-ci.yml",
+          "upstream_job": "hook-command-audit",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Additional MCP/memory-adjacent source-backed contract",
+          "run": "node plugins/ruflo-core/scripts/test-mcp-protocol.mjs",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Additional MCP/memory-adjacent source-backed contract",
+          "run": "node plugins/ruflo-core/scripts/test-memory-import.mjs",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Additional MCP/memory-adjacent source-backed contract",
+          "run": "node scripts/smoke-browser-rvf-create-flags.mjs",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "Additional MCP/memory-adjacent source-backed contract",
+          "run": "node scripts/smoke-kg-extract-type-imports.mjs",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "ruflo-agentdb actual default offline smoke contract",
+          "run": "bash plugins/ruflo-agentdb/scripts/smoke.sh",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "ruflo-market-data actual default offline smoke contract",
+          "run": "bash plugins/ruflo-market-data/scripts/smoke.sh",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "ruflo-migrations actual default offline smoke contract",
+          "run": "bash plugins/ruflo-migrations/scripts/smoke.sh",
+          "cwd": ".",
+          "diagnostic_mode": "command-diagnostics"
+        }
+      ],
+      "caveats": [
+        "Preserve upstream advisory/watchdog distinctions.",
+        "Only selected literal scripts run; do not claim unrelated whole jobs.",
+        "Static smokes do not prove provider behavior; real loopback regressions and installed MCP handlers do."
+      ]
+    },
+    "shipping22": {
+      "node": "22",
+      "gating_suite": false,
+      "install": "pnpm install --frozen-lockfile",
+      "install_cwd": "v3",
+      "commands": [
+        {
+          "name": "workspace runtime bootstrap",
+          "run": "pnpm --recursive --no-bail run build || true",
+          "cwd": "v3",
+          "diagnostic_mode": "command-diagnostics"
+        },
+        {
+          "name": "strict affected package build",
+          "run": "pnpm run build",
+          "cwd": "v3/@claude-flow/cli",
+          "diagnostic_mode": "command-diagnostics"
+        }
+      ],
+      "pack_origin": "scripts/smoke-cli-npx-install.mjs",
+      "pack": "pnpm pack --pack-destination /work/pack from the built CLI workspace, preserving bundled dependencies.",
+      "warmup": "Fresh consumer exactCLI tarball install --ignore-scripts WITH optional dependencies. Inspect every lifecycle/version against frozen v3 lock+reviewedcommands BEFORE scripts. Then execute allowlisted npm rebuild with network to seed prebuild cache; local matching Node headers available for builds.",
+      "caveats": [
+        "Actual CLI3.74.0; record resolved published MCP dist/hash and UTF16 enforcement before assertions. Root/v3 linked MCP source is not presumed identical to published dependency.",
+        "No provider calls, external endpoints, service daemons, or real user storage. Required SQLite must really persist accepted values. No mocked transport/storage or blanket green claim.",
+        "WebSocket wrapper shares actual same ToolRegistry/validateSchema path; source proof accompanies this plan. No live WebSocket claim."
+      ],
+      "disconnected_proof": "After the fresh warm consumer ignore-scripts install, exact closure inventory and allowlisted networked rebuild, disconnect all networks and exercise the real installed CLI/SDK stdio+HTTP against THAT consumer. No second npm install or lifecycle execution offline. This is a fresh installed consumer tested disconnected, not an offline reinstall claim."
+    }
+  },
+  "images": {
+    "20": "node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a",
+    "22": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa"
+  },
+  "locked_inputs": {
+    "package-lock.json": "f14c3977b5d539c5959a89445f708c1a9f0ec8abc7b186dd2c80b351d892f1f6",
+    "v3/pnpm-lock.yaml": "02798bc295daa2b922babc34606d5ffd3cf4252abf4460e553af8ec1e7d65554",
+    "package.json": "9b7318396b3dfcb9176eb23ac96f2d8e4de5d19681094657c9a75babefa28c2a",
+    "v3/package.json": "36a436f92ea5211db2be7c677b336d6481a9f74256dfc51d13a2f6113686f426",
+    "v3/pnpm-workspace.yaml": "188e1960dd374744c0d2e891f4db251bae072b7c6d70be625f0acdd97059e473",
+    "v3/@claude-flow/cli/package.json": "bf391ae0f1b538c8018f88454e78952b2b028a5be906c21d7ba7e0e0748a5721",
+    "v3/@claude-flow/cli/vitest.config.ts": "ce8f8043810d34bb21b9559008755d4891526333736d040a36bdd993879b4747",
+    "v3/@claude-flow/cli/tsconfig.json": "9700b59dfdeb3e3c5a03d0e26bb0823d60ccd7c0e9d285f889a2c25cc8e5f29f",
+    "v3/@claude-flow/mcp/package.json": "ff2df1e9f67c64992104c3a6e990d3a65817e02c2f0f173331fe6f7ba34a20b9",
+    "v3/@claude-flow/cli-core/package.json": "1d5fe5719dce61d9359fa1a876b80e6e01ca2769e1881bc480267694f62f0f25",
+    "plugins/ruflo-console/tests/events-sweep.spec.ts": "36ddbf6d14345b2765c5648d8404a181a455132adb403f905a84541a1f1de483",
+    "plugins/ruflo-console/tests/fixtures/ev-rig.ts": "250ac449b40deb1eece1c30671f76f761dd1e49e0ff18fd89d1945a701ac21a9"
+  },
+  "pnpm_sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
+  "candidate_files": [
+    {
+      "path": "v3/@claude-flow/cli/src/mcp-tools/agentdb-tools.ts",
+      "new": false,
+      "sha256": "8eb10c2ce1513b2e490cedf3e0af9e6be51f5e4e82c0bb3d0d3289876c0fe295",
+      "bytes": 85187,
+      "before_sha256": "52fe44702f2d827b2f2e739115cc7997258bbafbddcaa0ed2d30a01baa86e1fa"
+    },
+    {
+      "path": "v3/@claude-flow/cli/__tests__/hierarchical-store-value-schema-4892.test.ts",
+      "new": true,
+      "sha256": "e1bd833c0f82817b2d9670adbab001070c8c94c2fe6b8695f874cbdda88b9e2d",
+      "bytes": 7101
+    }
+  ],
+  "patch_sha256": "ffe81ec2cc518b043388ebf54b253b90cc537244c3db002fe265bdd44ffed42b",
+  "expected_new_cases": {
+    "root20": {
+      "v3/@claude-flow/cli/__tests__/hierarchical-store-value-schema-4892.test.ts": 26
+    },
+    "v3-test22": {
+      "v3/@claude-flow/cli/__tests__/hierarchical-store-value-schema-4892.test.ts": 26
+    },
+    "cli22": {
+      "v3/@claude-flow/cli/__tests__/hierarchical-store-value-schema-4892.test.ts": 26
+    },
+    "quality20": {},
+    "smokes22": {},
+    "shipping22": {}
+  },
+  "ui_source_files": [
+    "plugins/ruflo-console/tests/events-sweep.spec.ts",
+    "plugins/ruflo-console/tests/fixtures/ev-rig.ts"
+  ],
+  "complete_scope": "Full two-file CLI-bound fix; 26 actual tests with six expected pre-fix failures and all26candidatepass; realnativeguard and realToolRegistry; packed installed realMCP SDK stdio+HTTP boundarycases; fullroot/v3/CLI suites, strictwholeworkspacebuild,type/quality/smokes, completefailure-IDcomparison. No unrelated1796generator/helpmetadata/docs steps.",
+  "packet_files": [
+    {
+      "path": "I1.patch",
+      "bytes": 10401,
+      "sha256": "ffe81ec2cc518b043388ebf54b253b90cc537244c3db002fe265bdd44ffed42b"
+    },
+    {
+      "path": "aggregate.py",
+      "bytes": 9098,
+      "sha256": "acc5291125792df8a096d18a785c69a54d1e2455f1fe58961509d0c94387f306"
+    },
+    {
+      "path": "candidate-files/v3/@claude-flow/cli/__tests__/hierarchical-store-value-schema-4892.test.ts",
+      "bytes": 7101,
+      "sha256": "e1bd833c0f82817b2d9670adbab001070c8c94c2fe6b8695f874cbdda88b9e2d"
+    },
+    {
+      "path": "candidate-files/v3/@claude-flow/cli/src/mcp-tools/agentdb-tools.ts",
+      "bytes": 85187,
+      "sha256": "8eb10c2ce1513b2e490cedf3e0af9e6be51f5e4e82c0bb3d0d3289876c0fe295"
+    },
+    {
+      "path": "check-node-headers.mjs",
+      "bytes": 967,
+      "sha256": "c3d97817dfdb9c14b5bc4bfcd88cb5a57d4a2d1f9983977d78c99d4cdd4a862e"
+    },
+    {
+      "path": "check_lifecycles.py",
+      "bytes": 5766,
+      "sha256": "15786b970d846935d9e54a3dd9f7cfba4566f6a7ea436cc85d73fedd89241d72"
+    },
+    {
+      "path": "compare-consumer-locks.py",
+      "bytes": 1896,
+      "sha256": "f42fe4b67d8a11fde46242f3e614901e426db4d4eb88af09caf7607b6dc0e012"
+    },
+    {
+      "path": "compare_diagnostics.py",
+      "bytes": 5108,
+      "sha256": "1914ad04d20bccd8b13c684340a37b8e0f3066e94ab4c958ecbf5493d069cad8"
+    },
+    {
+      "path": "compare_reports.py",
+      "bytes": 12099,
+      "sha256": "2df21ae854cdec2324dc1454486b1bf28eb4b5543927d39379d86a2fa96ad55c"
+    },
+    {
+      "path": "consumer-closure.py",
+      "bytes": 4000,
+      "sha256": "3964e268500786cee0401f943c08b2e937ecbcc0b356065eb5d62d41f4731054"
+    },
+    {
+      "path": "evidence_index.py",
+      "bytes": 2198,
+      "sha256": "9bd80238e0e19ee2384e93e18ce41942406c7ab330a57c75f157c49e734e11f5"
+    },
+    {
+      "path": "focused-runner-identity.mjs",
+      "bytes": 975,
+      "sha256": "2e19417b2fc5f2c69b0e7bb1aad33a813240d0dbb019da8b7da0899239f2e4a4"
+    },
+    {
+      "path": "frozen-lifecycle-identities.json",
+      "bytes": 334934,
+      "sha256": "0f5b7f04ae2bcacb1fbd1563633b3c4e5f263502394fa00e5d8840f28e717056"
+    },
+    {
+      "path": "global-guard-fixture.cjs",
+      "bytes": 996,
+      "sha256": "56c91a3a70c8b5c7fa08a97c65229ed51cebb8163c8538a9021d80b4e1fe4f21"
+    },
+    {
+      "path": "hosted.py",
+      "bytes": 12201,
+      "sha256": "e8910cb9e192fdf3aaeac22c031dd54154db754263285184fbbee98484ef3c2b"
+    },
+    {
+      "path": "inside.py",
+      "bytes": 13587,
+      "sha256": "f8b1f0e4374dd6253d58ad794ba0662bf547a543198c95e15a6298b2b08f2c16"
+    },
+    {
+      "path": "install-global-guard.cjs",
+      "bytes": 718,
+      "sha256": "6bfcd26f154e97c5fe39c3f63f54402005ad54e0e08a7666dcb243e48294dec6"
+    },
+    {
+      "path": "installed-mcp-proof.mjs",
+      "bytes": 14368,
+      "sha256": "8728dac133a1a38203bef5f67f5c652d82fedf24375a1dd5cfa4e2dfe8a239fd"
+    },
+    {
+      "path": "lifecycle-allowlist-for-review.json",
+      "bytes": 9504,
+      "sha256": "4316cc5f89b002194f5dca9888df04a0a866483bca07bf4a43567423eefc3ad1"
+    },
+    {
+      "path": "mcp-resolution.mjs",
+      "bytes": 1493,
+      "sha256": "b4aac1aa0379725d505988f28eae0032ed7a1ef0f722d7df14b8891645c4c5c8"
+    },
+    {
+      "path": "npm-lifecycle-fixture.py",
+      "bytes": 3243,
+      "sha256": "33205accf781e527926b3c233813ac26393799813b5f8a0d3ba33b18a90bf1ec"
+    },
+    {
+      "path": "overlay-cli-core.py",
+      "bytes": 522,
+      "sha256": "89ef23eacaa66a229bc3316f7ea79e8b3deb03047de574367f2ad6066bb7daaa"
+    },
+    {
+      "path": "pnpm-8.15.0.tgz",
+      "bytes": 3805828,
+      "sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665"
+    },
+    {
+      "path": "retained-fixture-plan.json",
+      "bytes": 838,
+      "sha256": "64e97f711dd23a1f041cbf1d0c866ac74c37d04cecd9ce766924967445a292b1"
+    },
+    {
+      "path": "retained-root-baseline.json.gz",
+      "bytes": 871156,
+      "sha256": "15f5eef84f02f770e1c1c0e59bd75167044b1220724bf45e83fd50ebfb54f426"
+    },
+    {
+      "path": "retained-root-candidate.json.gz",
+      "bytes": 871216,
+      "sha256": "2c22844c9c275f800084016294cac07795f4454822cd0b1588eca4d3b73cb6b5"
+    },
+    {
+      "path": "retained-ts-diagnostics-provenance.json",
+      "bytes": 495,
+      "sha256": "246a0e2c29b85b9cb9edd785826c066c7e3df97ae7045b4c499d8b3a200680b6"
+    },
+    {
+      "path": "retained-ts-diagnostics.txt",
+      "bytes": 2112,
+      "sha256": "9ea710803fcec096fc574ab37439874f7ec8b3ea7f26985052af90f75d29f699"
+    },
+    {
+      "path": "runtime-metadata.mjs",
+      "bytes": 981,
+      "sha256": "58c8a7b63bdda7847d23fb2548d2d562587ba395fcb17fc89188957bfd4d0d4f"
+    },
+    {
+      "path": "safe_extract.py",
+      "bytes": 2208,
+      "sha256": "9fe3909b256bf2e9b174f73f98d76a3ae1b96951855a3899d43827ad9c81b9d6"
+    },
+    {
+      "path": "source_input.py",
+      "bytes": 9753,
+      "sha256": "39678a2bed313581808caa4d38c8576a088bfaa3878ba9c45762a7bb951a68ce"
+    },
+    {
+      "path": "verify-focused.py",
+      "bytes": 1584,
+      "sha256": "0bbac8dbd7283afd03867ef99f7397635aa593654ece3712d3c1988d39f1b6a2"
+    }
+  ],
+  "pinned_actions": {
+    "checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+    "upload-artifact": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+    "download-artifact": "d3f86a106a0bac45b974a628896c90dbdf5c8093"
+  },
+  "minimum_free_disk_bytes": 21474836480,
+  "minimum_mem_available_bytes": 15032385536,
+  "network_bytes_cap": 8589934592,
+  "attempt": 1,
+  "focused_runners": {
+    "root20": {
+      "cwd": ".",
+      "binary": "node_modules/vitest/vitest.mjs",
+      "config": "root implicit Vitest3 defaults; no root vite/vitest config exists",
+      "command": "node node_modules/vitest/vitest.mjs run v3/@claude-flow/cli/__tests__/hierarchical-store-value-schema-4892.test.ts --maxWorkers=2 --reporter=default --reporter=json --outputFile.json=/work/evidence/focused-report.json"
+    },
+    "v3-test22": {
+      "cwd": "v3/@claude-flow/cli",
+      "binary": "v3/@claude-flow/cli/node_modules/.bin/vitest",
+      "config": "v3/@claude-flow/cli/vitest.config.ts",
+      "command": "./node_modules/.bin/vitest run __tests__/hierarchical-store-value-schema-4892.test.ts --reporter=default --reporter=json --outputFile.json=/work/evidence/focused-report.json"
+    },
+    "cli22": {
+      "cwd": "v3/@claude-flow/cli",
+      "binary": "v3/@claude-flow/cli/node_modules/.bin/vitest",
+      "config": "v3/@claude-flow/cli/vitest.config.ts",
+      "command": "./node_modules/.bin/vitest run __tests__/hierarchical-store-value-schema-4892.test.ts --reporter=default --reporter=json --outputFile.json=/work/evidence/focused-report.json"
+    },
+    "quality20": {
+      "cwd": "v3/@claude-flow/cli",
+      "binary": "v3/@claude-flow/cli/node_modules/.bin/vitest",
+      "config": "v3/@claude-flow/cli/vitest.config.ts",
+      "command": "./node_modules/.bin/vitest run __tests__/hierarchical-store-value-schema-4892.test.ts --reporter=default --reporter=json --outputFile.json=/work/evidence/focused-report.json"
+    },
+    "smokes22": {
+      "cwd": "v3/@claude-flow/cli",
+      "binary": "v3/@claude-flow/cli/node_modules/.bin/vitest",
+      "config": "v3/@claude-flow/cli/vitest.config.ts",
+      "command": "./node_modules/.bin/vitest run __tests__/hierarchical-store-value-schema-4892.test.ts --reporter=default --reporter=json --outputFile.json=/work/evidence/focused-report.json"
+    },
+    "shipping22": {
+      "cwd": "v3/@claude-flow/cli",
+      "binary": "v3/@claude-flow/cli/node_modules/.bin/vitest",
+      "config": "v3/@claude-flow/cli/vitest.config.ts",
+      "command": "./node_modules/.bin/vitest run __tests__/hierarchical-store-value-schema-4892.test.ts --reporter=default --reporter=json --outputFile.json=/work/evidence/focused-report.json"
+    }
+  },
+  "fixture_archives": [
+    {
+      "name": "retained-root-baseline.json",
+      "compressed_name": "retained-root-baseline.json.gz",
+      "compressed_bytes": 871156,
+      "compressed_sha256": "15f5eef84f02f770e1c1c0e59bd75167044b1220724bf45e83fd50ebfb54f426",
+      "raw_bytes": 7059033,
+      "raw_sha256": "7fc42e1df21a3afac9cabe48e528d19df2198f22a6d2c146638f9345f11eabe3"
+    },
+    {
+      "name": "retained-root-candidate.json",
+      "compressed_name": "retained-root-candidate.json.gz",
+      "compressed_bytes": 871216,
+      "compressed_sha256": "2c22844c9c275f800084016294cac07795f4454822cd0b1588eca4d3b73cb6b5",
+      "raw_bytes": 7035527,
+      "raw_sha256": "a6a62f08eb64194c661ee2eba89533188e0f96720e92a91e220ae64712868a63"
+    }
+  ]
+}

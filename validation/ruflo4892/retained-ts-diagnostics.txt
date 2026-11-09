@@ -1,0 +1,30 @@
+Building project for ubuntu-latest...
+
+> claude-flow@3.72.2 build:ts
+> cd v3/@claude-flow/cli && npm run build || true
+
+
+> @claude-flow/cli@3.72.2 build
+> tsc
+
+src/infrastructure/in-memory-repositories.ts(9,47): error TS6305: Output file '/work/source/v3/@claude-flow/swarm/dist/domain/entities/agent.d.ts' has not been built from source file '/work/source/v3/@claude-flow/swarm/src/domain/entities/agent.ts'.
+src/infrastructure/in-memory-repositories.ts(10,48): error TS6305: Output file '/work/source/v3/@claude-flow/swarm/dist/domain/entities/task.d.ts' has not been built from source file '/work/source/v3/@claude-flow/swarm/src/domain/entities/task.ts'.
+src/infrastructure/in-memory-repositories.ts(15,8): error TS6305: Output file '/work/source/v3/@claude-flow/swarm/dist/domain/repositories/agent-repository.interface.d.ts' has not been built from source file '/work/source/v3/@claude-flow/swarm/src/domain/repositories/agent-repository.interface.ts'.
+src/infrastructure/in-memory-repositories.ts(20,8): error TS6305: Output file '/work/source/v3/@claude-flow/swarm/dist/domain/repositories/task-repository.interface.d.ts' has not been built from source file '/work/source/v3/@claude-flow/swarm/src/domain/repositories/task-repository.interface.ts'.
+src/mcp-tools/x-federation-channels.ts(36,30): error TS2307: Cannot find module 'nostr-tools/pure' or its corresponding type declarations.
+src/mcp-tools/x-federation-channels.ts(37,37): error TS2307: Cannot find module 'nostr-tools' or its corresponding type declarations.
+src/mcp-tools/x-federation-join.ts(61,30): error TS2307: Cannot find module 'nostr-tools/pure' or its corresponding type declarations.
+
+npm info using npm@10.8.2
+npm info using node@v20.20.2
+npm info using npm@10.8.2
+npm info using node@v20.20.2
+npm info config found workspace root at /work/source/v3
+npm error Lifecycle script `build` failed with error:
+npm error code 2
+npm error path /work/source/v3/@claude-flow/cli
+npm error workspace @claude-flow/cli@3.72.2
+npm error location /work/source/v3/@claude-flow/cli
+npm error command failed
+npm error command sh -c tsc
+npm info ok

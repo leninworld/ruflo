@@ -1,0 +1,13 @@
+{
+  "source_hashes": [
+    {
+      "plugins/ruflo-console/tests/events-sweep.spec.ts": "36ddbf6d14345b2765c5648d8404a181a455132adb403f905a84541a1f1de483",
+      "plugins/ruflo-console/tests/fixtures/ev-rig.ts": "250ac449b40deb1eece1c30671f76f761dd1e49e0ff18fd89d1945a701ac21a9"
+    },
+    {
+      "plugins/ruflo-console/tests/events-sweep.spec.ts": "36ddbf6d14345b2765c5648d8404a181a455132adb403f905a84541a1f1de483",
+      "plugins/ruflo-console/tests/fixtures/ev-rig.ts": "250ac449b40deb1eece1c30671f76f761dd1e49e0ff18fd89d1945a701ac21a9"
+    }
+  ],
+  "qualification": "Synthetic equal-hash predicate using current source bytes, for real retained-report comparison fixtures only. Historical4834whole-treehash equality is not asserted. Full new baseline/candidate comparison must supply their separately measured actual source hashes."
+}

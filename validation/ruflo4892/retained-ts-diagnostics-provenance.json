@@ -1,0 +1,10 @@
+[
+  {
+    "path": "co_create/20261106/ruflo4834-implementation/hosted-evidence/ruflo4834-result-root20-baseline/root20-baseline/evidence/010-official-05.stdout",
+    "sha256": "45ea3e30e53702b9cb8b33c406aca0642daeddb0acd3df2ca95dea9ac599cbd1"
+  },
+  {
+    "path": "co_create/20261106/ruflo4834-implementation/hosted-evidence/ruflo4834-result-root20-baseline/root20-baseline/evidence/010-official-05.stderr",
+    "sha256": "6f0c952a4a53e9f4b2817734c702e8d773e0d4853fd95b29ca0b148099afd121"
+  }
+]

@@ -1,0 +1,114 @@
+name: Hierarchical value schema full validation
+on:
+  push:
+    branches: [validate-hierarchical-value-4892-i1]
+permissions:
+  contents: read
+jobs:
+  shipping_first:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [shipping22]
+        variant: [baseline, candidate]
+    env:
+      APPROVED_PLAN_SHA256: 4aad113f168f794876d8df484fa51d37bf5402cd7185f5bf588e86fe7f17a54b
+      APPROVED_DIAGNOSTIC_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: packet
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: ruvnet/ruflo
+          ref: bc480847d868e8f8a1dab83bf3f3e6f657119077
+          path: upstream
+          persist-credentials: false
+      - name: Fresh frozen install, early guards and full lane
+        run: python3 packet/validation/ruflo4892/hosted.py ${{ matrix.profile }} ${{ matrix.variant }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: ruflo4892-${{ matrix.profile }}-${{ matrix.variant }}
+          path: ${{ runner.temp }}/ruflo4892-${{ github.run_id }}-${{ matrix.profile }}-${{ matrix.variant }}/evidence/
+          if-no-files-found: error
+          retention-days: 7
+  shipping_compare:
+    needs: shipping_first
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: packet
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: ruflo4892-shipping22-*
+          path: shipping-results
+      - name: Compare complete consumer locks before expensive suites
+        run: python3 packet/validation/ruflo4892/compare-consumer-locks.py shipping-results/ruflo4892-shipping22-baseline/work/consumer-lock.json shipping-results/ruflo4892-shipping22-candidate/work/consumer-lock.json shipping-comparison.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: ruflo4892-shipping-comparison
+          path: shipping-comparison.json
+          if-no-files-found: error
+          retention-days: 7
+  full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [root20, v3-test22, cli22, quality20, smokes22]
+        variant: [baseline, candidate]
+    env:
+      APPROVED_PLAN_SHA256: 4aad113f168f794876d8df484fa51d37bf5402cd7185f5bf588e86fe7f17a54b
+      APPROVED_DIAGNOSTIC_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: packet
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: ruvnet/ruflo
+          ref: bc480847d868e8f8a1dab83bf3f3e6f657119077
+          path: upstream
+          persist-credentials: false
+      - name: Fresh frozen install, early guards and full lane
+        run: python3 packet/validation/ruflo4892/hosted.py ${{ matrix.profile }} ${{ matrix.variant }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: ruflo4892-${{ matrix.profile }}-${{ matrix.variant }}
+          path: ${{ runner.temp }}/ruflo4892-${{ github.run_id }}-${{ matrix.profile }}-${{ matrix.variant }}/evidence/
+          if-no-files-found: error
+          retention-days: 7
+  compare:
+    needs: [shipping_first, shipping_compare, full]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: packet
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: ruflo4892-*
+          path: results
+      - name: Verify every lane, failure ID and installed transport
+        run: python3 packet/validation/ruflo4892/aggregate.py results comparison.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: ruflo4892-comparison
+          path: comparison.json
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,224 @@
+diff --git a/v3/@claude-flow/cli/src/mcp-tools/agentdb-tools.ts b/v3/@claude-flow/cli/src/mcp-tools/agentdb-tools.ts
+index 372436e..59905b0 100644
+--- a/v3/@claude-flow/cli/src/mcp-tools/agentdb-tools.ts
++++ b/v3/@claude-flow/cli/src/mcp-tools/agentdb-tools.ts
+@@ -19,6 +19,7 @@ import { agentdbEpisodeCrudTools } from './agentdb-episode-tools.js';
+ // ===== Shared validation helpers =====
+ 
+ const MAX_STRING_LENGTH = 100_000; // 100KB max for any string input
++const HIERARCHICAL_VALUE_MAX_LENGTH = 10_000;
+ const MAX_BATCH_SIZE = 500;        // Max entries per batch operation
+ const MAX_TOP_K = 100;             // Max results per query
+ 
+@@ -767,7 +768,13 @@ export const agentdbHierarchicalStore: MCPTool = {
+     type: 'object',
+     properties: {
+       key: { type: 'string', description: 'Memory entry key' },
+-      value: { type: 'string', description: 'Memory entry value' },
++      value: {
++        type: 'string',
++        maxLength: HIERARCHICAL_VALUE_MAX_LENGTH,
++        description: 'Memory entry value; at most 10,000 UTF-16 code units (JavaScript string length). '
++          + 'Standard JSON Schema maxLength counts Unicode code points. Supplementary characters use two runtime units each, '
++          + 'so a value that passes a standard client validator can still be refused by this server.',
++      },
+       tier: {
+         type: 'string',
+         description: 'Memory tier (working, episodic, semantic)',
+@@ -793,13 +800,13 @@ export const agentdbHierarchicalStore: MCPTool = {
+     try {
+       const vKey = validateIdentifier(params.key, 'key');
+       if (!vKey.valid) return { success: false, error: vKey.error };
+-      const vValue = validateText(params.value, 'value');
++      const vValue = validateText(params.value, 'value', HIERARCHICAL_VALUE_MAX_LENGTH);
+       if (!vValue.valid) return { success: false, error: vValue.error };
+       if (params.tier) { const vTier = validateIdentifier(params.tier, 'tier'); if (!vTier.valid) return { success: false, error: vTier.error }; }
+       const key = validateString(params.key, 'key', 1000);
+-      const value = validateString(params.value, 'value');
++      const value = validateString(params.value, 'value', HIERARCHICAL_VALUE_MAX_LENGTH);
+       if (!key) return { success: false, error: 'key is required (non-empty string, max 1KB)' };
+-      if (!value) return { success: false, error: 'value is required (non-empty string, max 100KB)' };
++      if (!value) return { success: false, error: 'value is required (non-empty string, max 10000 UTF-16 code units)' };
+       const tier = validateString(params.tier, 'tier', 20) ?? 'working';
+       if (!['working', 'episodic', 'semantic'].includes(tier)) {
+         return { success: false, error: `Invalid tier: ${tier}. Must be working, episodic, or semantic` };
+diff --git a/v3/@claude-flow/cli/__tests__/hierarchical-store-value-schema-4892.test.ts b/v3/@claude-flow/cli/__tests__/hierarchical-store-value-schema-4892.test.ts
+new file mode 100644
+index 0000000..de078ab
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/hierarchical-store-value-schema-4892.test.ts
+@@ -0,0 +1,174 @@
++import { beforeEach, describe, expect, it, vi } from 'vitest';
++// Use the actual package source, as the MCP package's own tests do. The root
++// ratchet does not build the linked MCP package's dist before running tests.
++import { ToolRegistry } from '../../mcp/src/tool-registry.js';
++import type { JSONSchema } from '../../mcp/src/types.js';
++
++const { store } = vi.hoisted(() => ({
++  store: vi.fn(async (_input: Record<string, unknown>) => ({
++    success: true,
++    id: 'stored-4892',
++    durable: true,
++  })),
++}));
++
++vi.mock('../src/memory/memory-bridge.js', () => ({
++  bridgeHierarchicalStore: store,
++}));
++
++import { agentdbHierarchicalStore, agentdbTools } from '../src/mcp-tools/agentdb-tools.js';
++import { validateText } from '../src/mcp-tools/validate-input.js';
++
++const boundaries = [
++  { label: '10000 ASCII units', value: 'a'.repeat(10_000), accepted: true },
++  { label: '10001 ASCII units', value: 'a'.repeat(10_001), accepted: false },
++  { label: '5000 supplementary code points', value: '\u{1F600}'.repeat(5_000), accepted: true },
++  { label: '5001 supplementary code points', value: '\u{1F600}'.repeat(5_001), accepted: false },
++  { label: '5000 combining sequences', value: 'e\u0301'.repeat(5_000), accepted: true },
++  { label: '5001 combining sequences', value: 'e\u0301'.repeat(5_001), accepted: false },
++];
++
++function input(value: unknown): Record<string, unknown> {
++  return {
++    key: 'schema-4892',
++    value,
++    tier: 'semantic',
++    validFrom: '2026-01-01T00:00:00.000Z',
++    validUntil: '2027-01-01T00:00:00.000Z',
++    supersedes: 'previous-4892',
++  };
++}
++
++const quietLogger = {
++  debug() {},
++  info() {},
++  warn() {},
++  error() {},
++};
++
++function httpRegistry() {
++  const registry = new ToolRegistry(quietLogger);
++  const handler = vi.fn(async (value: unknown) => (
++    agentdbHierarchicalStore.handler(value as Record<string, unknown>)
++  ));
++  const authorizer = vi.fn(async () => ({ allowed: true }));
++  registry.setAuthorizer(authorizer);
++  expect(registry.register({
++    name: agentdbHierarchicalStore.name,
++    description: agentdbHierarchicalStore.description,
++    inputSchema: agentdbHierarchicalStore.inputSchema as JSONSchema,
++    handler,
++  })).toBe(true);
++  return { registry, handler, authorizer };
++}
++
++beforeEach(() => {
++  store.mockClear();
++});
++
++describe('hierarchical-store advertised value bound (#4892)', () => {
++  it('exposes the bound on the real registered tool', () => {
++    expect(agentdbTools.find(tool => tool.name === 'agentdb_hierarchical-store'))
++      .toBe(agentdbHierarchicalStore);
++    expect(agentdbHierarchicalStore.inputSchema.properties.value)
++      .toMatchObject({ type: 'string', maxLength: 10_000 });
++  });
++
++  it('distinguishes the runtime UTF-16 bound from standard client code points', () => {
++    const schema = agentdbHierarchicalStore.inputSchema.properties.value as { description: string };
++    expect(schema.description).toContain('10,000 UTF-16 code units');
++    expect(schema.description).toContain('JavaScript string length');
++    expect(schema.description).toContain('Standard JSON Schema maxLength counts Unicode code points');
++    expect(schema.description).toContain('Supplementary characters use two runtime units');
++    expect(schema.description).toContain('can still be refused');
++  });
++
++  it('reconciles the reachable empty-value diagnostic without attempting storage', async () => {
++    expect(await agentdbHierarchicalStore.handler(input(''))).toEqual({
++      success: false,
++      error: 'value is required (non-empty string, max 10000 UTF-16 code units)',
++    });
++    expect(store).not.toHaveBeenCalled();
++  });
++});
++
++describe('native handler preserves its acceptance and effects boundary', () => {
++  it.each(boundaries)('$label', async ({ value, accepted }) => {
++    // The real cli-core guard, reached through the unchanged CLI shim.
++    expect(validateText(value, 'value').valid).toBe(accepted);
++    const args = input(value);
++    const result = await agentdbHierarchicalStore.handler(args);
++    if (accepted) {
++      expect(result).toEqual({ success: true, id: 'stored-4892', durable: true });
++      expect(store).toHaveBeenCalledExactlyOnceWith(args);
++    } else {
++      expect(result).toEqual({ success: false, error: 'value exceeds 10000 characters' });
++      // All supersedes and persistence effects are inside this bridge call.
++      expect(store).not.toHaveBeenCalled();
++    }
++  });
++
++  it.each([{ value: undefined }, { value: null }, { value: 1 }, { value: [] }, { value: {} }])(
++    'refuses a non-string value $value before storage', async ({ value }) => {
++    expect(await agentdbHierarchicalStore.handler(input(value))).toEqual({
++      success: false,
++      error: 'value must be a string',
++    });
++    expect(store).not.toHaveBeenCalled();
++  });
++
++  it('keeps omitted optional fields and the working tier default', async () => {
++    await agentdbHierarchicalStore.handler({ key: 'schema-4892', value: 'plain' });
++    expect(store).toHaveBeenCalledExactlyOnceWith({
++      key: 'schema-4892',
++      value: 'plain',
++      tier: 'working',
++      validFrom: undefined,
++      validUntil: undefined,
++      supersedes: undefined,
++    });
++  });
++
++  it.each([
++    { patch: { key: 'not/a/native/key' }, error: /key.*invalid characters/i },
++    { patch: { tier: 'not-a-tier' }, error: /invalid tier/i },
++    { patch: { validFrom: 'not-a-date' }, error: /validFrom.*parseable/i },
++    { patch: { validUntil: 'not-a-date' }, error: /validUntil.*parseable/i },
++    { patch: { supersedes: '' }, error: /supersedes.*non-empty/i },
++  ])('preserves the other input guard: $patch', async ({ patch, error }) => {
++    expect(await agentdbHierarchicalStore.handler({ ...input('valid'), ...patch }))
++      .toMatchObject({ success: false, error: expect.stringMatching(error) });
++    expect(store).not.toHaveBeenCalled();
++  });
++});
++
++describe('real HTTP/WebSocket registry layer', () => {
++  it.each(boundaries.filter(value => !value.accepted))(
++    'refuses $label before authorizer, native handler or storage',
++    async ({ value }) => {
++      const { registry, handler, authorizer } = httpRegistry();
++      expect(await registry.execute(agentdbHierarchicalStore.name, input(value))).toEqual({
++        content: [{ type: 'text', text: 'Invalid input: value: String length must be <= 10000' }],
++        isError: true,
++      });
++      expect(authorizer).not.toHaveBeenCalled();
++      expect(handler).not.toHaveBeenCalled();
++      expect(store).not.toHaveBeenCalled();
++    },
++  );
++
++  it.each(boundaries.filter(value => value.accepted))(
++    'forwards $label and temporal/supersedes metadata unchanged',
++    async ({ value }) => {
++      const { registry, handler, authorizer } = httpRegistry();
++      const args = input(value);
++      const result = await registry.execute(agentdbHierarchicalStore.name, args);
++      expect(result.isError).toBe(false);
++      expect(JSON.parse(result.content[0].text!))
++        .toEqual({ success: true, id: 'stored-4892', durable: true });
++      expect(authorizer).toHaveBeenCalledOnce();
++      expect(handler).toHaveBeenCalledOnce();
++      expect(store).toHaveBeenCalledExactlyOnceWith(args);
++    },
++  );
++});

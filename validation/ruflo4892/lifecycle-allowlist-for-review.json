@@ -1,0 +1,289 @@
+{
+  "entries": [
+    {
+      "name": "@swc/core",
+      "version": "1.15.8",
+      "scripts": {
+        "postinstall": "node postinstall.js"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agent-browser",
+      "version": "0.41.2",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.js"
+      },
+      "basis": "exact-public-version-metadata"
+    },
+    {
+      "name": "agentdb",
+      "version": "1.6.1",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.cjs || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentdb",
+      "version": "2.0.0-alpha.3.4",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.cjs || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentdb",
+      "version": "2.0.0-alpha.3.7",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.cjs || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentdb",
+      "version": "3.0.0-alpha.20",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.cjs || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentdb",
+      "version": "3.3.0",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.cjs || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentic-flow",
+      "version": "1.10.2",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.js || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentic-flow",
+      "version": "2.0.0-alpha",
+      "scripts": {
+        "postinstall": "cd agentic-flow && node scripts/postinstall.js || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentic-flow",
+      "version": "2.0.12-fix.8",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.js || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentic-flow",
+      "version": "2.0.13",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.js || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentic-flow",
+      "version": "2.0.3",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.js || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "agentic-flow",
+      "version": "3.0.0",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.js || true"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "argon2",
+      "version": "0.44.0",
+      "scripts": {
+        "install": "cross-env ZERO_AR_DATE=1 node-gyp-build"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "bcrypt",
+      "version": "6.0.0",
+      "scripts": {
+        "install": "node-gyp-build"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "better-sqlite3",
+      "version": "11.10.0",
+      "scripts": {
+        "install": "prebuild-install || node-gyp rebuild --release"
+      },
+      "basis": "exact-public-version-metadata"
+    },
+    {
+      "name": "better-sqlite3",
+      "version": "12.9.0",
+      "scripts": {
+        "install": "prebuild-install || node-gyp rebuild --release"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "esbuild",
+      "version": "0.27.2",
+      "scripts": {
+        "postinstall": "node install.js"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "hnswlib-node",
+      "version": "3.0.0",
+      "scripts": {
+        "install": "node-gyp rebuild"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "onnxruntime-node",
+      "version": "1.24.3",
+      "scripts": {
+        "postinstall": "node ./script/install"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "onnxruntime-node",
+      "version": "1.27.0",
+      "scripts": {
+        "postinstall": "node ./script/install"
+      },
+      "basis": "exact-public-version-metadata"
+    },
+    {
+      "name": "sharp",
+      "version": "0.32.6",
+      "scripts": {
+        "install": "(node install/libvips && node install/dll-copy && prebuild-install) || (node install/can-compile && node-gyp rebuild && node install/dll-copy)"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "sharp",
+      "version": "0.34.5",
+      "scripts": {
+        "install": "node install/check.js || npm run build"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "sqlite3",
+      "version": "5.1.7",
+      "scripts": {
+        "install": "prebuild-install -r napi || node-gyp rebuild"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "name": "tldjs",
+      "version": "2.3.2",
+      "scripts": {
+        "postinstall": "node ./bin/postinstall.js"
+      },
+      "basis": "retained-public-package-manifest"
+    },
+    {
+      "path": "v3/@claude-flow/browser/package.json",
+      "name": "@claude-flow/browser",
+      "version": "3.0.1",
+      "scripts": {
+        "postinstall": "node -e \"const{execSync}=require('child_process');try{execSync('agent-browser --version',{stdio:'ignore'});}catch{console.log('\\n\ud83d\udce6 Installing agent-browser globally...');try{execSync('npm install -g agent-browser@latest',{stdio:'inherit'});console.log('\u2705 agent-browser installed successfully!');}catch(e){console.log('\u26a0\ufe0f  Could not install agent-browser globally. Run manually:\\n   npm install -g agent-browser@latest');}}\""
+      }
+    },
+    {
+      "path": "v3/@claude-flow/cli/package.json",
+      "name": "@claude-flow/cli",
+      "version": "3.72.2",
+      "scripts": {
+        "postinstall": "node ./scripts/postinstall.cjs"
+      }
+    },
+    {
+      "path": "v3/@claude-flow/security/package.json",
+      "name": "@claude-flow/security",
+      "version": "3.0.6",
+      "scripts": {
+        "prepare": "npm run build"
+      }
+    },
+    {
+      "name": "@claude-flow/security",
+      "version": "3.0.7",
+      "scripts": {
+        "prepare": "npm run build"
+      },
+      "basis": "actual-current-workspace-manifest",
+      "source_path": "v3/@claude-flow/security/package.json",
+      "source_sha256": "21f826b9afc8a2ad0111cfd805f2db7d52522fecfe8bf8eb4f7ddd9a43167969"
+    },
+    {
+      "name": "@claude-flow/cli",
+      "version": "3.74.0",
+      "scripts": {
+        "postinstall": "node ./scripts/postinstall.cjs"
+      },
+      "basis": "actual-current-workspace-manifest",
+      "source_path": "v3/@claude-flow/cli/package.json",
+      "source_sha256": "bf391ae0f1b538c8018f88454e78952b2b028a5be906c21d7ba7e0e0748a5721"
+    },
+    {
+      "name": "@claude-flow/browser",
+      "version": "3.0.1",
+      "scripts": {
+        "postinstall": "node -e \"const{execSync}=require('child_process');const v=require('./package.json').dependencies['agent-browser'];try{execSync('agent-browser --version',{stdio:'ignore'});}catch{console.log('\\n\ud83d\udce6 Installing agent-browser globally...');try{execSync('npm install -g agent-browser@'+v,{stdio:'inherit'});console.log('\u2705 agent-browser installed successfully!');}catch(e){console.log('\u26a0\ufe0f  Could not install agent-browser globally. Run manually:\\n   npm install -g agent-browser@'+v);}}\""
+      },
+      "basis": "actual-current-workspace-manifest",
+      "source_path": "v3/@claude-flow/browser/package.json",
+      "source_sha256": "14b80fc826c5ae5fb7fdc643c44ef59a3a7bb23a59870fb000c22b1efd4135a8"
+    },
+    {
+      "name": "agentdb",
+      "version": "3.6.0",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.cjs || true"
+      },
+      "basis": "ClaudeB4same-name-phase-byte-identicalcommand; exactlockedintegrityverified",
+      "metadata_sha256": "bac6d96d2d6a81d92205e58f4f0af629afb0624b9da1f11329508f1277d54725",
+      "integrity": "sha512-G61ik5BiBvohgbyCOsNdoSYLsdd0XMQ/xpA2HPDeM5IWBaXCp9ZUREX9i+U4+8cM6REhTHZZcthmz8PWRYKnBw=="
+    },
+    {
+      "name": "agentdb",
+      "version": "3.7.2",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.cjs || true"
+      },
+      "basis": "ClaudeB4same-name-phase-byte-identicalcommand; exactlockedintegrityverified",
+      "metadata_sha256": "daf9748d52b9b6d880740c24d2fb3badd20a41112326cdc09351d0382e88fdc1",
+      "integrity": "sha512-1knpJnlYSfx+wxie44GDEyT6cKTga1APb0m5iCTf+dkmA7Wx1f6SepRj0YohFnwhFiBq9Y5oEFhzMTFb03Pb7A=="
+    },
+    {
+      "name": "agentic-flow",
+      "version": "2.0.14",
+      "scripts": {
+        "postinstall": "node scripts/postinstall.js || true"
+      },
+      "basis": "ClaudeB4same-name-phase-byte-identicalcommand; exactlockedintegrityverified",
+      "metadata_sha256": "eab0ba1ea53c99c9e21dfbbbc04c7641e7442fb25131daf2ddfd2088effa86fc",
+      "integrity": "sha512-8+AQhXI0P0mK26mZ8zsTQkhUhRsPWYP52Diwzr3Nk0dUNXd+pBjzdyQDfFxttGIymBfMqvRr8VRBd+bZLSYWcg=="
+    }
+  ],
+  "qualification": "Old registry declarations retained alongside actual new workspace bodies. Browser3.0.1hasoldregistry@latestandnewworkspace^0.41.0 scripts; both guardedglobalfallbacksrefused. Exactmetadata43newidentitiesverified. Newcolorspace/prom-client preparedeclarationsNOTmergedasexecutedscriptapprovals."
+}
