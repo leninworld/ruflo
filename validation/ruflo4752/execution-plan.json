@@ -1,0 +1,424 @@
+{
+  "issue": "https://github.com/ruvnet/ruflo/issues/4752",
+  "source_pin": "6b8095490e0cdb3389481b41d3a4c91d5dcbc991",
+  "execution_enabled": true,
+  "attempt": "ruflo4752-baseline-g0",
+  "logical_measurement_attempt": 1,
+  "maximum_measurement_attempts": 1,
+  "target_seconds": 3000,
+  "absolute_seconds": 3600,
+  "phase_caps": {
+    "prepare": 180,
+    "install": 900,
+    "build": 900,
+    "measure": 2100,
+    "early": 120
+  },
+  "retained_peak_bytes": 8233701376,
+  "resource_basis": "Baseline measurement only, current fullfinish unproven. Prior retained root8.23GBpeak andV3install4.78GB do not establish currentpeaks.12GiBcontainer on separate16GiBVM,14GiBavailable gate,4CPU,16GiBdisk; stepwise currentworking-set pressure monitored; final candidate needs measured2x+1GiB andtimepricing. No claim cachematches currentlocks.",
+  "lanes": {
+    "root20": {
+      "node_major": "20",
+      "image": "node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a",
+      "steps": {
+        "build": [
+          {
+            "label": "root-lint",
+            "args": [
+              "npm",
+              "run",
+              "lint"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "root-actual-cli-lint",
+            "args": [
+              "npm",
+              "run",
+              "lint",
+              "--prefix",
+              "v3/@claude-flow/cli"
+            ],
+            "cwd": "",
+            "cap": 180,
+            "expected": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "label": "root-types-upstream-tolerant",
+            "args": [
+              "npm",
+              "run",
+              "typecheck"
+            ],
+            "cwd": "",
+            "cap": 180,
+            "expected": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "label": "root-security-build",
+            "args": [
+              "npm",
+              "run",
+              "build",
+              "--workspace=@claude-flow/security"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "root-cli-core-build",
+            "args": [
+              "npm",
+              "run",
+              "build",
+              "--prefix",
+              "v3/@claude-flow/cli-core"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "kind": "cli-core-overlay"
+          }
+        ],
+        "measure": [
+          {
+            "label": "root-full-ratchet",
+            "args": [
+              "node",
+              "scripts/ci-test-ratchet.mjs"
+            ],
+            "cwd": "",
+            "cap": 1680,
+            "expected": 0,
+            "copy_report": ".test-results/vitest.json"
+          },
+          {
+            "label": "root-build-ts",
+            "args": [
+              "npm",
+              "run",
+              "build:ts"
+            ],
+            "cwd": "",
+            "cap": 300,
+            "expected": 0
+          },
+          {
+            "label": "root-actual-cli-build",
+            "args": [
+              "npm",
+              "run",
+              "build",
+              "--prefix",
+              "v3/@claude-flow/cli"
+            ],
+            "cwd": "",
+            "cap": 300,
+            "expected": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "label": "root-cli-version-upstream-tolerant",
+            "args": [
+              "node",
+              "v3/@claude-flow/cli/bin/cli.js",
+              "--version"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": [
+              0,
+              1
+            ]
+          },
+          {
+            "label": "root-shipping-pack",
+            "args": [
+              "npm",
+              "pack"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          }
+        ]
+      }
+    },
+    "workspace22": {
+      "node_major": "22",
+      "image": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa",
+      "steps": {
+        "build": [
+          {
+            "label": "v3-stdio-policy",
+            "args": [
+              "node",
+              "scripts/test-mcp-policy-stdio.mjs"
+            ],
+            "cwd": "v3/@claude-flow/cli",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "v3-recursive-build-upstream-tolerant",
+            "args": [
+              "pnpm",
+              "--recursive",
+              "--no-bail",
+              "run",
+              "build"
+            ],
+            "cwd": "v3",
+            "cap": 660,
+            "expected": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "label": "v3-flywheel-proof",
+            "args": [
+              "node",
+              "scripts/smoke-flywheel-proof.mjs"
+            ],
+            "cwd": "v3/@claude-flow/cli",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "v3-replay",
+            "args": [
+              "node",
+              "scripts/replay-generation.mjs"
+            ],
+            "cwd": "v3/@claude-flow/cli",
+            "cap": 120,
+            "expected": 0
+          }
+        ],
+        "measure": [
+          {
+            "label": "mcp-full",
+            "args": [
+              "./node_modules/.bin/vitest",
+              "run",
+              "--reporter=default",
+              "--reporter=json",
+              "--outputFile.json=/work/evidence/mcp-full-report.json"
+            ],
+            "cwd": "v3/@claude-flow/mcp",
+            "cap": 600,
+            "expected": [
+              0,
+              1,
+              139
+            ],
+            "vitest_report": "mcp-full-report.json"
+          },
+          {
+            "label": "federation-full",
+            "args": [
+              "./node_modules/.bin/vitest",
+              "run",
+              "--reporter=default",
+              "--reporter=json",
+              "--outputFile.json=/work/evidence/federation-full-report.json"
+            ],
+            "cwd": "v3/@claude-flow/plugin-agent-federation",
+            "cap": 600,
+            "expected": [
+              0,
+              1,
+              139
+            ],
+            "vitest_report": "federation-full-report.json"
+          },
+          {
+            "label": "v3-full",
+            "args": [
+              "./node_modules/.bin/vitest",
+              "run",
+              "--reporter=default",
+              "--reporter=json",
+              "--outputFile.json=/work/evidence/v3-full-report.json"
+            ],
+            "cwd": "v3",
+            "cap": 1200,
+            "expected": [
+              0,
+              1,
+              139
+            ],
+            "vitest_report": "v3-full-report.json"
+          },
+          {
+            "label": "v3-strict-shipping-build",
+            "args": [
+              "pnpm",
+              "build"
+            ],
+            "cwd": "v3",
+            "cap": 660,
+            "expected": 0
+          },
+          {
+            "label": "v3-types-upstream-tolerant",
+            "args": [
+              "pnpm",
+              "typecheck"
+            ],
+            "cwd": "v3",
+            "cap": 600,
+            "expected": [
+              0,
+              1,
+              2
+            ]
+          }
+        ]
+      }
+    },
+    "gateway22": {
+      "node_major": "22",
+      "image": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa",
+      "steps": {
+        "build": [
+          {
+            "label": "gateway-offline-imports",
+            "args": [
+              "node",
+              "--input-type=module",
+              "-e",
+              "import './src/server.mjs';import {registrationFromEnv} from './src/registration.mjs';const r=registrationFromEnv({publicUrl:'http://127.0.0.1',admit:async()=>{throw Error('unexpected admission')}});if(r.info().enabled!==false)throw Error('registration unexpectedly enabled');console.log('real server and Firestore SDK imports; registration disabled')"
+            ],
+            "cwd": "plugins/ruflo-x-gateway",
+            "cap": 30,
+            "expected": 0
+          }
+        ],
+        "measure": [
+          {
+            "label": "gateway-all-eight-node-files",
+            "args": [
+              "npm",
+              "test"
+            ],
+            "cwd": "plugins/ruflo-x-gateway",
+            "cap": 300,
+            "expected": 0
+          },
+          {
+            "label": "gateway-smoke",
+            "args": [
+              "bash",
+              "scripts/smoke.sh"
+            ],
+            "cwd": "plugins/ruflo-x-gateway",
+            "cap": 30,
+            "expected": 0
+          }
+        ]
+      }
+    }
+  },
+  "locked_inputs": {
+    "package.json": "0e938bd7830486be9a2688e05b9d642892c07cde69ea92372d1d9003ddafa8b3",
+    "package-lock.json": "830b156785be71552c98debaba4ffbf60f9f5b4e2841c1173bc7540a70437111",
+    "v3/pnpm-lock.yaml": "44e0476ca62ca05893358f7c7775f5b61080839cbacfc3997476997aaf6fea88",
+    "v3/package.json": "36a436f92ea5211db2be7c677b336d6481a9f74256dfc51d13a2f6113686f426",
+    "v3/tsconfig.base.json": "7dd0fd5637679ac03895c92333e487e1b130d4abd482eea90969b7a0b7af6d6a",
+    "v3/vitest.config.ts": "42f50b26ed47dc181a4d3180e2e224e7829ba9af4b0e144e93fa6bd283b05413",
+    "v3/@claude-flow/mcp/package.json": "1ed3045ce5f3b4ca301c85621a0e0c3fca9765dfe4504ce17f491ca2571a74c5",
+    "v3/@claude-flow/mcp/vitest.config.ts": "a467293ba7c47877f9eed3721f5b98d31c90f7367279e9bb6cb4c55d3f198314",
+    "v3/@claude-flow/plugin-agent-federation/package.json": "51109e66dec126864202c3c9bd7042e226b71eee0400fccc76e015f03b559844",
+    "v3/@claude-flow/plugin-agent-federation/vitest.config.ts": "3572426f04fb00bcebd7fdf82b11331bd718086e3f3fb3f7155849844fdfa9b5",
+    "v3/@claude-flow/cli/package.json": "1cb73ec661945c1d0336b1a081f7a3e4d5fe947b3ee169765debfca22fd19f52",
+    "v3/@claude-flow/cli/tsconfig.json": "9700b59dfdeb3e3c5a03d0e26bb0823d60ccd7c0e9d285f889a2c25cc8e5f29f",
+    "plugins/ruflo-x-gateway/package.json": "2c7614cf5092025cd541d36eafa7fdf5f964d78354e5925c65de68387e56fe21",
+    "plugins/ruflo-x-gateway/package-lock.json": "c1fb24f8fd7d1466898d919fd1eed667055eded2d676481deabe10c52c0fdda6",
+    ".github/workflows/ci.yml": "651e565dee807323021859726c71ef91f591ab7214402587c3f640a94a4ba01c",
+    ".github/workflows/v3-ci.yml": "c15f3755a414813b3bafbf9c38d0aa56aef791d73345b2bbca3383cd5cf591f6",
+    "scripts/ci-test-baseline.txt": "12f9052bc629b7a85de6f0a418e4aa69973166632c570a489c0c97651369923c",
+    "scripts/ci-test-ratchet.mjs": "e4f6311150e18e6ef8af595be2f6ec255fa002ae59f9bbf7b1e3d431827c29cc",
+    "plugins/ruflo-x-gateway/scripts/smoke.sh": "d4f780c85ff68285dfa7b41205d896017e2390509ec5537c1055cbf429941495",
+    "v3/@claude-flow/browser/package.json": "14b80fc826c5ae5fb7fdc643c44ef59a3a7bb23a59870fb000c22b1efd4135a8"
+  },
+  "pnpm_sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
+  "packet_files": [
+    {
+      "path": "hosted.py",
+      "bytes": 15056,
+      "sha256": "1f5b225fc4499011ed453d462079b1bb7fa224ff70a8e9faf7482fd671c3bdae"
+    },
+    {
+      "path": "inside.py",
+      "bytes": 11088,
+      "sha256": "0f17fe9c6e0806aff2dbe40a40121d878b88881433d42cd8fb2571570a103cbe"
+    },
+    {
+      "path": "install-global-guard.cjs",
+      "bytes": 718,
+      "sha256": "6bfcd26f154e97c5fe39c3f63f54402005ad54e0e08a7666dcb243e48294dec6"
+    },
+    {
+      "path": "pnpm-8.15.0.tgz",
+      "bytes": 3805828,
+      "sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665"
+    }
+  ],
+  "scope": "Baseline only: unchanged full5reported paths. Root Node20 completeCI/ratchet/shipping; V3Node22 quarantinedfullsuite plusindependentMCP/federation suites, fullstrictworkspacebuild andhonesttypes; gatewayNode22 all8nodefiles+smoke+nativeSDK offlineimport. No productimplementation admitted.",
+  "budget": "Singlecommonorphancommit origin across3jobs; no rerun/clockreset; sourcecheckout/pull/fixtures/install/build/tests/evidence included. Planphasecaps ceiling doesnotgrant extra time beyond target3000.",
+  "publication": "Disabled updated-pin proposal; same first baseline not yet executed; no PR/comment.",
+  "next_after_pass": "Whole actual baseline results review must admit complete5part candidate based on measured resources, actualfailure sets, installedclosure and allshipping requirements. No automatic implementation.",
+  "baseline_failure_handling": "Record completeVitest reports including genuineproductfailures; nevercall thempasses. Setup/dependency/errors/missingreports terminal. KnownV3quarantine retained verbatim; independentMCPauth mustbechecked. Ratchet baseline neverexpanded.",
+  "quarantine_expires": "2026-12-01",
+  "network_cap_bytes": 12884901888,
+  "script_tolerance_disclosure": "Root lint andbuild:ts themselves end||true; preserve wrapper commands but separatelyretain actualCLI lint/build statuses, neverassertinnerpassed fromwrapper0. Rootpackage hasno typecheck script; recordnpmrunstatus, sameupstreamtolerance. V3recursivebuildandtypes tolerance recorded separately; strictV3shippingbuild stillrequired. Rootnpmci flags match cached composite default--legacy-peer-deps; oneattempt, originalretries notcopied. Gatewaynpmci nolegacyflag. Browserglobalfallback caught optionally; guardeventsretained, guardcausedinstallfailureisharnessfailure.",
+  "gateway_test_files": [
+    "claude-directory.test.mjs",
+    "client-ip.test.mjs",
+    "gateway.test.mjs",
+    "github.test.mjs",
+    "oauth.test.mjs",
+    "registration-compat.test.mjs",
+    "registration.test.mjs",
+    "relay-robustness.test.mjs"
+  ],
+  "strict_shipping_proof": {
+    "run": 42961509056,
+    "head": "6b8095490e0cdb3389481b41d3a4c91d5dcbc991",
+    "job": 130331805189,
+    "step": "Build",
+    "command": "pnpm build",
+    "conclusion": "success",
+    "source": ".github/workflows/v3-ci.yml:514"
+  },
+  "network_policy": "Prepare/earlyoffline; install/build/measure bridgeconnected,12GiB cumulativeownedcontainerRX cap with10ssampling. HF/transformer offlinevariablesremovedforbuild/measure tomatchcoldCI. No privatecredentials/provideraccounts or clouddeployment.",
+  "baseline_worker_policy": "V3full andindependentpackage suites use actualupstreamdefaultworker semantics; only2-testcontrollerfixture limitsworkers2.",
+  "prior_publication_preflight": {
+    "dossier": "/Users/leninmookiah/Developer/open_source_control_plane/co_create/20261110/ruflo4752-baseline-G0",
+    "reads": 5,
+    "writes": 0,
+    "runtime_attempts": 0,
+    "reason": "SOURCE_CHANGED",
+    "closed_no_replay": true
+  }
+}
