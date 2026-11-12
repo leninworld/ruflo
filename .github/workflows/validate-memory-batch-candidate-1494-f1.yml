@@ -1,0 +1,42 @@
+name: Validate inline memory batch candidate
+on:
+  push:
+    branches: [validate-memory-batch-candidate-1494-f1]
+permissions:
+  contents: read
+concurrency:
+  group: ruflo1494-candidate-f1
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [root20, workspace22]
+        variant: [baseline, candidate]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: packet
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: ruvnet/ruflo
+          ref: dc25dd9b522bf1f3761f0d061a0bd0deb1900ba1
+          path: upstream
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Validate isolated baseline or exact candidate
+        env:
+          APPROVED_DIAGNOSTIC_COMMIT: ${{ github.sha }}
+          APPROVED_PLAN_SHA256: d502cfea74ab5a0435c037471e493226231aa7ff900f317eeb818d43d38529cd
+        run: python3 packet/validation/ruflo1494/hosted.py "${{ matrix.lane }}" "${{ matrix.variant }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: ruflo1494-${{ matrix.lane }}-${{ matrix.variant }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/ruflo1494-${{ github.run_id }}-${{ matrix.lane }}-${{ matrix.variant }}/evidence
+          if-no-files-found: warn
+          retention-days: 7

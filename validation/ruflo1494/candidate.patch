@@ -1,0 +1,1011 @@
+--- a/v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts
++++ b/v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts
+@@ -21,6 +21,7 @@
+ import { DEFAULT_SEARCH_THRESHOLD, nearMisses } from '../memory/search-defaults.js';
+ import { compileExclusionPatterns, MAX_EXCLUDE_PATTERNS, MAX_EXCLUDE_PATTERN_LENGTH } from './glob-exclusions.js';
+ import { readImportFile } from './import-limits.js';
++import type { MemoryBatchEntry } from '../memory/memory-batch.js';
+ 
+ // Legacy JSON store interface (for migration)
+ interface LegacyMemoryEntry {
+@@ -224,6 +225,51 @@
+     error: `${tool}: required parameter "${param}" must be a non-empty string (${got})`,
+     code: MISSING_REQUIRED_PARAM,
+   };
++}
++
++type MemoryWriteValidation =
++  | { ok: true; entry: MemoryBatchEntry; scopeInfo: Record<string, unknown> }
++  | { ok: false; response: Record<string, unknown> };
++
++/** Pure store normalization. Batch callers run this for every row before writing. */
++export function normalizeMemoryWrite(input: Record<string, unknown>): MemoryWriteValidation {
++  const missing = missingRequiredString(input, 'key', 'memory_store');
++  if (missing) return { ok: false, response: { success: false, key: input.key, stored: false, hasEmbedding: false, ...missing } };
++  const key = input.key as string;
++  // #1227: with scope + agentId the write lands in the scoped namespace.
++  const scoped = resolveScopedNamespace({ scope: input.scope, agentId: input.agentId, namespace: (input.namespace as string) || 'default' });
++  if (!scoped.ok) {
++    return { ok: false, response: { success: false, key, stored: false, hasEmbedding: false, error: scoped.error } };
++  }
++  const namespace = scoped.namespace;
++  const scopeInfo = scoped.scope ? { scope: scoped.scope, agentId: scoped.agentId } : {};
++  const rawValue = input.value;
++  const value = typeof rawValue === 'string' ? rawValue : (rawValue !== undefined ? JSON.stringify(rawValue) : '');
++  const tags = (input.tags as string[]) || [];
++  const ttl = input.ttl as number | undefined;
++  // #2775 parity with CLI: default true; only explicit `upsert: false` opts out.
++  const upsert = input.upsert !== false;
++  // ADR-323: leave undefined when omitted so storeEntry's own default
++  // ('unknown') applies uniformly across the CLI, MCP tool, and other callers.
++  const provenanceType = input.provenance_type as string | undefined;
++  // #1426: metadata must be a plain JSON object; reject arrays, null and scalars.
++  const rawMetadata = input.metadata;
++  if (rawMetadata !== undefined && (typeof rawMetadata !== 'object' || rawMetadata === null || Array.isArray(rawMetadata))) {
++    return { ok: false, response: { success: false, key, stored: false, hasEmbedding: false, error: 'metadata must be a JSON object' } };
++  }
++  const metadata = rawMetadata as Record<string, unknown> | undefined;
++
++  if (!value) {
++    return { ok: false, response: { success: false, key, stored: false, hasEmbedding: false, error: 'Value is required and cannot be empty' } };
++  }
++
++  validateMemoryInput(key, value, undefined, namespace);
++  // #3570: a namespace written here must be exportable and purgeable, so it
++  // passes the same validator export and purge use.
++  const vNs = validateIdentifier(namespace, 'namespace');
++  if (!vNs.valid) throw new Error(vNs.error);
++
++  return { ok: true, entry: { key, value, namespace, tags, ttl, upsert, provenanceType, metadata }, scopeInfo };
+ }
+ 
+ // #1884 — sanitize a key produced from arbitrary input (markdown headings,
+@@ -613,51 +659,10 @@
+       if (!dbPath) await ensureInitialized();
+       const { storeEntry } = await getMemoryFunctions();
+ 
+-      const key = input.key as string;
+-      // #1227: with scope + agentId the write lands in the scoped namespace.
+-      const scoped = resolveScopedNamespace({ scope: input.scope, agentId: input.agentId, namespace: (input.namespace as string) || 'default' });
+-      if (!scoped.ok) {
+-        return { success: false, key, stored: false, hasEmbedding: false, error: scoped.error };
+-      }
+-      const namespace = scoped.namespace;
+-      const scopeInfo = scoped.scope ? { scope: scoped.scope, agentId: scoped.agentId } : {};
+-      const rawValue = input.value;
+-      const value = typeof rawValue === 'string' ? rawValue : (rawValue !== undefined ? JSON.stringify(rawValue) : '');
+-      const tags = (input.tags as string[]) || [];
+-      const ttl = input.ttl as number | undefined;
+-      // #2775 parity with CLI: default true; only explicit `upsert: false` opts out.
+-      const upsert = input.upsert !== false;
+-      // ADR-323: leave undefined when omitted so storeEntry's own default
+-      // ('unknown') applies uniformly across the CLI, MCP tool, and other callers.
+-      const provenanceType = input.provenance_type as string | undefined;
+-      // #1426: metadata must be a plain JSON object; reject arrays, null and scalars.
+-      const rawMetadata = input.metadata;
+-      if (rawMetadata !== undefined && (typeof rawMetadata !== 'object' || rawMetadata === null || Array.isArray(rawMetadata))) {
+-        return {
+-          success: false,
+-          key,
+-          stored: false,
+-          hasEmbedding: false,
+-          error: 'metadata must be a JSON object',
+-        };
+-      }
+-      const metadata = rawMetadata as Record<string, unknown> | undefined;
+-
+-      if (!value) {
+-        return {
+-          success: false,
+-          key,
+-          stored: false,
+-          hasEmbedding: false,
+-          error: 'Value is required and cannot be empty',
+-        };
+-      }
+-
+-      validateMemoryInput(key, value, undefined, namespace);
+-      // #3570: a namespace written here must be exportable and purgeable, so it
+-      // passes the same validator export and purge use.
+-      const vNs = validateIdentifier(namespace, 'namespace');
+-      if (!vNs.valid) throw new Error(vNs.error);
++      const validated = normalizeMemoryWrite(input);
++      if (!validated.ok) return validated.response;
++      const { key, value, namespace, tags, ttl, upsert, provenanceType, metadata } = validated.entry;
++      const { scopeInfo } = validated;
+ 
+       const startTime = performance.now();
+ 
+@@ -700,6 +705,82 @@
+           error: error instanceof Error ? error.message : 'Unknown error',
+         };
+       }
++    },
++  },
++  {
++    name: 'memory_batch',
++    description: 'Store multiple inline memory entries with semantic embeddings in one call. Use when native Write is wrong because these are searchable memory rows, not files, and repeated memory_store calls add round trips. Validates every row first and reports per-row outcomes; the bridge path is non-atomic. Pair with memory_retrieve or memory_search; use memory_import for an existing export file.',
++    category: 'memory',
++    inputSchema: {
++      type: 'object',
++      properties: {
++        entries: {
++          type: 'array', minItems: 1, maxItems: 2048,
++          items: {
++            type: 'object', required: ['key', 'value'], additionalProperties: false,
++            properties: {
++              key: { type: 'string' }, value: {}, namespace: { type: 'string' },
++              tags: { type: 'array', items: { type: 'string' } },
++              metadata: { type: 'object' }, ttl: { type: 'number', minimum: 0 },
++              upsert: { type: 'boolean', default: true },
++              provenance_type: { type: 'string', enum: ['user_claim', 'agent_output', 'system_observation', 'tool_result', 'unknown'] },
++              ...SCOPE_SCHEMA_PROPERTIES,
++            },
++          },
++        },
++        dbPath: { type: 'string', description: 'One SQLite store for the whole batch; omit for the MCP default.' },
++      },
++      required: ['entries'],
++    },
++    handler: async (input, context) => {
++      const rows = input.entries;
++      const reject = (error: string) => ({ success: false, stored: 0, embedded: 0, error });
++      if (!Array.isArray(rows) || !rows.length || rows.length > 2048) return reject('entries must contain between 1 and 2048 rows');
++      try {
++        // Bound both JSON parsing/response bookkeeping and the total content.
++        // 2048 rows gives a 2 KiB average budget within the 4 MiB envelope.
++        const serialized = JSON.stringify(input);
++        if (typeof serialized !== 'string') return reject('memory_batch input must be JSON');
++        if (Buffer.byteLength(serialized, 'utf8') > 4 * 1024 * 1024) return reject('memory_batch payload exceeds 4 MiB');
++        if (Object.keys(input).some(key => !['entries', 'dbPath'].includes(key))) return reject('Unknown memory_batch parameter');
++        if (input.dbPath !== undefined && typeof input.dbPath !== 'string') return reject('dbPath must be a string');
++        const dbPath = resolveDbPathOption(input.dbPath, context);
++        const allowed = new Set(['key', 'value', 'namespace', 'tags', 'metadata', 'ttl', 'upsert', 'provenance_type', 'scope', 'agentId']);
++        const entries: MemoryBatchEntry[] = [];
++        const slots = new Set<string>();
++        const errors: Array<{ index: number; error: string }> = [];
++        const { isValidProvenanceType } = await import('../memory/memory-initializer.js');
++        for (let index = 0; index < rows.length; index++) {
++          try {
++            const row = rows[index];
++            if (!row || typeof row !== 'object' || Array.isArray(row)) throw new Error('entry must be a JSON object');
++            if (Object.keys(row).some(key => !allowed.has(key))) throw new Error('Unknown entry parameter; dbPath is shared by the entire batch');
++            if (row.tags !== undefined && (!Array.isArray(row.tags) || !row.tags.every((tag: unknown) => typeof tag === 'string'))) throw new Error('tags must be an array of strings');
++            if (row.upsert !== undefined && typeof row.upsert !== 'boolean') throw new Error('upsert must be a boolean');
++            if (row.ttl !== undefined && (typeof row.ttl !== 'number' || !Number.isFinite(row.ttl) || row.ttl < 0)) throw new Error('ttl must be a finite nonnegative number');
++            const validated = normalizeMemoryWrite(row);
++            if (!validated.ok) throw new Error(String(validated.response.error));
++            const entry = validated.entry;
++            if (entry.provenanceType !== undefined && !isValidProvenanceType(entry.provenanceType)) throw new Error('Invalid provenance type');
++            const slot = JSON.stringify([entry.namespace, entry.key]);
++            if (slots.has(slot)) throw new Error('Duplicate (namespace, key) in memory_batch');
++            slots.add(slot);
++            entries.push(entry);
++          } catch (error) { errors.push({ index, error: error instanceof Error ? error.message : String(error) }); }
++        }
++        if (errors.length) return { ...reject('Batch validation failed; no entries were written'), notAttempted: rows.length, errors };
++        if (!dbPath) await ensureInitialized();
++        const { storeMemoryBatch } = await import('../memory/memory-batch.js');
++        const start = performance.now();
++        const result = await storeMemoryBatch(entries, dbPath);
++        return {
++          success: result.results.every(row => row.success), backend: result.backend,
++          stored: result.results.filter(row => row.stored).length,
++          embedded: result.results.filter(row => row.hasEmbedding).length,
++          failed: result.results.filter(row => !row.success).length,
++          results: result.results, duration: performance.now() - start,
++        };
++      } catch (error) { return reject(error instanceof Error ? error.message : String(error)); }
+     },
+   },
+   {
+--- a/v3/@claude-flow/cli/src/memory/memory-initializer.ts
++++ b/v3/@claude-flow/cli/src/memory/memory-initializer.ts
+@@ -9,6 +9,7 @@
+  * @module v3/cli/memory-initializer
+  */
+ import type { AppendCondition } from './append-conditions.js';
++import { insertSqlJsMemoryRow } from './memory-row.js';
+ 
+ import { loadBetterSqlite3 } from './shared-sqlite.js';
+ import { resolveMemoryRoot } from './memory-root.js';
+@@ -283,6 +284,18 @@
+   return base;
+ }
+ 
++/** Backend selection for one bulk call; module presence alone is not availability. */
++export async function isMemoryBridgeAvailable(dbPath?: string): Promise<boolean> {
++  const bridge = await getBridge();
++  return !!bridge && await bridge.isBridgeAvailable(dbPath);
++}
++
++/** The same native-handle/WAL guard used by raw single writes. */
++export async function assertSqlJsMemoryWriteSafe(dbPath: string, requestedPath?: string): Promise<void> {
++  await releaseOwnNativeHandle(dbPath);
++  if (await hasNativeWalSidecars(dbPath)) throw new Error(await walRefusalError('write', requestedPath));
++}
++
+ /**
+  * Enhanced schema with pattern confidence, temporal decay, versioning
+  * Vector embeddings enabled for semantic search
+@@ -788,16 +801,18 @@
+ /**
+  * Save HNSW metadata to disk for persistence
+  */
+-function saveHNSWMetadata(): void {
+-  if (!hnswIndex?.entries) return;
++function saveHNSWMetadata(): boolean {
++  if (!hnswIndex?.entries) return false;
+ 
+   try {
+     const swarmDir = getMemoryRoot();
+     const metadataPath = path.join(swarmDir, 'hnsw.metadata.json');
+     const metadata = Array.from(hnswIndex.entries.entries());
+     fs.writeFileSync(metadataPath, JSON.stringify(metadata));
++    return true;
+   } catch {
+-    // Silently fail - metadata save is best-effort
++    // Single-row callers retain their historical best-effort behavior.
++    return false;
+   }
+ }
+ 
+@@ -896,6 +911,41 @@
+   } catch {
+     return false;
+   }
++}
++
++/** Batch metadata persistence without inventing an unsupported VectorDb batch API. */
++export async function addBatchToHNSWIndex(
++  rows: Array<{ entry: HNSWEntry; embedding: number[]; upsert: boolean }>,
++  dbPath?: string,
++): Promise<{ available: boolean; failed: string[] }> {
++  if (!rows.length) return { available: true, failed: [] };
++  // This singleton and its metadata belong to the project-default store.
++  if (dbPath && path.resolve(dbPath) !== path.resolve(getMemoryRoot(), 'memory.db')) {
++    return { available: false, failed: [] };
++  }
++  const index = await getHNSWIndex({ dimensions: rows[0].embedding.length });
++  if (!index) return { available: false, failed: [] };
++  const replacements = new Set(rows.filter(row => row.upsert).map(row => JSON.stringify([row.entry.namespace, row.entry.key])));
++  const retained = new Set(rows.map(row => row.entry.id));
++  let removed = false;
++  for (const [id, entry] of index.entries) {
++    if (!retained.has(id) && replacements.has(JSON.stringify([entry.namespace, entry.key]))) {
++      index.entries.delete(id);
++      removed = true;
++    }
++  }
++  const failed: string[] = [];
++  for (const row of rows) {
++    // Initializing the index from the committed SQLite image can already load it.
++    if (index.entries.has(row.entry.id)) continue;
++    try {
++      await index.db.insert({ id: row.entry.id, vector: new Float32Array(row.embedding) });
++      index.entries.set(row.entry.id, row.entry);
++    } catch { failed.push(row.entry.id); }
++  }
++  if (!saveHNSWMetadata()) failed.push(...rows.map(row => row.entry.id));
++  if (removed) rebuildSearchIndex();
++  return { available: true, failed: [...new Set(failed)] };
+ }
+ 
+ /**
+@@ -3151,67 +3201,14 @@
+ 
+       const fileBuffer = readFileMaybeEncrypted(dbPath, null);
+       const db = new SQL.Database(fileBuffer);
+-      let persistedProvenance = provenanceType ?? 'unknown';
+-      if (upsert && provenanceType === undefined) {
+-        try {
+-          const stmt = db.prepare(
+-            'SELECT provenance_type FROM memory_entries WHERE namespace = ? AND key = ? LIMIT 1'
+-          );
+-          stmt.bind([namespace, key]);
+-          if (stmt.step()) {
+-            const existingType = stmt.get()[0];
+-            persistedProvenance = isValidProvenanceType(existingType) ? existingType : 'unknown';
+-          }
+-          stmt.free();
+-        } catch { /* legacy schema or new row — keep unknown */ }
+-      }
+-
+-      // #1941: provision a `vector_indexes` row for this namespace before the
+-      // entry insert. The HNSW lookup uses this table to find which namespaces
+-      // are indexed — without a row, `memory_search({namespace:"X"})` returns
+-      // 0 even when memory_entries holds matching rows. INSERT OR IGNORE
+-      // preserves the existing `default` / `patterns` rows.
+       try {
+-        db.run(
+-          `INSERT OR IGNORE INTO vector_indexes (id, name, dimensions) VALUES (?, ?, ?)`,
+-          [namespace, namespace, embeddingDimensions ?? 384]
+-        );
+-      } catch { /* vector_indexes may not exist on legacy DBs — fall through */ }
+-
+-      // Insert or update entry (upsert mode uses REPLACE)
+-      const insertSql = upsert
+-        ? `INSERT OR REPLACE INTO memory_entries (
+-            id, key, namespace, content, type,
+-            embedding, embedding_dimensions, embedding_model,
+-            tags, metadata, provenance_type, created_at, updated_at, expires_at, status
+-          ) VALUES (?, ?, ?, ?, 'semantic', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`
+-        : `INSERT INTO memory_entries (
+-            id, key, namespace, content, type,
+-            embedding, embedding_dimensions, embedding_model,
+-            tags, metadata, provenance_type, created_at, updated_at, expires_at, status
+-          ) VALUES (?, ?, ?, ?, 'semantic', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`;
+-
+-      try {
+-        db.run(insertSql, [
+-          id,
+-          key,
+-          namespace,
+-          value,
+-          embeddingJson,
+-          embeddingDimensions,
+-          embeddingModel,
+-          tags.length > 0 ? JSON.stringify(tags) : null,
+-          JSON.stringify(options.metadata ?? {}),
+-          persistedProvenance,
+-          now,
+-          now,
+-          ttl ? now + (ttl * 1000) : null
+-        ]);
+-      } catch (e) {
+-        // Don't leave the handle open (and the lock held) on a constraint
+-        // failure — the outer catch turns this into the caller's error.
++        insertSqlJsMemoryRow(db, {
++          id, key, namespace, value, tags, metadata: options.metadata, ttl,
++          upsert, provenanceType, now, embeddingJson, embeddingDimensions, embeddingModel,
++        }, isValidProvenanceType);
++      } catch (error) {
+         db.close();
+-        throw e;
++        throw error;
+       }
+ 
+       // Save
+@@ -3388,10 +3385,13 @@
+     } catch { /* RaBitQ unavailable, fall through */ }
+ 
+     // Try HNSW search (150x faster than brute-force)
+-    const hnswResults = await searchHNSWIndex(queryEmbedding, {
++    // The singleton has no per-store identity: an explicit different store
++    // must use its own authoritative vectors instead of same-key project hits.
++    const usesProjectIndex = path.resolve(dbPath) === path.resolve(swarmDir, 'memory.db');
++    const hnswResults = usesProjectIndex ? await searchHNSWIndex(queryEmbedding, {
+       k: provenanceFilter?.length ? Math.max(limit * 4, limit + 32) : limit,
+       namespace: effectiveNamespace,
+-    });
++    }) : null;
+     if (hnswResults && hnswResults.length > 0) {
+       // Filter by threshold
+       let filtered: Array<{ id: string; key: string; content: string; score: number; namespace: string; provenanceType?: string }> =
+@@ -3462,7 +3462,7 @@
+       whereParams.push(...provenanceFilter);
+     }
+     const searchStmt = db.prepare(
+-      `SELECT id, key, namespace, content, embedding, provenance_type FROM memory_entries WHERE ${whereClauses.join(' AND ')} LIMIT 1000`
++      `SELECT id, key, namespace, content, embedding, provenance_type FROM memory_entries WHERE ${whereClauses.join(' AND ')} LIMIT 10000`
+     );
+     if (whereParams.length > 0) {
+       searchStmt.bind(whereParams);
+--- /dev/null
++++ b/v3/@claude-flow/cli/src/memory/memory-batch.ts
+@@ -0,0 +1,184 @@
++/** Inline memory writes: canonical bridge operations, or one guarded sql.js image. */
++import { randomUUID } from 'node:crypto';
++import { existsSync } from 'node:fs';
++import { join, resolve } from 'node:path';
++import { readFileMaybeEncrypted, writeDbImagePreservingFormat } from '../fs-secure.js';
++import {
++  addBatchToHNSWIndex, assertSqlJsMemoryWriteSafe, ensureSchemaColumns,
++  generateEmbedding, getMemoryRoot, isMemoryBridgeAvailable, isValidProvenanceType,
++  storeEntry, withMemoryDbLock,
++} from './memory-initializer.js';
++import { enforceNoStub } from './embedding-policy.js';
++import { insertSqlJsMemoryRow } from './memory-row.js';
++
++type StoreOptions = Parameters<typeof storeEntry>[0];
++export type MemoryBatchEntry = Pick<StoreOptions,
++  'key' | 'value' | 'namespace' | 'tags' | 'metadata' | 'ttl' | 'upsert' | 'provenanceType'>;
++export interface MemoryBatchResult {
++  index: number;
++  key: string;
++  namespace: string;
++  success: boolean;
++  stored: boolean;
++  durable: boolean;
++  id?: string;
++  hasEmbedding: boolean;
++  embeddingDimensions?: number;
++  embeddingModel?: string;
++  error?: string;
++  persistWarning?: string;
++  indexWarning?: string;
++}
++
++const message = (error: unknown): string => error instanceof Error ? error.message : String(error);
++const empty = (entry: MemoryBatchEntry, index: number): MemoryBatchResult => ({
++  index, key: entry.key, namespace: entry.namespace ?? 'default',
++  success: false, stored: false, durable: false, hasEmbedding: false,
++});
++
++export async function storeMemoryBatch(entries: MemoryBatchEntry[], dbPath?: string): Promise<{
++  backend: 'bridge' | 'sql.js'; results: MemoryBatchResult[];
++}> {
++  const results = entries.map(empty);
++  if (!entries.length) return { backend: 'sql.js', results };
++  const keys = new Set<string>();
++  for (const entry of entries) {
++    const key = JSON.stringify([entry.namespace ?? 'default', entry.key]);
++    if (keys.has(key)) throw new Error('Duplicate (namespace, key) in memory_batch');
++    keys.add(key);
++    if (entry.provenanceType !== undefined && !isValidProvenanceType(entry.provenanceType)) {
++      throw new Error(`Invalid provenance type "${entry.provenanceType}"`);
++    }
++  }
++  // Select once, before the first write. Do not move the suffix of a bridge batch
++  // onto a whole-image writer after a native prefix has already committed.
++  if (await isMemoryBridgeAvailable(dbPath)) {
++    for (let index = 0; index < entries.length; index++) {
++      try {
++        const result = await storeEntry({ ...entries[index], dbPath, generateEmbeddingFlag: true });
++        // A declined canonical bridge write can itself use raw fallback.
++        // Do not report a hash vector from that path as semantic success.
++        const semantic = !!result.embedding && !/hash|mock/i.test(result.embedding.model);
++        results[index] = {
++          ...results[index], id: result.id, stored: result.success,
++          durable: result.success && !result.persistWarning,
++          success: result.success && semantic && !result.embeddingError && !result.persistWarning,
++          hasEmbedding: !!result.embedding,
++          embeddingDimensions: result.embedding?.dimensions,
++          embeddingModel: result.embedding?.model,
++          error: result.error ?? result.embeddingError ?? (result.embedding && !semantic ? 'Canonical fallback stored a nonsemantic vector' : undefined),
++          persistWarning: result.persistWarning,
++        };
++      } catch (error) { results[index].error = message(error); }
++    }
++    return { backend: 'bridge', results };
++  }
++
++  const path = dbPath ? resolve(dbPath) : join(getMemoryRoot(), 'memory.db');
++  if (!existsSync(path)) {
++    for (const result of results) result.error = 'Database not initialized. Run: claude-flow memory init';
++    return { backend: 'sql.js', results };
++  }
++  type Prepared = { index: number; id: string; embedding: Awaited<ReturnType<typeof generateEmbedding>> };
++  const prepared: Prepared[] = [];
++  async function prepare(index: number): Promise<Prepared | null> {
++    try {
++      const embedding = await generateEmbedding(entries[index].value);
++      if (!embedding.embedding.length || !embedding.embedding.every(Number.isFinite)) {
++        throw new Error('Embedding producer returned an empty or nonfinite vector');
++      }
++      // Keep the existing default warn/degrade versus strict fail-closed policy.
++      if (embedding.backend !== 'onnx') enforceNoStub('memory_batch');
++      return { index, id: `entry_${randomUUID()}`, embedding };
++    } catch (error) { results[index].error = message(error); return null; }
++  }
++  // Warm one producer before parallel work, avoiding concurrent cold model loads.
++  const firstPrepared = await prepare(0);
++  if (firstPrepared) prepared.push(firstPrepared);
++  // Four producers bound model work and memory; never use the unbounded default.
++  for (let first = 1; first < entries.length; first += 4) {
++    const chunk = await Promise.all(entries.slice(first, first + 4).map((_, offset) => prepare(first + offset)));
++    for (const row of chunk) if (row) prepared.push(row);
++  }
++  if (!prepared.length) return { backend: 'sql.js', results };
++  const committed: Prepared[] = [];
++  try {
++    await withMemoryDbLock(path, async () => {
++      await assertSqlJsMemoryWriteSafe(path, dbPath);
++      await ensureSchemaColumns(path);
++      const SQL = await (await import('sql.js')).default();
++      const db = new SQL.Database(readFileMaybeEncrypted(path, null));
++      try {
++        db.run('BEGIN');
++        for (const row of prepared) {
++          const entry = entries[row.index];
++          db.run('SAVEPOINT memory_batch_row');
++          try {
++            insertSqlJsMemoryRow(db, {
++              ...entry, id: row.id, namespace: entry.namespace ?? 'default',
++              tags: entry.tags ?? [], upsert: entry.upsert !== false, now: Date.now(),
++              embeddingJson: JSON.stringify(row.embedding.embedding),
++              embeddingDimensions: row.embedding.dimensions, embeddingModel: row.embedding.model,
++            }, isValidProvenanceType);
++            const check = db.prepare('SELECT id FROM memory_entries WHERE namespace = ? AND key = ?');
++            try {
++              check.bind([entry.namespace ?? 'default', entry.key]);
++              if (!check.step() || check.get()[0] !== row.id) throw new Error('Stored row verification failed');
++            } finally { check.free(); }
++            db.run('RELEASE memory_batch_row');
++            committed.push(row);
++          } catch (error) {
++            db.run('ROLLBACK TO memory_batch_row');
++            db.run('RELEASE memory_batch_row');
++            results[row.index].error = message(error);
++          }
++        }
++        db.run('COMMIT');
++        // Verify all logical slots after the transaction, before exporting it.
++        // This also catches an unexpected ID collision replacing an earlier row.
++        let verified = 0;
++        for (const row of committed) {
++          const entry = entries[row.index];
++          const check = db.prepare('SELECT id FROM memory_entries WHERE namespace = ? AND key = ?');
++          try {
++            check.bind([entry.namespace ?? 'default', entry.key]);
++            if (!check.step() || check.get()[0] !== row.id) throw new Error('Committed batch row verification failed');
++            verified++;
++          } finally { check.free(); }
++        }
++        if (verified !== committed.length) throw new Error('Committed batch row count mismatch');
++        writeDbImagePreservingFormat(path, db.export());
++      } finally { db.close(); }
++    });
++  } catch (error) {
++    for (const row of prepared) results[row.index].error = `Batch not durably persisted: ${message(error)}`;
++    return { backend: 'sql.js', results };
++  }
++  for (const row of committed) {
++    results[row.index] = {
++      ...results[row.index], id: row.id, success: row.embedding.backend === 'onnx', stored: true, durable: true,
++      error: row.embedding.backend === 'onnx' ? undefined : 'Canonical fallback stored a nonsemantic vector',
++      hasEmbedding: true, embeddingDimensions: row.embedding.dimensions, embeddingModel: row.embedding.model,
++    };
++  }
++  // The canonical database is durable before any best-effort ANN update.
++  try {
++    const indexed = await addBatchToHNSWIndex(committed.map(row => ({
++      entry: { id: row.id, key: entries[row.index].key, namespace: entries[row.index].namespace ?? 'default', content: entries[row.index].value },
++      embedding: row.embedding.embedding, upsert: entries[row.index].upsert !== false,
++    })), dbPath);
++    for (const row of committed) {
++      if (!indexed.available) results[row.index].indexWarning = 'Optional HNSW unavailable; vectors remain in SQLite';
++      else if (indexed.failed.includes(row.id)) {
++        results[row.index].success = false;
++        results[row.index].indexWarning = 'Row persisted, but HNSW indexing did not complete';
++      }
++    }
++  } catch (error) {
++    for (const row of committed) {
++      results[row.index].success = false;
++      results[row.index].indexWarning = `Row persisted, but HNSW indexing failed: ${message(error)}`;
++    }
++  }
++  return { backend: 'sql.js', results };
++}
+--- /dev/null
++++ b/v3/@claude-flow/cli/src/memory/memory-row.ts
+@@ -0,0 +1,57 @@
++/** Canonical raw-sql.js row mutation, shared by single and bulk writes. */
++export interface MemoryRowDatabase {
++  run(sql: string, params?: Array<string | number | null>): unknown;
++  prepare(sql: string): { bind(values: Array<string | number | null>): void; step(): boolean; get(): unknown[]; free(): void };
++}
++
++export interface MemoryRow {
++  id: string;
++  key: string;
++  namespace: string;
++  value: string;
++  tags: string[];
++  metadata?: Record<string, unknown>;
++  ttl?: number;
++  upsert: boolean;
++  provenanceType?: string;
++  now: number;
++  embeddingJson: string | null;
++  embeddingDimensions: number | null;
++  embeddingModel: string | null;
++}
++
++export function insertSqlJsMemoryRow(
++  db: MemoryRowDatabase,
++  row: MemoryRow,
++  validProvenance: (value: unknown) => boolean,
++): void {
++  let provenance = row.provenanceType ?? 'unknown';
++  if (row.upsert && row.provenanceType === undefined) {
++    try {
++      const statement = db.prepare('SELECT provenance_type FROM memory_entries WHERE namespace = ? AND key = ? LIMIT 1');
++      try {
++        statement.bind([row.namespace, row.key]);
++        if (statement.step()) {
++          const existing = statement.get()[0];
++          provenance = validProvenance(existing) ? existing as string : 'unknown';
++        }
++      } finally { statement.free(); }
++    } catch { /* legacy schema or new row — retain unknown */ }
++  }
++  try {
++    db.run('INSERT OR IGNORE INTO vector_indexes (id, name, dimensions) VALUES (?, ?, ?)',
++      [row.namespace, row.namespace, row.embeddingDimensions ?? 384]);
++  } catch { /* vector_indexes may be absent on a legacy database */ }
++  const verb = row.upsert ? 'INSERT OR REPLACE' : 'INSERT';
++  db.run(`${verb} INTO memory_entries (
++    id, key, namespace, content, type,
++    embedding, embedding_dimensions, embedding_model,
++    tags, metadata, provenance_type, created_at, updated_at, expires_at, status
++  ) VALUES (?, ?, ?, ?, 'semantic', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`, [
++    row.id, row.key, row.namespace, row.value,
++    row.embeddingJson, row.embeddingDimensions, row.embeddingModel,
++    row.tags.length > 0 ? JSON.stringify(row.tags) : null,
++    JSON.stringify(row.metadata ?? {}), provenance, row.now, row.now,
++    row.ttl ? row.now + row.ttl * 1000 : null,
++  ]);
++}
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/memory-batch.test.ts
+@@ -0,0 +1,245 @@
++/** #1494: controlled producer units with real sql.js storage; real ONNX/stdio is an integration gate. */
++import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
++import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
++import { join } from 'node:path';
++import { tmpdir } from 'node:os';
++
++const state = vi.hoisted(() => ({ failPersist: false, failLock: false, failGuard: false }));
++vi.mock('../src/fs-secure.js', async (load) => {
++  const actual = await load<typeof import('../src/fs-secure.js')>();
++  return { ...actual, writeDbImagePreservingFormat: vi.fn((...args: Parameters<typeof actual.writeDbImagePreservingFormat>) => {
++    if (state.failPersist) throw new Error('controlled persistence failure');
++    return actual.writeDbImagePreservingFormat(...args);
++  }) };
++});
++vi.mock('../src/memory/memory-initializer.js', async (load) => {
++  const actual = await load<typeof import('../src/memory/memory-initializer.js')>();
++  return {
++    ...actual,
++    isMemoryBridgeAvailable: vi.fn(async () => false),
++    assertSqlJsMemoryWriteSafe: vi.fn(async (path: string, requested?: string) => {
++      if (state.failGuard) throw new Error('controlled native WAL refusal');
++      return actual.assertSqlJsMemoryWriteSafe(path, requested);
++    }),
++    generateEmbedding: vi.fn(async () => ({ embedding: [1, 0], dimensions: 2, model: 'controlled-unit-producer', backend: 'onnx' as const })),
++    addBatchToHNSWIndex: vi.fn(async () => ({ available: true, failed: [] as string[] })),
++    storeEntry: vi.fn(async () => ({ success: true, id: 'bridge-unit', embedding: { dimensions: 2, model: 'controlled-unit-producer' } })),
++    withMemoryDbLock: vi.fn(async (path: string, fn: () => unknown) => {
++      if (state.failLock) throw new Error('controlled lock failure');
++      return actual.withMemoryDbLock(path, fn);
++    }),
++  };
++});
++
++import { memoryTools, normalizeMemoryWrite } from '../src/mcp-tools/memory-tools.js';
++import { storeMemoryBatch } from '../src/memory/memory-batch.js';
++import * as memory from '../src/memory/memory-initializer.js';
++import { writeDbImagePreservingFormat } from '../src/fs-secure.js';
++
++let project: string;
++let dbPath: string;
++let priorDisable: string | undefined;
++let priorStrict: string | undefined;
++const batch = memoryTools.find(tool => tool.name === 'memory_batch')!;
++const single = memoryTools.find(tool => tool.name === 'memory_store')!;
++
++beforeEach(async () => {
++  state.failPersist = false;
++  state.failLock = false;
++  state.failGuard = false;
++  priorDisable = process.env.CLAUDE_FLOW_DISABLE_BRIDGE;
++  priorStrict = process.env.RUFLO_REQUIRE_REAL_EMBEDDINGS;
++  delete process.env.RUFLO_REQUIRE_REAL_EMBEDDINGS;
++  process.env.CLAUDE_FLOW_DISABLE_BRIDGE = '1';
++  project = mkdtempSync(join(tmpdir(), 'ruflo-batch-1494-'));
++  dbPath = join(project, 'memory.db');
++  expect((await memory.initializeMemoryDatabase({ dbPath })).success).toBe(true);
++  vi.clearAllMocks();
++  vi.mocked(memory.isMemoryBridgeAvailable).mockResolvedValue(false);
++  vi.mocked(memory.addBatchToHNSWIndex).mockResolvedValue({ available: true, failed: [] });
++});
++afterEach(() => {
++  if (priorDisable === undefined) delete process.env.CLAUDE_FLOW_DISABLE_BRIDGE;
++  else process.env.CLAUDE_FLOW_DISABLE_BRIDGE = priorDisable;
++  if (priorStrict === undefined) delete process.env.RUFLO_REQUIRE_REAL_EMBEDDINGS;
++  else process.env.RUFLO_REQUIRE_REAL_EMBEDDINGS = priorStrict;
++  rmSync(project, { recursive: true, force: true });
++});
++
++async function rows() {
++  const SQL = await (await import('sql.js')).default();
++  const db = new SQL.Database(readFileSync(dbPath));
++  try { return db.exec('SELECT key, content, tags, metadata, provenance_type, id FROM memory_entries ORDER BY key')[0]?.values ?? []; }
++  finally { db.close(); }
++}
++
++const entry = (key: string, value = 'memory content') => ({ key, value, namespace: 'batch', upsert: true });
++
++describe('memory_batch API prevalidation', () => {
++  it.each([
++    { key: 'a', value: 'ok', metadata: [] },
++    { key: 'a', value: '' },
++    { key: 'a', value: 'ok', scope: 'invalid' },
++    { value: 'missing key' },
++  ])('uses exactly the single-store validation for %j', async (invalid) => {
++    const before = readFileSync(dbPath);
++    const one = await single.handler({ ...invalid, dbPath }) as { error: string };
++    const many = await batch.handler({ entries: [entry('valid'), invalid], dbPath }) as { success: boolean; errors: Array<{ error: string }> };
++    expect(many.success).toBe(false);
++    expect(many.errors[0].error).toBe(one.error);
++    expect(readFileSync(dbPath)).toEqual(before);
++    expect(memory.storeEntry).not.toHaveBeenCalled();
++    expect(memory.generateEmbedding).not.toHaveBeenCalled();
++  });
++
++  it('rejects an invalid namespace before any write, including earlier valid rows', async () => {
++    const before = readFileSync(dbPath);
++    const input = { key: 'a', value: 'ok', namespace: 'bad;namespace' };
++    expect(() => normalizeMemoryWrite(input)).toThrow();
++    const result = await batch.handler({ dbPath, entries: [entry('valid'), input] }) as { success: boolean };
++    expect(result.success).toBe(false);
++    expect(readFileSync(dbPath)).toEqual(before);
++  });
++
++  it('rejects duplicate logical keys after scope normalization', async () => {
++    const before = readFileSync(dbPath);
++    const duplicate = { key: 'a', value: 'ok', namespace: 'n', scope: 'project', agentId: 'agent' };
++    const result = await batch.handler({ dbPath, entries: [duplicate, duplicate] }) as { success: boolean; errors: Array<{ error: string }> };
++    expect(result.errors[0].error).toMatch(/Duplicate/);
++    expect(readFileSync(dbPath)).toEqual(before);
++    expect(memory.isMemoryBridgeAvailable).not.toHaveBeenCalled();
++  });
++
++  it.each([
++    { key: 'a', value: 'ok', tags: 'not an array' },
++    { key: 'a', value: 'ok', ttl: -1 },
++    { key: 'a', value: 'ok', provenance_type: 'forged' },
++    { key: 'a', value: 'ok', requireNative: true },
++    { key: 'a', value: 'ok', dbPath: '/another.db' },
++  ])('rejects malformed or unsupported batch fields %j', async (invalid) => {
++    const before = readFileSync(dbPath);
++    const result = await batch.handler({ dbPath, entries: [invalid] }) as { success: boolean };
++    expect(result.success).toBe(false);
++    expect(readFileSync(dbPath)).toEqual(before);
++  });
++
++  it('bounds both row bookkeeping and aggregate JSON bytes', async () => {
++    expect(await batch.handler({ entries: Array.from({ length: 2049 }, (_, i) => entry(String(i))) })).toMatchObject({ success: false, stored: 0 });
++    expect(await batch.handler({ entries: [entry('large', 'x'.repeat(4 * 1024 * 1024))] })).toMatchObject({ success: false, stored: 0 });
++    expect(memory.generateEmbedding).not.toHaveBeenCalled();
++  });
++});
++
++describe('one-image sql.js batch storage with controlled embeddings', () => {
++  it('durably writes distinct rows once and preserves tags, metadata and provenance', async () => {
++    const result = await storeMemoryBatch([
++      { ...entry('a'), tags: ['source:test'], metadata: { confidence: 0.9 }, provenanceType: 'tool_result' },
++      entry('b'),
++    ], dbPath);
++    expect(result.backend).toBe('sql.js');
++    expect(result.results.every(row => row.success && row.stored && row.durable)).toBe(true);
++    expect(new Set(result.results.map(row => row.id)).size).toBe(2);
++    expect(writeDbImagePreservingFormat).toHaveBeenCalledTimes(1);
++    expect(await rows()).toEqual([
++      ['a', 'memory content', '["source:test"]', '{"confidence":0.9}', 'tool_result', result.results[0].id],
++      ['b', 'memory content', null, '{}', 'unknown', result.results[1].id],
++    ]);
++  });
++
++  it('retains every row when all 1247 inserts share one timestamp', async () => {
++    const clock = vi.spyOn(Date, 'now').mockReturnValue(1794450000000);
++    try {
++      const input = Array.from({ length: 1247 }, (_, index) => entry(`same-clock-${index}`));
++      const result = await storeMemoryBatch(input, dbPath);
++      expect(result.results.every(row => row.success)).toBe(true);
++      expect(new Set(result.results.map(row => row.id)).size).toBe(1247);
++      expect((await rows()).length).toBe(1247);
++      expect(writeDbImagePreservingFormat).toHaveBeenCalledTimes(1);
++    } finally { clock.mockRestore(); }
++  });
++
++  it('keeps a conflicting row unchanged while committing the next savepoint', async () => {
++    await storeMemoryBatch([entry('exists', 'original')], dbPath);
++    const result = await storeMemoryBatch([{ ...entry('exists', 'replacement'), upsert: false }, entry('new')], dbPath);
++    expect(result.results.map(row => row.success)).toEqual([false, true]);
++    const saved = await rows();
++    expect(saved.find(row => row[0] === 'exists')?.[1]).toBe('original');
++    expect(saved.find(row => row[0] === 'new')?.[1]).toBe('memory content');
++  });
++
++  it('retains provenance when an upsert omits it', async () => {
++    await storeMemoryBatch([{ ...entry('a'), provenanceType: 'tool_result' }], dbPath);
++    await storeMemoryBatch([entry('a', 'updated')], dbPath);
++    expect((await rows())[0].slice(0, 5)).toEqual(['a', 'updated', null, '{}', 'tool_result']);
++  });
++
++  it('keeps default hash fallback durable but reports nonsemantic failure', async () => {
++    vi.mocked(memory.generateEmbedding).mockResolvedValueOnce({ embedding: [1, 0], dimensions: 2, model: 'hash', backend: 'mock' });
++    const result = await storeMemoryBatch([entry('a')], dbPath);
++    expect(result.results[0]).toMatchObject({ success: false, stored: true, durable: true, hasEmbedding: true });
++    expect(result.results[0].error).toMatch(/nonsemantic/);
++    expect((await rows())[0][0]).toBe('a');
++  });
++
++  it('refuses hash fallback without a write in strict mode', async () => {
++    process.env.RUFLO_REQUIRE_REAL_EMBEDDINGS = '1';
++    vi.mocked(memory.generateEmbedding).mockResolvedValueOnce({ embedding: [1, 0], dimensions: 2, model: 'hash-fallback', backend: 'mock' });
++    const result = await storeMemoryBatch([entry('a')], dbPath);
++    expect(result.results[0]).toMatchObject({ success: false, stored: false, durable: false });
++    expect(result.results[0].error).toMatch(/no-stub/);
++    expect(await rows()).toEqual([]);
++  });
++
++  it('revives a tombstoned logical slot with canonical upsert semantics', async () => {
++    await storeMemoryBatch([entry('a', 'old')], dbPath);
++    const SQL = await (await import('sql.js')).default();
++    const db = new SQL.Database(readFileSync(dbPath));
++    try {
++      db.run("UPDATE memory_entries SET status = 'deleted' WHERE key = 'a'");
++      writeDbImagePreservingFormat(dbPath, db.export());
++    } finally { db.close(); }
++    const result = await storeMemoryBatch([entry('a', 'revived')], dbPath);
++    expect(result.results[0].success).toBe(true);
++    expect((await rows())[0][1]).toBe('revived');
++  });
++
++  it.each(['persist', 'lock', 'guard'])('does not claim durable rows on %s failure', async (failure) => {
++    const before = readFileSync(dbPath);
++    state.failPersist = failure === 'persist';
++    state.failLock = failure === 'lock';
++    state.failGuard = failure === 'guard';
++    const result = await storeMemoryBatch([entry('a'), entry('b')], dbPath);
++    expect(result.results.every(row => !row.success && !row.stored && !row.durable)).toBe(true);
++    expect(readFileSync(dbPath)).toEqual(before);
++    expect(memory.addBatchToHNSWIndex).not.toHaveBeenCalled();
++  });
++
++  it('reports index failure separately from already durable data', async () => {
++    vi.mocked(memory.addBatchToHNSWIndex).mockRejectedValueOnce(new Error('controlled index failure'));
++    const result = await storeMemoryBatch([entry('a')], dbPath);
++    expect(result.results[0]).toMatchObject({ success: false, stored: true, durable: true });
++    expect(result.results[0].indexWarning).toMatch(/index failure/);
++    expect((await rows())[0][0]).toBe('a');
++  });
++});
++
++describe('canonical bridge writes', () => {
++  it('does not report canonical hash fallback as semantic success', async () => {
++    vi.mocked(memory.isMemoryBridgeAvailable).mockResolvedValueOnce(true);
++    vi.mocked(memory.storeEntry).mockResolvedValueOnce({ success: true, id: 'degraded', embedding: { dimensions: 384, model: 'hash-fallback' } });
++    const result = await storeMemoryBatch([entry('a')], dbPath);
++    expect(result.results[0]).toMatchObject({ success: false, stored: true, durable: true });
++    expect(result.results[0].error).toMatch(/nonsemantic/);
++  });
++
++  it('chooses the bridge once and retains canonical per-row operations', async () => {
++    vi.mocked(memory.isMemoryBridgeAvailable).mockResolvedValueOnce(true);
++    const result = await storeMemoryBatch([entry('a'), entry('b')], dbPath);
++    expect(result.results.every(row => row.success)).toBe(true);
++    expect(memory.isMemoryBridgeAvailable).toHaveBeenCalledTimes(1);
++    expect(memory.storeEntry).toHaveBeenCalledTimes(2);
++    expect(memory.storeEntry).toHaveBeenNthCalledWith(1, { ...entry('a'), dbPath, generateEmbeddingFlag: true });
++    expect(memory.generateEmbedding).not.toHaveBeenCalled();
++    expect(writeDbImagePreservingFormat).not.toHaveBeenCalled();
++  });
++});
+--- /dev/null
++++ b/v3/@claude-flow/cli/docs/memory-batch.md
+@@ -0,0 +1,27 @@
++# Inline memory batches
++
++`memory_batch` writes inline entries to the same `memory_entries` store and embedding paths used by `memory_store`. Use `memory_import` instead when an export file already exists on the server. A batch does not write to AgentDB's `episodes` table.
++
++```json
++{
++  "name": "memory_batch",
++  "arguments": {
++    "entries": [
++      { "key": "knowledge:orchard", "value": "Apples are harvested in autumn", "namespace": "knowledge", "tags": ["source:notes"], "upsert": true },
++      { "key": "knowledge:reef", "value": "Coral reefs shelter tropical marine life", "namespace": "knowledge" }
++    ]
++  }
++}
++```
++
++Each row accepts the store's key, value, namespace, tags, metadata, TTL, upsert, provenance type, scope and agent ID. The optional top-level `dbPath` selects one SQLite store for the entire call. The default is the existing MCP store. Keys must be unique within their resolved namespace in a batch; duplicate logical keys, invalid rows and oversized requests are rejected before writing any row. Upsert defaults to true. Native-only and immutable-append flags are not part of this API.
++
++Requests are limited to 2,048 entries and 4 MiB of aggregate JSON encoded as UTF-8. The row bound limits bookkeeping even for tiny values; it does not guarantee a completion time. Larger workloads should use several batches.
++
++The healthy bridge path calls the existing guarded store operation for each row. It preserves MutationGuard, attestations, cache invalidation and existing persistence diagnostics. It is **not one atomic transaction**: earlier rows can remain written when a later row fails. An unavailable bridge uses the sql.js path, which prepares embeddings with bounded concurrency, writes under one database lock with a savepoint per row, and persists one database image. A row conflict does not discard other successful rows. Only committed rows enter the search index.
++
++The response includes aggregate stored/embedded/failed counts and per-row results. `success: false` can accompany `stored: true` when indexing or embedding is incomplete; inspect the error or warning. A persistence warning must not be read as confirmed durability. Optional HNSW absence is reported separately, while vectors remain available in SQLite. Both backends retain the existing embedding policy: by default a degraded hash vector may be stored with its truthful model and a failed semantic outcome. With `RUFLO_REQUIRE_REAL_EMBEDDINGS` enabled, hash fallback throws before the affected row is written. A hash vector is never reported as semantic success.
++
++Cold model initialization and larger databases can take longer than warm requests. The call blocks until processing completes, and it does not cancel work when a client disconnects or its timeout expires. Configure client/server timeouts for the workload and inspect results before retrying. No speedup or fixed latency is guaranteed for every input or host.
++
++Explicit alternate stores use their SQLite vectors instead of the project-wide optional HNSW singleton. The SQL search fallback considers up to 10,000 live rows, matching the existing project-index load bound. The pre-existing single-store writer can still populate the singleton from an explicit store; this batch change does not alter that writer.
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/memory-batch-search.test.ts
+@@ -0,0 +1,90 @@
++/** #1494 search-window and store isolation: controlled vectors, real sql.js. */
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++import { mkdtempSync, rmSync } from 'node:fs';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++
++const state = vi.hoisted(() => ({
++  ann: false,
++  search: vi.fn(async () => []),
++}));
++// The producer and optional ANN are controlled units. The SQL database,
++// transaction, bulk writer and searchEntries implementation are real.
++vi.mock('@huggingface/transformers', () => ({
++  env: {},
++  pipeline: async () => async (text: string) => ({ data: Float32Array.from(text.includes('late') ? [1, 0] : [0, 1]) }),
++}));
++vi.mock('@xenova/transformers', () => ({ pipeline: undefined }));
++vi.mock('../src/memory/rabitq-index.js', () => ({
++  ensureRabitqIndex: vi.fn(async () => undefined),
++  searchRabitq: vi.fn(async () => null),
++}));
++vi.mock('@ruvector/core', () => ({
++  default: undefined,
++  get VectorDb() {
++    if (!state.ann) return undefined;
++    return class {
++      async len() { return 0; }
++      async insert() {}
++      search = state.search;
++    };
++  },
++}));
++
++let project: string;
++beforeEach(() => {
++  vi.resetModules();
++  state.ann = false;
++  state.search.mockClear();
++  project = mkdtempSync(join(tmpdir(), 'ruflo-batch-search-1494-'));
++  vi.stubEnv('CLAUDE_FLOW_DISABLE_BRIDGE', '1');
++  vi.stubEnv('CLAUDE_FLOW_MEMORY_PATH', join(project, 'store'));
++  vi.stubEnv('TRANSFORMERS_CACHE', join(project, 'models'));
++  vi.stubEnv('RUFLO_REQUIRE_REAL_EMBEDDINGS', '1');
++});
++afterEach(() => {
++  vi.unstubAllEnvs();
++  rmSync(project, { recursive: true, force: true });
++});
++
++async function modules() {
++  const memory = await import('../src/memory/memory-initializer.js');
++  const { storeMemoryBatch } = await import('../src/memory/memory-batch.js');
++  return { memory, storeMemoryBatch };
++}
++
++describe('batch search without optional indexes', () => {
++  it('finds row 1246 through the real SQL fallback when both ANN paths are absent', async () => {
++    const { memory, storeMemoryBatch } = await modules();
++    expect((await memory.initializeMemoryDatabase()).success).toBe(true);
++    const entries = Array.from({ length: 1247 }, (_, index) => ({
++      key: `row-${String(index).padStart(4, '0')}`, namespace: 'bulk',
++      value: index === 1246 ? 'late target' : `unrelated record ${index}`,
++    }));
++    const result = await storeMemoryBatch(entries);
++    expect(result.results.filter(row => row.stored)).toHaveLength(1247);
++    expect((await memory.listEntries({ namespace: 'bulk', limit: 0 })).total).toBe(1247);
++    const found = await memory.searchEntries({ query: 'late query', namespace: 'bulk', limit: 1, threshold: 0 });
++    expect(found.success).toBe(true);
++    expect(found.results[0].key).toBe('row-1246');
++    expect(state.search).not.toHaveBeenCalled();
++  });
++
++  it('uses HNSW for the default store and skips it for an explicit different store', async () => {
++    state.ann = true;
++    const { memory, storeMemoryBatch } = await modules();
++    expect((await memory.initializeMemoryDatabase()).success).toBe(true);
++    expect((await storeMemoryBatch([{ key: 'same', namespace: 'store', value: 'project record' }])).results[0].stored).toBe(true);
++    state.search.mockClear();
++    await memory.searchEntries({ query: 'query', namespace: 'store', limit: 1, threshold: 0 });
++    expect(state.search).toHaveBeenCalledTimes(1);
++    const alternate = join(project, 'alternate.db');
++    expect((await memory.initializeMemoryDatabase({ dbPath: alternate })).success).toBe(true);
++    await storeMemoryBatch([{ key: 'same', namespace: 'store', value: 'alternate record' }], alternate);
++    state.search.mockClear();
++    const found = await memory.searchEntries({ dbPath: alternate, query: 'query', namespace: 'store', limit: 1, threshold: 0 });
++    expect(state.search).not.toHaveBeenCalled();
++    expect(found.results[0].content).toBe('alternate record');
++    expect(found.results[0].key).toBe('same');
++  });
++});

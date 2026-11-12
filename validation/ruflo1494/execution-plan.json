@@ -1,0 +1,491 @@
+{
+  "issue": "https://github.com/ruvnet/ruflo/issues/1494",
+  "source_pin": "dc25dd9b522bf1f3761f0d061a0bd0deb1900ba1",
+  "execution_enabled": true,
+  "attempt": "ruflo1494-baseline-candidate-f1",
+  "logical_measurement_attempt": 1,
+  "maximum_measurement_attempts": 2,
+  "target_seconds": 3000,
+  "absolute_seconds": 3600,
+  "phase_caps": {
+    "prepare": 180,
+    "install": 900,
+    "build": 900,
+    "measure": 2100,
+    "early": 120,
+    "backend": 1080,
+    "consumer": 1140
+  },
+  "retained_peak_bytes": 8233701376,
+  "resource_basis": "G0 measured maximum sampled working5963857920B: twice plus1GiB13001457664B fits13GiB allocation13958643712B. Actualhostminimum14GiB includes1GiB unallocated hostreserve above13GiBcontainer; requireactualadmission. G0raw12GiBcgroupcachelimit/events808/noOOM disclosed, not comfortableheadroom. Four fresh independent hostedallocations, noMac/externaldisk.",
+  "lanes": {
+    "root20": {
+      "node_major": "20",
+      "image": "node@sha256:cacf10e99285cbbc891452e31249c1b5ec3ba225f40028fae946b75aeaf1b66a",
+      "steps": {
+        "build": [
+          {
+            "label": "root-lint",
+            "args": [
+              "npm",
+              "run",
+              "lint"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "root-actual-cli-lint",
+            "args": [
+              "npm",
+              "run",
+              "lint",
+              "--prefix",
+              "v3/@claude-flow/cli"
+            ],
+            "cwd": "",
+            "cap": 180,
+            "expected": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "label": "root-types-upstream-tolerant",
+            "args": [
+              "npm",
+              "run",
+              "typecheck"
+            ],
+            "cwd": "",
+            "cap": 180,
+            "expected": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "label": "root-security-build",
+            "args": [
+              "npm",
+              "run",
+              "build",
+              "--workspace=@claude-flow/security"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "root-cli-core-build",
+            "args": [
+              "npm",
+              "run",
+              "build",
+              "--prefix",
+              "v3/@claude-flow/cli-core"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "kind": "cli-core-overlay"
+          }
+        ],
+        "measure": [
+          {
+            "label": "root-full-ratchet",
+            "args": [
+              "node",
+              "scripts/ci-test-ratchet.mjs"
+            ],
+            "cwd": "",
+            "cap": 1680,
+            "expected": [
+              0,
+              1,
+              2
+            ],
+            "copy_report": ".test-results/vitest.json",
+            "baseline_failure_continues_shipping_checks": true
+          },
+          {
+            "label": "root-build-ts",
+            "args": [
+              "npm",
+              "run",
+              "build:ts"
+            ],
+            "cwd": "",
+            "cap": 300,
+            "expected": 0
+          },
+          {
+            "label": "root-cli-version-upstream-tolerant",
+            "args": [
+              "node",
+              "v3/@claude-flow/cli/bin/cli.js",
+              "--version"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": [
+              0,
+              1
+            ]
+          },
+          {
+            "label": "root-shipping-pack",
+            "args": [
+              "npm",
+              "pack"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          }
+        ]
+      }
+    },
+    "workspace22": {
+      "node_major": "22",
+      "image": "node@sha256:539d4d5b9c0df96bb9d1229264d358dc816e8592cb8867828a580b527e7ad0fa",
+      "steps": {
+        "build": [
+          {
+            "label": "v3-stdio-policy",
+            "args": [
+              "node",
+              "scripts/test-mcp-policy-stdio.mjs"
+            ],
+            "cwd": "v3/@claude-flow/cli",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "v3-recursive-build-upstream-tolerant",
+            "args": [
+              "pnpm",
+              "--recursive",
+              "--no-bail",
+              "run",
+              "build"
+            ],
+            "cwd": "v3",
+            "cap": 660,
+            "expected": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "label": "v3-flywheel-proof",
+            "args": [
+              "node",
+              "scripts/smoke-flywheel-proof.mjs"
+            ],
+            "cwd": "v3/@claude-flow/cli",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "v3-replay",
+            "args": [
+              "node",
+              "scripts/replay-generation.mjs"
+            ],
+            "cwd": "v3/@claude-flow/cli",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "cli-strict-build",
+            "args": [
+              "pnpm",
+              "--filter",
+              "@claude-flow/cli",
+              "build"
+            ],
+            "cwd": "v3",
+            "cap": 240,
+            "expected": 0
+          },
+          {
+            "label": "candidate-targeted-units",
+            "args": [
+              "./node_modules/.bin/vitest",
+              "run",
+              "__tests__/memory-batch.test.ts",
+              "__tests__/memory-batch-search.test.ts",
+              "--pool=forks",
+              "--maxWorkers=2"
+            ],
+            "cwd": "v3/@claude-flow/cli",
+            "cap": 120,
+            "expected": 0,
+            "candidate_only": true
+          }
+        ],
+        "measure": [
+          {
+            "label": "v3-full",
+            "args": [
+              "./node_modules/.bin/vitest",
+              "run",
+              "--reporter=default",
+              "--reporter=json",
+              "--outputFile.json=/work/evidence/v3-full-report.json"
+            ],
+            "cwd": "v3",
+            "cap": 1200,
+            "expected": [
+              0,
+              1,
+              139,
+              -11
+            ],
+            "vitest_report": "v3-full-report.json",
+            "signal_policy": "record signal as failure, never pass; continue remaining shipping checks; upstream tolerance evaluated separately from raw result"
+          },
+          {
+            "label": "v3-strict-shipping-build",
+            "args": [
+              "pnpm",
+              "build"
+            ],
+            "cwd": "v3",
+            "cap": 660,
+            "expected": 0
+          },
+          {
+            "label": "v3-types-upstream-tolerant",
+            "args": [
+              "pnpm",
+              "typecheck"
+            ],
+            "cwd": "v3",
+            "cap": 600,
+            "expected": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "label": "audit-tool-descriptions",
+            "args": [
+              "node",
+              "scripts/audit-tool-descriptions.mjs"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "audit-cli-mcp-tools",
+            "args": [
+              "node",
+              "scripts/audit-cli-mcp-tools.mjs"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "scaffold-references",
+            "args": [
+              "node",
+              "scripts/smoke-init-scaffold-references.mjs"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "mcp-protocol",
+            "args": [
+              "node",
+              "plugins/ruflo-core/scripts/test-mcp-protocol.mjs"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "mcp-roundtrips-advisory",
+            "args": [
+              "node",
+              "plugins/ruflo-core/scripts/test-mcp-roundtrips.mjs"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "memory-import",
+            "args": [
+              "node",
+              "plugins/ruflo-core/scripts/test-memory-import.mjs"
+            ],
+            "cwd": "",
+            "cap": 180,
+            "expected": 0
+          },
+          {
+            "label": "memory-legacy",
+            "args": [
+              "node",
+              "scripts/smoke-memory-stats-legacy-db.mjs"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "memory-no-stray",
+            "args": [
+              "node",
+              "scripts/smoke-memory-no-stray-db.mjs"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "vector-audit",
+            "args": [
+              "node",
+              "scripts/audit-vector-dim.mjs"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "witness-markers",
+            "args": [
+              "node",
+              "scripts/smoke-witness-marker-drift.mjs"
+            ],
+            "cwd": "",
+            "cap": 120,
+            "expected": 0
+          },
+          {
+            "label": "plugin-hooks",
+            "args": [
+              "node",
+              "plugins/ruflo-core/scripts/test-hooks.mjs",
+              "node /work/source/v3/@claude-flow/cli/bin/cli.js"
+            ],
+            "cwd": "",
+            "cap": 180,
+            "expected": 0
+          }
+        ]
+      }
+    }
+  },
+  "locked_inputs": {
+    "package.json": "f89e69a5e4a81b69cdf3bd686729516a94365824c9b402a079f47c9e27da9729",
+    "package-lock.json": "5d2baf14400d825bd18472717156131eaab66c4c34259e2331d7ae9243cca6c2",
+    "v3/pnpm-lock.yaml": "d0c9504fddfc9ba27c1f8239f175f7fe43383edb97ef245db18297567815719a",
+    "v3/package.json": "36a436f92ea5211db2be7c677b336d6481a9f74256dfc51d13a2f6113686f426",
+    "v3/tsconfig.base.json": "7dd0fd5637679ac03895c92333e487e1b130d4abd482eea90969b7a0b7af6d6a",
+    "v3/vitest.config.ts": "42f50b26ed47dc181a4d3180e2e224e7829ba9af4b0e144e93fa6bd283b05413",
+    "v3/@claude-flow/mcp/package.json": "1ed3045ce5f3b4ca301c85621a0e0c3fca9765dfe4504ce17f491ca2571a74c5",
+    "v3/@claude-flow/mcp/vitest.config.ts": "a467293ba7c47877f9eed3721f5b98d31c90f7367279e9bb6cb4c55d3f198314",
+    "v3/@claude-flow/plugin-agent-federation/package.json": "51109e66dec126864202c3c9bd7042e226b71eee0400fccc76e015f03b559844",
+    "v3/@claude-flow/plugin-agent-federation/vitest.config.ts": "3572426f04fb00bcebd7fdf82b11331bd718086e3f3fb3f7155849844fdfa9b5",
+    "v3/@claude-flow/cli/package.json": "ac2c2c9e434b7658d87068f94e5d10482e79b379e03df8b241a88ed873c032ac",
+    "v3/@claude-flow/cli/tsconfig.json": "9700b59dfdeb3e3c5a03d0e26bb0823d60ccd7c0e9d285f889a2c25cc8e5f29f",
+    ".github/workflows/ci.yml": "651e565dee807323021859726c71ef91f591ab7214402587c3f640a94a4ba01c",
+    ".github/workflows/v3-ci.yml": "c15f3755a414813b3bafbf9c38d0aa56aef791d73345b2bbca3383cd5cf591f6",
+    "scripts/ci-test-baseline.txt": "12f9052bc629b7a85de6f0a418e4aa69973166632c570a489c0c97651369923c",
+    "scripts/ci-test-ratchet.mjs": "e4f6311150e18e6ef8af595be2f6ec255fa002ae59f9bbf7b1e3d431827c29cc",
+    "v3/@claude-flow/browser/package.json": "14b80fc826c5ae5fb7fdc643c44ef59a3a7bb23a59870fb000c22b1efd4135a8",
+    "v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts": "75ca93b4343d49dc9b93178eb760e4c109fe635a5532ab48791b60e2b6349234",
+    "v3/@claude-flow/cli/src/memory/memory-initializer.ts": "e05f25b430bcaa7bc8c9b80895d5dae3077d46ee2d6c34333698077c2bd6d3e6",
+    "v3/@claude-flow/cli/src/memory/memory-bridge.ts": "122085bb8f7a98f6b1958ca20b750de64d8f81cd6094c470270a7c1d9addc173",
+    "v3/@claude-flow/cli/src/memory/embedding-policy.ts": "f020e94a04c7da2c082f4135bbbafb148e80d2a3957f17f1c4f8fd744ace0e2f",
+    "v3/@claude-flow/cli/vitest.config.ts": "ce8f8043810d34bb21b9559008755d4891526333736d040a36bdd993879b4747",
+    "AGENTS.md": "a953f3742d5a7c902aa8d184620e29994d6c144acae5af93ffb0b05ff0b138f2",
+    "CLAUDE.md": "509bf87c1aea8779bfa3561646e2dd72ec58087dfefd4ca8197ab484603153d8",
+    "CONTRIBUTING.md": "6c149a5160fc2fbd9bd3b0d85f41ff0e04f02fb8706e1673af66bc2c423faf5d"
+  },
+  "pnpm_sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665",
+  "packet_files": [
+    {
+      "path": "backend-probe.mjs",
+      "bytes": 6752,
+      "sha256": "b429c5de44c0179730b3257da58cc27b80137f8eff3521491859164ec2378656"
+    },
+    {
+      "path": "candidate.patch",
+      "bytes": 52408,
+      "sha256": "7c4d7de9159bf3591df3c7feea04359753b619fd67e23b0670caa6a9c10b1f1b"
+    },
+    {
+      "path": "feature-probe.mjs",
+      "bytes": 11598,
+      "sha256": "51ea27fbf9469f8661b1b5b2ef29f9c7f177f82ce1160a0350117c6d837ee5a5"
+    },
+    {
+      "path": "hosted.py",
+      "bytes": 16748,
+      "sha256": "a90d1e68e9f37515acbe61b9d69ca4c293f8a5480b71e404f0edca8795bd1443"
+    },
+    {
+      "path": "inside.py",
+      "bytes": 14439,
+      "sha256": "91da168ddf11c78df60c3c0be353f1c2616e971ef6a56f616e0d5b049b1f8b41"
+    },
+    {
+      "path": "install-global-guard.cjs",
+      "bytes": 718,
+      "sha256": "6bfcd26f154e97c5fe39c3f63f54402005ad54e0e08a7666dcb243e48294dec6"
+    },
+    {
+      "path": "pack-consumers.py",
+      "bytes": 3364,
+      "sha256": "ee75eb0abbf5d1401b0c5ccb2e6d037e4327f146b0c99fcf6744baa274aa86cc"
+    },
+    {
+      "path": "pnpm-8.15.0.tgz",
+      "bytes": 3805828,
+      "sha256": "fd1eab68a6d403f35cf3259c53780d70b0f14bd74e39da2f917d201f554d8665"
+    },
+    {
+      "path": "stdio-probe.mjs",
+      "bytes": 4869,
+      "sha256": "285fcf497a35dbca99c5ddefacc9148b0d23246da4261b551b8591267a9326a1"
+    }
+  ],
+  "scope": "Unchangedbase and exact seven-source-file reviewed candidate on four isolated jobs root20/workspace22 x baseline/candidate. Full exact upstream rootratchet/fullV3 defaultworkers, strictCLI/V3shipping/type, noCLI-onlyfull lane. Newtargetedunits supplemental. Candidate1247bridge/sqljs/defaultstrict/durability/ranking plus actual installedstdio normal and nativeabsent-forced+default complete BEFORE full suites; consumers pack from a separate stagingcopy, original source/dependency closure unchanged. Actualresults must be independently compared pertest against fresh correctedbaseline; no139waiver. No PR/comment/release.",
+  "budget": "One common orphancommit origin across four jobs, target3000/absolute3600 seconds including checkout/setup/install/fullchecks/evidence. No rerun/reset. Distinct updated sourceattempt requires own fresh authority; priorG0 grant consumed.",
+  "publication": "DISABLED pending whole exact source+execution review and normal platform authority. Public orphan diagnostic contains only explicit packet files; never private histories/quota/policy.",
+  "next_after_pass": "Actualresultsreview then possible1494implementation; currentG0 alone never admitscandidate.",
+  "baseline_failure_handling": "Allactualassertion/build/lint/typefailures retained distinctly; no candidateagreement frommissing/failedcriticalprerequisites. Signals/timeouts terminal, no139acceptance. No rerun.",
+  "network_cap_bytes": 12884901888,
+  "script_tolerance_disclosure": "Raw baseline failures retained separately; native signal139/-11 never pass. Upstream shutdown criteria separately recorded, subsequent strict shipping builds still measured. Root ratchet failure copied and recorded, later builds/pack still measured.",
+  "strict_shipping_proof": "Not a packaging pass. CurrentstableCLI package shipping recipe retained for later candidate stage; exact compiled APIs/moduleimports/packconsumer and realMCPtool builtArtifact required before PR. G0mustclose native dependency/build/time/resources first.",
+  "network_policy": "Prepare/earlyoffline; install/build/measure bridgeconnected,12GiB cumulativeownedcontainerRX cap with10ssampling. HF/transformer offlinevariablesremovedforbuild/measure tomatchcoldCI. No privatecredentials/provideraccounts or clouddeployment.",
+  "baseline_worker_policy": "V3 full selection uses upstream default worker semantics; CLI own-config lane is agent-proposed with fork pool/max2, not CI-equivalent. Root ratchet exactly upstream.",
+  "network_accounting": "Cumulative RX across bridge disconnects, excluding loopback; sampled 10s with end-of-connection checkpoint; hard phase/deadline and log/disk gates remain.",
+  "backend_probe": "Candidate actual memory_batch1247 <=25sec each bridge/sqljs x default/strict; actualreal384finite semanticmargin, early/middle/late worddisjoint ranking, full1247 vectorreadback and freshprocess. Populated1247 supplemental. Installed realstdio bothnormal/nooptionalconsumer1247 <=25s. No shrinkloop, no mock labeling proof. Freshbridge reads use canonicalbridgeGetAllEmbeddings in another process, never assumedrawimage/checkpoint; nativeabsenceconsumer bothunsetdefault andforcedsqljs routes, selectedbackend recorded; each1247/25s. NewrealSQLcontrolledproducer units directlydisableANN for1247latefallback anddefault-vs-alternateHNSWrouting.",
+  "host_min_memory_bytes": 15032385536,
+  "candidate_inputs": {
+    "v3/@claude-flow/cli/src/mcp-tools/memory-tools.ts": "84bc54c7bba21829d29bab36109bc3f9078e4323c47e5a2ff79a957f789434fd",
+    "v3/@claude-flow/cli/src/memory/memory-initializer.ts": "560685a2a9de097dc91ee9af1db6f7e2a6178466aa0b738b97ad87ab07763dc9",
+    "v3/@claude-flow/cli/src/memory/memory-batch.ts": "64577dddb488fd39b0615de4cd737518dd0913d1ee1fca1a7fcd12f700d95197",
+    "v3/@claude-flow/cli/src/memory/memory-row.ts": "4a3bc5bf6320f343225270fa27d774598c7690dc45b7a068913860905aafd54c",
+    "v3/@claude-flow/cli/__tests__/memory-batch.test.ts": "2300c9ad46cdd54591d35f2389477f372b52256a0ec42439c5da3ef520d192a3",
+    "v3/@claude-flow/cli/docs/memory-batch.md": "eb3ca97000334ca0831f07e47bdcc653a6b3114e8861e583b3d07c990b6cade2",
+    "v3/@claude-flow/cli/__tests__/memory-batch-search.test.ts": "9b19af1be4257ecf9d682645dbd8b895bf6e38d5efc8af718e08a7b5a822950a"
+  }
+}
