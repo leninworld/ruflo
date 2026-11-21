@@ -1,0 +1,758 @@
+From 90ebe2addf599dea6184b08ee68310de75822374 Mon Sep 17 00:00:00 2001
+From: Lenin Mookiah <2639584+leninworld@users.noreply.github.com>
+Date: Fri, 20 Nov 2026 21:18:30 -0800
+Subject: [PATCH] fix(daemon): gate workers on available memory on macOS
+ (#2935)
+
+On Darwin, os.freemem() counts only free and speculative pages. The kernel
+keeps reclaimable file cache on the inactive queue, so an idle Mac reads as a
+few percent "free" and the worker daemon defers almost every worker.
+
+The memory gate now measures available memory on Darwin from vm_stat as
+(free + speculative + inactive) x page size, clamped to totalmem, with the
+page size read from vm_stat's own header (16 KiB on Apple Silicon). Purgeable
+pages are not added because they already sit on other queues. Linux and
+Windows keep os.freemem() unchanged.
+
+vm_stat runs without a shell, with a 1 s timeout; concurrent checks share one
+probe and results are cached for 5 s. If the probe fails the gate falls back
+to os.freemem() and logs that once per daemon. Threshold defaults are not
+changed.
+
+Refs #2935
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ .../services/available-memory-2935.test.ts    | 300 ++++++++++++++++++
+ .../worker-daemon-darwin-gate-2935.test.ts    | 118 +++++++
+ .../cli/src/services/available-memory.ts      | 228 +++++++++++++
+ .../cli/src/services/worker-daemon.ts         |  29 +-
+ 4 files changed, 670 insertions(+), 5 deletions(-)
+ create mode 100644 v3/@claude-flow/cli/__tests__/services/available-memory-2935.test.ts
+ create mode 100644 v3/@claude-flow/cli/__tests__/services/worker-daemon-darwin-gate-2935.test.ts
+ create mode 100644 v3/@claude-flow/cli/src/services/available-memory.ts
+
+diff --git a/v3/@claude-flow/cli/__tests__/services/available-memory-2935.test.ts b/v3/@claude-flow/cli/__tests__/services/available-memory-2935.test.ts
+new file mode 100644
+index 00000000..ae82b0e8
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/services/available-memory-2935.test.ts
+@@ -0,0 +1,300 @@
++/**
++ * #2935 — available-memory measurement used by the daemon's memory gate.
++ * Every dependency is injected, so nothing here depends on the host.
++ */
++
++import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
++import {
++  parseVmStat,
++  vmStatAvailableBytes,
++  createAvailableMemoryReader,
++  AVAILABLE_MEMORY_CACHE_TTL_MS,
++  VM_STAT_PATH,
++  type AvailableMemoryDeps,
++} from '../../src/services/available-memory.js';
++import { WorkerDaemon } from '../../src/services/worker-daemon.js';
++import { mkdtempSync, rmSync, mkdirSync } from 'fs';
++import { join } from 'path';
++import { tmpdir } from 'os';
++
++// Captured on Apple Silicon (16 KiB pages).
++const VM_STAT_16K = [
++  'Mach Virtual Memory Statistics: (page size of 16384 bytes)',
++  'Pages free:                                   132582.',
++  'Pages active:                                 668441.',
++  'Pages inactive:                               657222.',
++  'Pages speculative:                             37467.',
++  'Pages throttled:                                   0.',
++  'Pages wired down:                             347909.',
++  'Pages purgeable:                               46532.',
++  '"Translation faults":                     123456789.',
++  '',
++].join('\n');
++
++// Intel layout (4 KiB pages), same field set.
++const VM_STAT_4K = [
++  'Mach Virtual Memory Statistics: (page size of 4096 bytes)',
++  'Pages free:                                    50000.',
++  'Pages active:                                 900000.',
++  'Pages inactive:                               800000.',
++  'Pages speculative:                             10000.',
++  'Pages wired down:                             300000.',
++  'Pages purgeable:                              120000.',
++  '',
++].join('\n');
++
++const TOTAL_16K = 51_539_607_552;
++const AVAIL_16K = (132_582 + 37_467 + 657_222) * 16_384; // 13,554,008,064
++
++type Cb = (error: Error | null, stdout: string, stderr: string) => void;
++
++function deps(overrides: Partial<{
++  platform: string | undefined;
++  stdout: string;
++  error: Error & { code?: string; killed?: boolean };
++  freemem: number;
++  totalmem: number;
++  now: () => number;
++}> = {}) {
++  const calls: Array<{ file: string; opts: any }> = [];
++  const d: AvailableMemoryDeps = {
++    platform: async () => ('platform' in overrides ? overrides.platform : 'darwin'),
++    execFile: async () => (file: string, _args: readonly string[], opts: any, cb: Cb) => {
++      calls.push({ file, opts });
++      setImmediate(() =>
++        overrides.error ? cb(overrides.error, '', '') : cb(null, overrides.stdout ?? VM_STAT_16K, ''),
++      );
++      return {};
++    },
++    freemem: async () => overrides.freemem ?? 2_769_993_728,
++    totalmem: async () => overrides.totalmem ?? TOTAL_16K,
++    now: overrides.now ?? (() => 0),
++  };
++  return { d, calls };
++}
++
++describe('parseVmStat', () => {
++  it('parses the 16 KiB Apple Silicon layout', () => {
++    expect(parseVmStat(VM_STAT_16K)).toEqual({
++      pageSize: 16384, free: 132582, inactive: 657222, speculative: 37467, purgeable: 46532,
++    });
++  });
++
++  it('parses the 4 KiB Intel layout from its own header', () => {
++    expect(parseVmStat(VM_STAT_4K)?.pageSize).toBe(4096);
++  });
++
++  it('accepts CRLF line endings', () => {
++    expect(parseVmStat(VM_STAT_16K.replace(/\n/g, '\r\n'))).toEqual(parseVmStat(VM_STAT_16K));
++  });
++
++  it('accepts counters without a trailing period', () => {
++    expect(parseVmStat(VM_STAT_16K.replace(/(\d)\.$/gm, '$1'))?.inactive).toBe(657222);
++  });
++
++  it('treats purgeable as optional', () => {
++    const text = VM_STAT_16K.split('\n').filter((l) => !l.startsWith('Pages purgeable')).join('\n');
++    const parsed = parseVmStat(text);
++    expect(parsed).not.toBeNull();
++    expect(parsed).not.toHaveProperty('purgeable');
++  });
++
++  it.each([
++    ['missing header', VM_STAT_16K.split('\n').slice(1).join('\n')],
++    ['header not on the first line', `\n${VM_STAT_16K}`],
++    ['zero page size', VM_STAT_16K.replace('16384 bytes', '0 bytes')],
++    ['missing inactive', VM_STAT_16K.replace(/^Pages inactive.*$/m, '')],
++    ['missing free', VM_STAT_16K.replace(/^Pages free.*$/m, '')],
++    ['missing speculative', VM_STAT_16K.replace(/^Pages speculative.*$/m, '')],
++    ['negative counter', VM_STAT_16K.replace('657222.', '-657222.')],
++    ['non-numeric counter', VM_STAT_16K.replace('657222.', 'lots.')],
++    ['unsafe-integer counter', VM_STAT_16K.replace('657222.', '9007199254740993.')],
++    ['empty output', ''],
++  ])('returns null for %s', (_name, text) => {
++    expect(parseVmStat(text)).toBeNull();
++  });
++});
++
++describe('vmStatAvailableBytes', () => {
++  it('is (free + speculative + inactive) × pageSize and excludes purgeable', () => {
++    const sample = parseVmStat(VM_STAT_16K)!;
++    expect(vmStatAvailableBytes(sample)).toBe(AVAIL_16K);
++    expect(vmStatAvailableBytes({ ...sample, purgeable: 10 ** 9 })).toBe(AVAIL_16K);
++  });
++
++  it('returns null when the byte product is not a safe integer', () => {
++    expect(vmStatAvailableBytes({ pageSize: 2 ** 40, free: 2 ** 20, inactive: 0, speculative: 0 })).toBeNull();
++  });
++});
++
++describe('createAvailableMemoryReader', () => {
++  it('measures Darwin from vm_stat without a shell, with a timeout', async () => {
++    const { d, calls } = deps();
++    const m = await createAvailableMemoryReader(d).read();
++    expect(m).toEqual({ availableBytes: AVAIL_16K, totalBytes: TOTAL_16K, percent: (AVAIL_16K / TOTAL_16K) * 100, source: 'vm_stat' });
++    expect(m.percent.toFixed(1)).toBe('26.3');
++    expect(calls).toHaveLength(1);
++    expect(calls[0].file).toBe(VM_STAT_PATH);
++    expect(calls[0].opts).toMatchObject({ timeout: 1000 });
++    expect(calls[0].opts.shell).toBeUndefined();
++  });
++
++  it('measures the 4 KiB layout with its own page size', async () => {
++    const total = 16 * 1024 ** 3;
++    const { d } = deps({ stdout: VM_STAT_4K, totalmem: total });
++    const m = await createAvailableMemoryReader(d).read();
++    expect(m.availableBytes).toBe((50_000 + 10_000 + 800_000) * 4096);
++    expect(m.source).toBe('vm_stat');
++  });
++
++  it('clamps available memory to totalmem', async () => {
++    const { d } = deps({ totalmem: 1024 ** 3 });
++    const m = await createAvailableMemoryReader(d).read();
++    expect(m.availableBytes).toBe(1024 ** 3);
++    expect(m.percent).toBe(100);
++  });
++
++  it.each(['linux', 'win32', undefined])('keeps os.freemem() on %s and never spawns', async (platform) => {
++    const { d, calls } = deps({ platform, freemem: 4e9, totalmem: 16e9 });
++    const m = await createAvailableMemoryReader(d).read();
++    expect(m).toEqual({ availableBytes: 4e9, totalBytes: 16e9, percent: 25, source: 'os.freemem' });
++    expect(calls).toHaveLength(0);
++  });
++
++  it.each([
++    ['ENOENT', Object.assign(new Error('spawn /usr/bin/vm_stat ENOENT'), { code: 'ENOENT' }), /ENOENT/],
++    ['timeout', Object.assign(new Error('killed'), { killed: true }), /timed out/],
++    ['non-zero exit', Object.assign(new Error('Command failed'), { code: 1 as unknown as string }), /failed \(1\)/],
++  ])('falls back to os.freemem() on %s', async (_name, error, reason) => {
++    const { d } = deps({ error, freemem: 4e9, totalmem: 16e9 });
++    const m = await createAvailableMemoryReader(d).read();
++    expect(m.source).toBe('os.freemem-fallback');
++    expect(m.availableBytes).toBe(4e9);
++    expect(m.percent).toBe(25);
++    expect(m.fallbackReason).toMatch(reason);
++    expect(m.diagnostic).toBeUndefined();
++  });
++
++  it('falls back to os.freemem() on unparsable output', async () => {
++    const { d } = deps({ stdout: 'vm_stat: something else entirely' });
++    const m = await createAvailableMemoryReader(d).read();
++    expect(m.source).toBe('os.freemem-fallback');
++    expect(m.fallbackReason).toMatch(/could not be parsed/);
++  });
++
++  it('falls back when execFile itself throws synchronously', async () => {
++    const d: AvailableMemoryDeps = {
++      ...deps().d,
++      execFile: async () => () => { throw Object.assign(new Error('EAGAIN'), { code: 'EAGAIN' }); },
++    };
++    const m = await createAvailableMemoryReader(d).read();
++    expect(m.source).toBe('os.freemem-fallback');
++    expect(m.fallbackReason).toMatch(/EAGAIN/);
++  });
++
++  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
++    'reports invalid totalmem %s as a diagnostic, not a fallback, and does not gate on it',
++    async (totalmem) => {
++      for (const platform of ['darwin', 'linux']) {
++        const { d } = deps({ platform, totalmem });
++        const m = await createAvailableMemoryReader(d).read();
++        expect(m.percent).toBe(100);
++        expect(m.diagnostic).toMatch(/invalid totalmem/);
++        expect(m.fallbackReason).toBeUndefined();
++        expect(m.source).toBe(platform === 'darwin' ? 'vm_stat' : 'os.freemem');
++      }
++    },
++  );
++
++  it('caches a result for the TTL and measures again after it', async () => {
++    let now = 0;
++    const { d, calls } = deps({ now: () => now });
++    const reader = createAvailableMemoryReader(d);
++    await reader.read();
++    now = AVAILABLE_MEMORY_CACHE_TTL_MS - 1;
++    await reader.read();
++    expect(calls).toHaveLength(1);
++    now = AVAILABLE_MEMORY_CACHE_TTL_MS + 1;
++    await reader.read();
++    expect(calls).toHaveLength(2);
++  });
++
++  it('coalesces concurrent reads into one vm_stat process', async () => {
++    const { d, calls } = deps();
++    const reader = createAvailableMemoryReader(d);
++    const results = await Promise.all(Array.from({ length: 10 }, () => reader.read()));
++    expect(calls).toHaveLength(1);
++    expect(new Set(results).size).toBe(1);
++  });
++
++  it('measures again after a failed in-flight read settles', async () => {
++    let fail = true;
++    const base = deps().d;
++    const d: AvailableMemoryDeps = {
++      ...base,
++      now: (() => { let t = 0; return () => (t += AVAILABLE_MEMORY_CACHE_TTL_MS + 1); })(),
++      execFile: async () => (_f: string, _a: readonly string[], _o: unknown, cb: Cb) => {
++        setImmediate(() => (fail ? cb(Object.assign(new Error('x'), { code: 'EIO' }), '', '') : cb(null, VM_STAT_16K, '')));
++        return {};
++      },
++    };
++    const reader = createAvailableMemoryReader(d);
++    expect((await reader.read()).source).toBe('os.freemem-fallback');
++    fail = false;
++    expect((await reader.read()).source).toBe('vm_stat');
++  });
++});
++
++describe('WorkerDaemon memory gate logging', () => {
++  let tempDir: string;
++
++  beforeEach(() => {
++    tempDir = mkdtempSync(join(tmpdir(), 'available-memory-2935-'));
++    mkdirSync(join(tempDir, '.claude-flow', 'logs'), { recursive: true });
++  });
++
++  afterEach(() => {
++    vi.restoreAllMocks();
++    rmSync(tempDir, { recursive: true, force: true });
++    process.removeAllListeners('SIGTERM');
++    process.removeAllListeners('SIGINT');
++    process.removeAllListeners('SIGHUP');
++  });
++
++  function daemonWith(reading: Record<string, unknown>, minFreeMemoryPercent: number) {
++    const daemon = new WorkerDaemon(tempDir, {
++      resourceThresholds: { maxCpuLoad: 1e9, minFreeMemoryPercent },
++    });
++    (daemon as any).memoryReader = { read: async () => reading };
++    const warnings: string[] = [];
++    daemon.on('log', (e: { level: string; message: string }) => {
++      if (e.level === 'warn') warnings.push(e.message);
++    });
++    return { daemon, warnings };
++  }
++
++  it('logs a fallback once per daemon, whether or not the gate allows', async () => {
++    const reading = { availableBytes: 8e9, totalBytes: 16e9, percent: 50, source: 'os.freemem-fallback', fallbackReason: 'vm_stat failed (ENOENT)' };
++    const { daemon, warnings } = daemonWith(reading, 10);
++    for (let i = 0; i < 3; i++) expect((await (daemon as any).canRunWorker()).allowed).toBe(true);
++    expect(warnings).toEqual(['Memory gate falling back to os.freemem(): vm_stat failed (ENOENT)']);
++
++    const denied = daemonWith({ ...reading, percent: 5 }, 10);
++    expect((await (denied.daemon as any).canRunWorker()).reason).toBe('Memory too low: 5.0% available (os.freemem-fallback)');
++    expect(denied.warnings).toHaveLength(1);
++  });
++
++  it('logs an invalid-totalmem diagnostic once, without claiming a fallback, and allows', async () => {
++    const reading = { availableBytes: 1, totalBytes: 0, percent: 100, source: 'vm_stat', diagnostic: 'invalid totalmem: 0' };
++    const { daemon, warnings } = daemonWith(reading, 10);
++    expect(await (daemon as any).canRunWorker()).toEqual({ allowed: true });
++    expect(await (daemon as any).canRunWorker()).toEqual({ allowed: true });
++    expect(warnings).toEqual(['Memory gate measurement unavailable (invalid totalmem: 0); memory check not enforced']);
++    expect(warnings.some((w) => w.includes('falling back'))).toBe(false);
++  });
++
++  it('keeps the at-threshold boundary: equal percent is allowed', async () => {
++    const { daemon } = daemonWith({ availableBytes: 20, totalBytes: 100, percent: 20, source: 'vm_stat' }, 20);
++    expect((await (daemon as any).canRunWorker()).allowed).toBe(true);
++  });
++});
+diff --git a/v3/@claude-flow/cli/__tests__/services/worker-daemon-darwin-gate-2935.test.ts b/v3/@claude-flow/cli/__tests__/services/worker-daemon-darwin-gate-2935.test.ts
+new file mode 100644
+index 00000000..cd1745dc
+--- /dev/null
++++ b/v3/@claude-flow/cli/__tests__/services/worker-daemon-darwin-gate-2935.test.ts
+@@ -0,0 +1,118 @@
++/**
++ * #2935 — the daemon's memory gate on Darwin.
++ *
++ * os.freemem() on macOS counts only free (+ speculative) pages, so an idle Mac
++ * with gigabytes of reclaimable inactive memory reads as a few percent "free"
++ * and the gate defers almost every worker. These tests drive the existing
++ * canRunWorker() through mocked `os` and `child_process` modules only, using
++ * one real vm_stat capture and the matching os.freemem()/os.totalmem() values
++ * from the same Apple Silicon machine (16 KiB pages).
++ *
++ * Captured numbers: os.freemem() = 2,769,993,728 B of 51,539,607,552 B (5.37%);
++ * vm_stat (free 132,582 + speculative 37,467 + inactive 657,222) × 16,384 B
++ * = 13,554,008,064 B (26.30%).
++ */
++
++import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
++import { WorkerDaemon } from '../../src/services/worker-daemon.js';
++import { mkdtempSync, rmSync, mkdirSync } from 'fs';
++import { join } from 'path';
++import { tmpdir } from 'os';
++
++const TOTAL_BYTES = 51_539_607_552;
++const FREEMEM_BYTES = 2_769_993_728;
++
++const VM_STAT_APPLE_SILICON = [
++  'Mach Virtual Memory Statistics: (page size of 16384 bytes)',
++  'Pages free:                                   132582.',
++  'Pages active:                                 668441.',
++  'Pages inactive:                               657222.',
++  'Pages speculative:                             37467.',
++  'Pages throttled:                                   0.',
++  'Pages wired down:                             347909.',
++  'Pages purgeable:                               46532.',
++  '',
++].join('\n');
++
++function mockOs(platform: string) {
++  const os = {
++    loadavg: () => [0.1, 0.1, 0.1],
++    totalmem: () => TOTAL_BYTES,
++    freemem: () => FREEMEM_BYTES,
++    platform: () => platform,
++  };
++  vi.doMock('os', () => ({ default: os, ...os }));
++}
++
++function mockVmStat(output: string) {
++  const calls: string[] = [];
++  const execFile = (file: string, _args: unknown, _opts: unknown, cb: (e: Error | null, out: string, err: string) => void) => {
++    calls.push(file);
++    setImmediate(() => cb(null, output, ''));
++    return {};
++  };
++  for (const id of ['node:child_process', 'child_process']) {
++    vi.doMock(id, async (importOriginal) => ({ ...(await importOriginal<Record<string, unknown>>()), execFile }));
++  }
++  return calls;
++}
++
++describe('#2935 Darwin memory gate (canRunWorker)', () => {
++  let tempDir: string;
++
++  beforeEach(() => {
++    tempDir = mkdtempSync(join(tmpdir(), 'worker-daemon-2935-'));
++    mkdirSync(join(tempDir, '.claude-flow', 'logs'), { recursive: true });
++  });
++
++  afterEach(() => {
++    vi.restoreAllMocks();
++    vi.doUnmock('os');
++    vi.doUnmock('node:child_process');
++    vi.doUnmock('child_process');
++    rmSync(tempDir, { recursive: true, force: true });
++    process.removeAllListeners('SIGTERM');
++    process.removeAllListeners('SIGINT');
++    process.removeAllListeners('SIGHUP');
++  });
++
++  it('allows workers when reclaimable inactive memory is above the threshold (A1)', async () => {
++    mockOs('darwin');
++    const calls = mockVmStat(VM_STAT_APPLE_SILICON);
++    const daemon = new WorkerDaemon(tempDir, {
++      resourceThresholds: { maxCpuLoad: 1000, minFreeMemoryPercent: 10 },
++    });
++
++    const result = await (daemon as any).canRunWorker();
++
++    expect(result).toEqual({ allowed: true });
++    expect(calls).toEqual(['/usr/bin/vm_stat']);
++  });
++
++  it('still defers workers when available memory is below the threshold (A2)', async () => {
++    mockOs('darwin');
++    mockVmStat(VM_STAT_APPLE_SILICON);
++    const daemon = new WorkerDaemon(tempDir, {
++      resourceThresholds: { maxCpuLoad: 1000, minFreeMemoryPercent: 30 },
++    });
++
++    const result = await (daemon as any).canRunWorker();
++
++    expect(result.allowed).toBe(false);
++    expect(result.reason).toMatch(/Memory too low: 26\.3% available \(vm_stat\)/);
++  });
++
++  it('keeps os.freemem() and never runs vm_stat off Darwin (A3)', async () => {
++    mockOs('linux');
++    const calls = mockVmStat(VM_STAT_APPLE_SILICON);
++    const daemon = new WorkerDaemon(tempDir, {
++      resourceThresholds: { maxCpuLoad: 1000, minFreeMemoryPercent: 10 },
++    });
++
++    const result = await (daemon as any).canRunWorker();
++
++    expect(result.allowed).toBe(false);
++    expect(result.reason).toContain('5.4%');
++    expect(calls).toEqual([]);
++  });
++});
+diff --git a/v3/@claude-flow/cli/src/services/available-memory.ts b/v3/@claude-flow/cli/src/services/available-memory.ts
+new file mode 100644
+index 00000000..d892a9cd
+--- /dev/null
++++ b/v3/@claude-flow/cli/src/services/available-memory.ts
+@@ -0,0 +1,228 @@
++/**
++ * Available-memory measurement for the worker daemon's resource gate (#2935).
++ *
++ * On Darwin, `os.freemem()` (libuv: host `free_count` × page size) counts only
++ * free and speculative pages. The kernel keeps file cache resident on the
++ * inactive queue and reclaims it on demand, so a healthy idle Mac reports a
++ * few percent "free" and the daemon defers almost every worker.
++ *
++ * On Darwin this module reads `vm_stat` and measures
++ *   (free + speculative + inactive) × pageSize, clamped to totalmem,
++ * where vm_stat's "Pages free" is `free_count - speculative_count` (so
++ * free + speculative is the kernel's `free_count`) and the page size is taken
++ * from vm_stat's own header (16384 on Apple Silicon, 4096 on Intel). Purgeable
++ * pages are parsed for diagnostics only: they are an attribute of pages that
++ * already sit on other queues, so adding them could double-count. This is the
++ * same `inactive + free_count` measure psutil and Zabbix report as available.
++ *
++ * Every other platform keeps `os.freemem()`, unchanged. If the probe fails,
++ * the reader falls back to `os.freemem()` and says so in `fallbackReason`.
++ */
++
++export type AvailableMemorySource = 'vm_stat' | 'os.freemem' | 'os.freemem-fallback';
++
++export interface AvailableMemory {
++  availableBytes: number;
++  totalBytes: number;
++  /** Available memory as a percentage of total, 0–100. */
++  percent: number;
++  source: AvailableMemorySource;
++  /** Set only when source is 'os.freemem-fallback': why vm_stat was not used. */
++  fallbackReason?: string;
++  /** Set when the measurement itself is degenerate (e.g. invalid totalmem). */
++  diagnostic?: string;
++}
++
++export interface VmStatSample {
++  pageSize: number;
++  free: number;
++  inactive: number;
++  speculative: number;
++  purgeable?: number;
++}
++
++type ExecFileCallback = (error: Error | null, stdout: string | Buffer, stderr: string | Buffer) => void;
++type ExecFileLike = (
++  file: string,
++  args: readonly string[],
++  options: { timeout: number; maxBuffer: number; windowsHide: boolean; encoding: 'utf8' },
++  callback: ExecFileCallback,
++) => unknown;
++
++export interface AvailableMemoryDeps {
++  /** Platform of the measured host; anything other than 'darwin' keeps os.freemem(). */
++  platform?: () => Promise<string | undefined>;
++  execFile?: () => Promise<ExecFileLike>;
++  freemem?: () => Promise<number>;
++  totalmem?: () => Promise<number>;
++  now?: () => number;
++}
++
++export const VM_STAT_PATH = '/usr/bin/vm_stat';
++export const VM_STAT_TIMEOUT_MS = 1000;
++export const AVAILABLE_MEMORY_CACHE_TTL_MS = 5000;
++
++const VM_STAT_MAX_BUFFER = 16 * 1024;
++const PAGE_SIZE_HEADER = /page size of (\d+) bytes/;
++const COUNTER_LINE = /^([^:]+):\s+(\d+)\.?\s*$/;
++const COUNTERS: Record<string, keyof Omit<VmStatSample, 'pageSize'>> = {
++  'Pages free': 'free',
++  'Pages inactive': 'inactive',
++  'Pages speculative': 'speculative',
++  'Pages purgeable': 'purgeable',
++};
++
++/** Parse `vm_stat` output. Returns null unless the header and required counters are valid. */
++export function parseVmStat(text: string): VmStatSample | null {
++  if (typeof text !== 'string') return null;
++  const lines = text.replace(/\r\n/g, '\n').split('\n');
++  const header = PAGE_SIZE_HEADER.exec(lines[0] ?? '');
++  if (!header) return null;
++  const pageSize = Number(header[1]);
++  if (!Number.isSafeInteger(pageSize) || pageSize <= 0) return null;
++
++  const counters: Partial<Record<keyof Omit<VmStatSample, 'pageSize'>, number>> = {};
++  for (const line of lines.slice(1)) {
++    const match = COUNTER_LINE.exec(line);
++    if (!match) continue;
++    const key = COUNTERS[match[1].trim()];
++    if (!key) continue;
++    const value = Number(match[2]);
++    if (!Number.isSafeInteger(value) || value < 0) return null;
++    counters[key] = value;
++  }
++  const { free, inactive, speculative, purgeable } = counters;
++  if (free === undefined || inactive === undefined || speculative === undefined) return null;
++  return purgeable === undefined
++    ? { pageSize, free, inactive, speculative }
++    : { pageSize, free, inactive, speculative, purgeable };
++}
++
++/** Available bytes per the documented formula, or null if the product is not a safe integer. */
++export function vmStatAvailableBytes(sample: VmStatSample): number | null {
++  const pages = sample.free + sample.speculative + sample.inactive;
++  const bytes = pages * sample.pageSize;
++  return Number.isSafeInteger(pages) && Number.isSafeInteger(bytes) ? bytes : null;
++}
++
++function runExecFile(execFile: ExecFileLike): Promise<string> {
++  return new Promise((resolve, reject) => {
++    try {
++      execFile(
++        VM_STAT_PATH,
++        [],
++        { timeout: VM_STAT_TIMEOUT_MS, maxBuffer: VM_STAT_MAX_BUFFER, windowsHide: true, encoding: 'utf8' },
++        (error, stdout) => (error ? reject(error) : resolve(String(stdout))),
++      );
++    } catch (error) {
++      reject(error);
++    }
++  });
++}
++
++function describeError(error: unknown): string {
++  const e = error as { code?: unknown; killed?: unknown; signal?: unknown; message?: unknown };
++  if (e?.killed) return `vm_stat timed out after ${VM_STAT_TIMEOUT_MS}ms`;
++  if (e?.code !== undefined) return `vm_stat failed (${String(e.code)})`;
++  return `vm_stat failed (${String(e?.message ?? error).slice(0, 200)})`;
++}
++
++interface OsLike {
++  freemem(): number;
++  totalmem(): number;
++  platform?: () => string;
++}
++
++// Resolved at call time, from the same `os` specifier canRunWorker has always
++// imported, so a substituted `os` (as in the daemon's tests) supplies the
++// platform as well as the byte counts. A substitute that does not provide
++// `platform` is measured with its own freemem(), never with the host's vm_stat.
++async function loadOs(): Promise<OsLike> {
++  const mod = (await import('os')) as unknown as { default?: OsLike } & OsLike;
++  return mod.default ?? mod;
++}
++
++const defaultDeps: Required<AvailableMemoryDeps> = {
++  platform: async () => {
++    const os = await loadOs();
++    return typeof os.platform === 'function' ? os.platform() : undefined;
++  },
++  execFile: async () => (await import('node:child_process')).execFile as unknown as ExecFileLike,
++  freemem: async () => (await loadOs()).freemem(),
++  totalmem: async () => (await loadOs()).totalmem(),
++  now: () => Date.now(),
++};
++
++export interface AvailableMemoryReader {
++  read(): Promise<AvailableMemory>;
++}
++
++/**
++ * Create a reader. Resolved results are cached for AVAILABLE_MEMORY_CACHE_TTL_MS
++ * and concurrent callers share one in-flight measurement, so at most one
++ * vm_stat child process exists at a time.
++ */
++export function createAvailableMemoryReader(deps: AvailableMemoryDeps = {}): AvailableMemoryReader {
++  const d: Required<AvailableMemoryDeps> = { ...defaultDeps, ...deps };
++  let cached: { at: number; value: AvailableMemory } | null = null;
++  let inFlight: Promise<AvailableMemory> | null = null;
++
++  async function measure(): Promise<AvailableMemory> {
++    const totalBytes = await d.totalmem();
++    const freeBytes = await d.freemem();
++    const fromFreemem = (source: AvailableMemorySource, fallbackReason?: string): AvailableMemory => {
++      const result: AvailableMemory = { availableBytes: freeBytes, totalBytes, percent: 0, source };
++      if (fallbackReason) result.fallbackReason = fallbackReason;
++      return withPercent(result);
++    };
++
++    if ((await d.platform()) !== 'darwin') return fromFreemem('os.freemem');
++
++    let sample: VmStatSample | null;
++    try {
++      sample = parseVmStat(await runExecFile(await d.execFile()));
++    } catch (error) {
++      return fromFreemem('os.freemem-fallback', describeError(error));
++    }
++    if (!sample) return fromFreemem('os.freemem-fallback', 'vm_stat output could not be parsed');
++    const bytes = vmStatAvailableBytes(sample);
++    if (bytes === null) return fromFreemem('os.freemem-fallback', 'vm_stat page counts overflow');
++
++    const availableBytes = Number.isFinite(totalBytes) && totalBytes > 0 ? Math.min(bytes, totalBytes) : bytes;
++    return withPercent({ availableBytes, totalBytes, percent: 0, source: 'vm_stat' });
++  }
++
++  return {
++    read(): Promise<AvailableMemory> {
++      const now = d.now();
++      if (cached && now - cached.at < AVAILABLE_MEMORY_CACHE_TTL_MS) return Promise.resolve(cached.value);
++      if (inFlight) return inFlight;
++      inFlight = measure()
++        .then((value) => {
++          cached = { at: d.now(), value };
++          return value;
++        })
++        .finally(() => {
++          inFlight = null;
++        });
++      return inFlight;
++    },
++  };
++}
++
++/**
++ * A broken total (0, negative, NaN, Infinity) cannot yield a percentage. Report
++ * 100% with a diagnostic so the gate does not deny on it, matching the
++ * previous behaviour where `NaN < threshold` was false.
++ */
++function withPercent(result: AvailableMemory): AvailableMemory {
++  const { availableBytes, totalBytes } = result;
++  if (!Number.isFinite(totalBytes) || totalBytes <= 0) {
++    return { ...result, percent: 100, diagnostic: `invalid totalmem: ${String(totalBytes)}` };
++  }
++  const percent = (availableBytes / totalBytes) * 100;
++  if (!Number.isFinite(percent)) {
++    return { ...result, percent: 100, diagnostic: `invalid available memory: ${String(availableBytes)}` };
++  }
++  return { ...result, percent: Math.max(0, Math.min(100, percent)) };
++}
+diff --git a/v3/@claude-flow/cli/src/services/worker-daemon.ts b/v3/@claude-flow/cli/src/services/worker-daemon.ts
+index d89357b2..3eb3da01 100644
+--- a/v3/@claude-flow/cli/src/services/worker-daemon.ts
++++ b/v3/@claude-flow/cli/src/services/worker-daemon.ts
+@@ -42,6 +42,7 @@ import { dispatchQueueDir } from './dispatch-queue.js';
+ import { resolveGitWorkspaceIdentity, type GitWorkspaceIdentity } from './git-workspace-identity.js';
+ import { getWorkspaceLeaseRegistry } from './workspace-lease.js';
+ import { getRepoSupervisorRegistry, type SupervisorRecord } from './repo-supervisor.js';
++import { createAvailableMemoryReader, type AvailableMemoryReader } from './available-memory.js';
+ 
+ // Daemon config is read synchronously from the constructor. In an ESM build,
+ // bare `require` is undefined, so use a module-relative require for YAML.
+@@ -797,21 +798,39 @@ export class WorkerDaemon extends EventEmitter {
+     try { unlinkSync(file); } catch { /* ignore */ }
+   }
+ 
++  // #2935 — on Darwin, os.freemem() leaves out reclaimable inactive pages, so
++  // the memory gate measures available memory from vm_stat instead (see
++  // available-memory.ts). One reader per daemon keeps its short cache local.
++  private memoryReader: AvailableMemoryReader = createAvailableMemoryReader();
++  private memoryFallbackLogged = false;
++  private memoryDiagnosticLogged = false;
++
+   /**
+    * Check if system resources allow worker execution
+    */
+   private async canRunWorker(): Promise<{ allowed: boolean; reason?: string }> {
+     const os = await import('os');
+     const cpuLoad = os.loadavg()[0];
+-    const totalMem = os.totalmem();
+-    const freeMem = os.freemem();
+-    const freePercent = (freeMem / totalMem) * 100;
++    const memory = await this.memoryReader.read();
++
++    // Report a degraded measurement once per daemon lifetime, whatever the verdict.
++    if (memory.fallbackReason && !this.memoryFallbackLogged) {
++      this.memoryFallbackLogged = true;
++      this.log('warn', `Memory gate falling back to os.freemem(): ${memory.fallbackReason}`);
++    }
++    if (memory.diagnostic && !this.memoryDiagnosticLogged) {
++      this.memoryDiagnosticLogged = true;
++      this.log('warn', `Memory gate measurement unavailable (${memory.diagnostic}); memory check not enforced`);
++    }
+ 
+     if (cpuLoad > this.config.resourceThresholds.maxCpuLoad) {
+       return { allowed: false, reason: `CPU load too high: ${cpuLoad.toFixed(2)}` };
+     }
+-    if (freePercent < this.config.resourceThresholds.minFreeMemoryPercent) {
+-      return { allowed: false, reason: `Memory too low: ${freePercent.toFixed(1)}% free` };
++    if (memory.percent < this.config.resourceThresholds.minFreeMemoryPercent) {
++      return {
++        allowed: false,
++        reason: `Memory too low: ${memory.percent.toFixed(1)}% available (${memory.source})`,
++      };
+     }
+     return { allowed: true };
+   }
+-- 
+2.54.0 (Apple Git-157)
+
