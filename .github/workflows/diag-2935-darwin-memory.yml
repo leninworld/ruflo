@@ -1,0 +1,47 @@
+# Prerequisite diagnostic for ruvnet/ruflo#2935 — NOT YET PUBLISHED.
+# Intended location: .github/workflows/diag-2935-darwin-memory.yml on the
+# packet-only fork branch leninworld/ruflo:diag-darwin-memory-p0-issue-2935 (a branch whose
+# tree contains only this workflow and validation/ruflo2935/probe.mjs, so this is the
+# only workflow that can run on it). Triggered once by the push of that branch.
+name: Darwin memory signal prerequisite (2935 P0)
+on:
+  push:
+    branches: [diag-darwin-memory-p0-issue-2935]
+permissions:
+  contents: read
+concurrency:
+  group: ruflo2935-p0
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, reused from reviewed #4752 workflow
+        with:
+          path: packet
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Record runner identity
+        run: |
+          mkdir -p "$RUNNER_TEMP/ruflo2935-p0/evidence"
+          {
+            echo "run_id=$GITHUB_RUN_ID sha=$GITHUB_SHA node=$(node --version)"
+            echo "ImageOS=$ImageOS ImageVersion=$ImageVersion"
+            uname -a
+          } > "$RUNNER_TEMP/ruflo2935-p0/evidence/runner-${{ matrix.node }}.txt"
+      - name: Probe Darwin memory signals (read-only)
+        run: node packet/validation/ruflo2935/probe.mjs "$RUNNER_TEMP/ruflo2935-p0/evidence"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, reused from reviewed #4752 workflow
+        if: always()
+        with:
+          name: ruflo2935-p0-node${{ matrix.node }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/ruflo2935-p0/evidence
+          if-no-files-found: error
+          retention-days: 7
